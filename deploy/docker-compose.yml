@@ -1,0 +1,136 @@
+# DEFI Movember — server stack
+#
+# Run from this directory:
+#   docker compose up -d
+#
+# Production and staging run side by side on the same host, in separate
+# containers, with separate databases and separate key sets. Caddy tells them
+# apart by domain name (architecture §9.1).
+#
+# PostgreSQL is deliberately absent: the database stays on Supabase. We take
+# on what is simple and stateless — serving a web app — and delegate what is
+# critical and operational (architecture §2.3).
+
+name: defi-movember
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      APP_DOMAIN: ${APP_DOMAIN}
+      STAGING_DOMAIN: ${STAGING_DOMAIN}
+      STAGING_USER: ${STAGING_USER}
+      STAGING_PASSWORD_HASH: ${STAGING_PASSWORD_HASH}
+      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-}
+    depends_on:
+      - app
+      - app-staging
+    networks:
+      - web
+
+  app:
+    image: ${APP_IMAGE:-defi-movember:local}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-local}
+    restart: always
+    # Never published to the host: reachable only through Caddy.
+    expose:
+      - "3000"
+    env_file:
+      - .env.production
+    environment:
+      APP_ENVIRONMENT: production
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      - web
+
+  app-staging:
+    image: ${STAGING_IMAGE:-defi-movember:staging}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: ${STAGING_APP_VERSION:-staging}
+    restart: always
+    expose:
+      - "3000"
+    env_file:
+      - .env.staging
+    environment:
+      APP_ENVIRONMENT: staging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      - web
+
+  # Background queue: Strava activity ingestion, push and e-mail delivery.
+  #
+  # Declared now so the stack does not have to be reshaped later, but held
+  # behind a profile so it does not run as an empty container until epic 3
+  # gives it something to do. Start it with:
+  #   docker compose --profile worker up -d
+  worker:
+    image: ${APP_IMAGE:-defi-movember:local}
+    restart: always
+    profiles:
+      - worker
+    env_file:
+      - .env.production
+    environment:
+      APP_ENVIRONMENT: production
+    # Placeholder entry point, replaced in epic 3 by the queue runner.
+    # It fails loudly on purpose: reusing the web server command here would
+    # silently start a second, pointless web server if the profile were
+    # enabled by mistake.
+    command:
+      [
+        "node",
+        "-e",
+        "console.error('worker: not implemented yet, see epic 3'); process.exit(1)",
+      ]
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:
+  caddy-logs:

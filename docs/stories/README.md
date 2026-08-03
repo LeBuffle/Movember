@@ -13,7 +13,7 @@
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
 | 1.1 | [Initialisation du projet Next.js](1.1.initialisation-projet.md) | **Review** | — |
-| 1.2 | [Conteneurisation Docker et reverse proxy](1.2.conteneurisation.md) | Draft | 1.1 |
+| 1.2 | [Conteneurisation Docker et reverse proxy](1.2.conteneurisation.md) | **Review** | 1.1 |
 | 1.3 | [Déploiement automatisé vers la préproduction](1.3.deploiement-preproduction.md) | Draft | 1.2 · **accès VPS** |
 | 1.4 | [Déploiement en production et retour arrière](1.4.deploiement-production.md) | Draft | 1.3 |
 | 1.5 | [Charte graphique et composants de base](1.5.charte-graphique.md) | **Review** | 1.1 |

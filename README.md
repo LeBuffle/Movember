@@ -67,6 +67,18 @@ deploy/             # infrastructure (à venir, story 1.2)
 `GET /api/health` renvoie l'état de l'application, sa version et l'horodatage. Il est
 consommé par le contrôle de santé Docker, la chaîne de déploiement et la supervision.
 
+## Exécution conteneurisée
+
+L'application tourne en conteneur Docker derrière un reverse proxy Caddy, sur le VPS.
+
+```bash
+docker build -f deploy/Dockerfile -t defi-movember:local .
+docker run --rm -p 3000:3000 -e APP_ENVIRONMENT=development defi-movember:local
+```
+
+La pile complète (Caddy, production, préproduction) et son installation sur le serveur
+sont décrites dans [`deploy/README.md`](deploy/README.md).
+
 ## Sécurité
 
 **Aucun secret ne doit être committé.** Toutes les clés passent par des variables
