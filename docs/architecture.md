@@ -17,7 +17,7 @@ backend, la base de données, les intégrations et le déploiement.
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
 | 2026-08-03 | v1 | Rédaction initiale à partir du PRD v1 | Agent Architect |
-| 2026-08-03 | v1.1 | **Hébergement sur VPS Hostinger** décidé par le PO (remplace Vercel) : déploiement, tâches planifiées, sauvegardes, supervision, coûts et risques révisés. Modèle de données étendu aux règles de jeu précisées par le PO (défis individualisés, classements multiples, raretés) | Agent Architect |
+| 2026-08-03 | v1.1 | **Hébergement sur VPS Hostinger** décidé par le PO (remplace Vercel) : déploiement, tâches planifiées, sauvegardes, supervision, coûts et risques révisés. Modèle de données étendu aux règles de jeu précisées par le PO (défis individualisés, classements multiples, raretés commune/rare/épique/légendaire) | Agent Architect |
 
 ---
 
@@ -621,13 +621,19 @@ même défi.
 
 **`cards`** / **`card_grants`**
 `cards` : `id`, `edition_id`, `code`, `name`, `description`, `rarity`
-(`commune` | `rare` | `tres_rare` | `epique`), `image_path`, `series`
+(`commune` | `rare` | `epique` | `legendaire`), `image_path`, `series`
 (regroupement thématique : formes, couleurs), `is_active`, `released_at`.
 
 > Les cartes sont sur le thème de la moustache — formes, couleurs, noms fantaisistes
 > (« mono moustache », « moustache girlie », « moustache fine », « moustache touffue »,
 > « moustache cowboy », « moustache d'or », « moustache teinte », « moustache blanche »).
-> Quatre niveaux de rareté : commune, rare, très rare, épique.
+> Quatre niveaux de rareté, par ordre croissant : **commune, rare, épique, légendaire**.
+>
+> La rareté `legendaire` n'est garantie que par le bonus du niveau 3 ; elle reste
+> accessible par le tirage des défis avec une probabilité faible. Le niveau d'inscription
+> `legendaire` (« Sportif légendaire ») et la rareté `legendaire` portent le même nom mais
+> vivent dans deux tables distinctes — c'est voulu et cohérent narrativement, sans
+> ambiguïté technique.
 
 `card_grants` : `id`, `profile_id`, `card_id`, `source` (`challenge` | `daily_draw` |
 `pack` | `tier_bonus` | `admin`), `source_ref`, `granted_at`.
@@ -1255,10 +1261,11 @@ premier incident.
 | A5 | Traitement des activités saisies à la main sur Strava (point P11 du PRD) | Exclues ; les imports depuis une montre restent acceptés | Phase 4 |
 | A6 | Nom de domaine de l'édition | À réserver — le PO s'en occupe | Août |
 | A7 | Compte Sentry pour la remontée des erreurs | Oui, offre gratuite | Phase 4 |
-| **A8** | **« Carte légendaire garantie » au niveau 3, alors que les raretés retenues s'arrêtent à « épique »** | Renommer la promesse en **« carte épique garantie »**, ou ajouter une 5ᵉ rareté « légendaire » au-dessus d'épique. *Recommandation : renommer — quatre raretés suffisent pour 50 cartes* | **Avant l'ouverture des inscriptions** — c'est une promesse commerciale affichée |
-| **A9** | **Une carte par défi réussi, ou une carte par jour maximum ?** | Une carte **par défi réussi** : cohérent avec le rattrapage de plusieurs défis d'un coup, et plus lisible pour le joueur | Phase 4 |
+| ~~A8~~ | ~~Contradiction sur la « carte légendaire garantie »~~ | ✅ **Résolue** — raretés arrêtées à commune, rare, épique, légendaire | — |
+| ~~A9~~ | ~~Une carte par défi ou une par jour ?~~ | ✅ **Résolue** — une carte **par défi réussi** | — |
 | **A10** | Écart de points entre un défi facile et un défi difficile | Rapport de 1 à 3 pour commencer, ajustable en base sans redéploiement | Phase 4 |
 | **A11** | Volume cible du catalogue de défis | Au moins 60 à 80 défis répartis sur les sports et les difficultés, à produire en septembre | Septembre |
+| **A12** | Probabilités de tirage par rareté | Point de départ : commune 60 %, rare 28 %, épique 10 %, légendaire 2 % — à calibrer pour qu'une légendaire reste un événement sans être inatteignable | Phase 4 |
 
 ---
 

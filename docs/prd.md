@@ -49,7 +49,7 @@ collecte se joue sur le panier moyen bien plus que sur le volume** : passer de 1
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
 | 2026-08-03 | v1 | Rédaction initiale à partir du Brief v1.1 | Agent PM |
-| 2026-08-03 | v1.1 | Règles du jeu précisées par le PO : défis individualisés tirés d'un catalogue, défis cumulables et sans blocage, sept classements, une carte par défi réussi, quatre raretés, packs de 5 cartes, thème moustache des cartes. Hébergement sur VPS Hostinger. | Agent PM |
+| 2026-08-03 | v1.1 | Règles du jeu précisées par le PO : défis individualisés tirés d'un catalogue, défis cumulables et sans blocage, sept classements, une carte par défi réussi, raretés commune/rare/épique/légendaire, packs de 5 cartes, thème moustache des cartes. Hébergement sur VPS Hostinger. | Agent PM |
 
 ---
 
@@ -164,19 +164,18 @@ d'édition.
 
 | Règle | Valeur retenue |
 | --- | --- |
-| Attribution | **1 carte tirée au sort par défi réussi** — soit environ une par jour |
-| Raretés | **4 niveaux** : commune, rare, très rare, épique |
+| Attribution | **1 carte tirée au sort par défi réussi.** Rattraper trois défis en retard donne donc trois cartes |
+| Raretés | **4 niveaux, du plus courant au plus rare** : commune → rare → épique → **légendaire** |
 | Volume au lancement | ~50 cartes, collection extensible en cours de mois |
 | Thème | Moustaches : formes, couleurs, noms fantaisistes (« mono moustache », « moustache girlie », « moustache fine », « moustache touffue », « moustache cowboy », « moustache d'or », « moustache teinte », « moustache blanche »…) |
 | Pack booster | **5 cartes** par pack |
-| Bonus niveau 3 | 2 packs, dont une carte de haute rareté garantie |
+| Bonus niveau 3 | 2 packs, dont **une carte légendaire garantie** |
 
-> ⚠️ **Incohérence à lever avant l'ouverture des inscriptions.** Le niveau 3 promet une
-> « carte légendaire garantie », mais la liste des raretés arrêtée par le PO s'arrête à
-> « épique ». Deux issues : renommer la promesse en « carte épique garantie », ou ajouter
-> une 5ᵉ rareté « légendaire » au-dessus d'épique. *Recommandation : renommer — quatre
-> raretés suffisent pour une collection de 50 cartes.* C'est une promesse commerciale
-> affichée, elle doit être exacte avant la mise en vente.
+> La rareté « légendaire » est le sommet de la collection et n'est garantie que par le
+> bonus du niveau 3 — ce qui donne sa valeur à la contrepartie du « Sportif légendaire »
+> sans pour autant procurer d'avantage au classement (décision D2). Les cartes légendaires
+> restent accessibles gratuitement par le tirage des défis, simplement avec une
+> probabilité faible.
 
 ---
 
@@ -271,14 +270,14 @@ cette édition.
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR57 | La collection compte environ 50 cartes au lancement, réparties en **4 niveaux de rareté** : commune, rare, très rare, épique. | M |
+| FR57 | La collection compte environ 50 cartes au lancement, réparties en **4 niveaux de rareté** : commune, rare, épique, légendaire. | M |
 | FR58 | Les cartes sont sur le thème de la moustache — formes, couleurs, noms fantaisistes — et regroupées en séries. | M |
 | FR59 | Le participant consulte son album : cartes obtenues, manquantes, taux de complétion, avec **deux compteurs distincts** — « cartes gagnées » et « collection complète ». | M |
 | FR60 | L'attribution d'une carte suit des règles de tirage paramétrables tenant compte de la rareté. | M |
 | FR61 | L'obtention d'une carte est mise en scène (animation de révélation) et notifiée. | M |
 | FR62 | De nouvelles cartes peuvent être ajoutées à la collection en cours de mois depuis le back-office. | M |
 | FR63 | Le participant peut consulter le détail d'une carte : visuel, nom, rareté, série, date d'obtention. | M |
-| FR64 | Les participants de niveau 3 reçoivent automatiquement leurs **2 packs de 5 cartes**, dont une carte de haute rareté garantie. | M |
+| FR64 | Les participants de niveau 3 reçoivent automatiquement leurs **2 packs de 5 cartes**, dont **une carte légendaire garantie**. | M |
 | FR65 | Le participant peut acheter des **packs de 5 cartes** en cours de jeu, par paiement Stripe. | S |
 | FR66 | Un pack acheté suit des règles de composition paramétrables et garantit sa contrepartie annoncée. | S |
 | FR67 | Le participant peut partager le visuel d'une carte obtenue sur les réseaux sociaux. | C |
@@ -590,8 +589,8 @@ Phase 4 ou en cours de développement.
 | --- | --- | --- |
 | P1 | **Prix ferme de la médaille**, qui conditionne la répartition définitive du don par niveau (décision D1). | Avant l'ouverture des inscriptions |
 | P2 | Annonce du « 100 % reversé » au niveau 1 : reformuler, ou faire combler les frais Stripe par l'association (~260 € pour 600 participants). | Avant l'ouverture des inscriptions |
-| **P12** | **« Carte légendaire garantie » au niveau 3 alors que les raretés s'arrêtent à « épique »** — renommer la promesse, ou ajouter une 5ᵉ rareté (décision D10). | **Avant l'ouverture des inscriptions** |
-| P3 | **Prix** des packs achetables. *(Composition tranchée : 5 cartes. Rythme d'obtention tranché : 1 carte par défi réussi.)* | Phase 4 |
+| ~~P12~~ | ~~Contradiction sur la « carte légendaire garantie »~~ ✅ **Tranché** : les raretés sont commune, rare, épique, légendaire — « très rare » supprimée, « légendaire » ajoutée au sommet. La promesse du niveau 3 est désormais exacte. | — |
+| P3 | **Prix** des packs achetables, et **probabilités de tirage par rareté**. *(Composition tranchée : 5 cartes. Rythme tranché : 1 carte par défi réussi.)* | Phase 4 |
 | P13 | Barème de points par difficulté de défi — rapport proposé de 1 à 3 entre facile et difficile. | Phase 4 |
 | P14 | Volume cible du catalogue de défis : au moins 60 à 80 défis répartis par sport et par difficulté. **Travail de contenu à mener en septembre.** | Septembre |
 | ~~P4~~ | ~~Classement par équipe : total ou moyenne~~ ✅ **Tranché** : normalisé par le nombre de membres, pour ne pas désavantager les petites équipes. | — |
