@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | v1 — Phase 1 BMAD (Analyst) |
+| **Version** | v1.1 — Phase 1 BMAD (Analyst) |
 | **Date** | 3 août 2026 |
 | **Auteur** | Agent Analyst (BMAD), sur saisie de Sylvain (Product Owner) |
 | **Statut** | En attente de validation PO |
@@ -184,13 +184,40 @@ conditionne la croissance vers le grand public.
 
 ## 5. Objectifs et métriques de succès
 
+### 5.0 Point de départ : les résultats de l'édition 4
+
+| Indicateur | Édition 4 |
+| --- | --- |
+| Participants | 400 |
+| Montant reversé à la fondation | 5 000 € |
+| **Collecte par participant** | **12,50 €** |
+| Distance cumulée | 30 000 km |
+| Temps de sport cumulé | 3 500 heures |
+
+Trois enseignements en découlent, et ils structurent tout le reste du document.
+
+**a) Le levier de croissance est le panier moyen, pas le nombre de participants.**
+L'édition 4 a collecté 12,50 € par personne — l'équivalent du niveau 1 seul. La grille à
+trois niveaux permet de doubler la collecte **à effectif constant**, sans avoir à
+recruter davantage. Recruter plus vient en supplément, pas en substitution.
+
+**b) Les participants font en moyenne 75 km et 8h45 de sport sur le mois** — soit
+environ **17 minutes de sport par jour** en moyenne. C'est la donnée la plus importante
+pour calibrer les défis : un défi quotidien exigeant 45 minutes d'effort serait hors de
+portée du participant médian. **Les défis doivent être courts et le jeu doit accepter
+qu'on saute des jours.**
+
+**c) 30 000 km et 3 500 heures sont des chiffres qui parlent.** Ils deviennent des
+compteurs collectifs à afficher en page d'accueil et des objectifs d'équipe — un
+matériau d'animation directement exploitable.
+
 ### 5.1 Objectifs métier
 
-- **Collecter au minimum le résultat de l'édition 4**, avec pour cible haute un
-  doublement du nombre de participants. *(Cible chiffrée à confirmer — voir question
-  ouverte Q1.)*
-- **Atteindre 300 participants inscrits et payés** au 1ᵉʳ novembre, avec un plancher
-  acceptable à 100 et un objectif ambitieux à 500.
+- **Reverser 10 000 € à la fondation**, soit le double de l'édition 4. Plancher
+  acceptable : 6 500 € (déjà +30 %). Cible ambitieuse : 15 000 €.
+- **Atteindre 600 participants inscrits et payés** au 1ᵉʳ novembre, avec un plancher à
+  400 (niveau de l'édition 4) et un objectif ambitieux à 800.
+- **Franchir 50 000 km parcourus et 6 000 heures de sport** cumulées sur le mois.
 - **Recruter au moins 3 entités externes** (association, entreprise ou club) inscrivant
   une équipe, afin de valider le levier de croissance de cette 5ᵉ édition.
 - **Réduire la charge d'animation à moins de 30 minutes par jour** pour l'équipe
@@ -212,62 +239,78 @@ conditionne la croissance vers le grand public.
 
 ### 5.3 Indicateurs clés (KPI)
 
-| KPI | Définition | Cible |
-| --- | --- | --- |
-| Participants payants | Inscriptions payées et confirmées | 300 (min. 100) |
-| Montant total encaissé | Somme brute Stripe (inscriptions + packs) | à définir (Q1) |
-| Montant net reversé | Encaissé − frais Stripe − coût des médailles − infra | à définir (Q1) |
+| KPI | Définition | Cible | Édition 4 |
+| --- | --- | --- | --- |
+| Participants payants | Inscriptions payées et confirmées | 600 (min. 400) | 400 |
+| Montant net reversé | Encaissé − frais Stripe − coût des médailles | 10 000 € (min. 6 500 €) | 5 000 € |
+| Collecte par participant | Reversé ÷ participants | > 17 € | 12,50 € |
+| Distance cumulée | Somme des kilomètres du mois | 50 000 km | 30 000 km |
+| Temps de sport cumulé | Somme des durées d'activité | 6 000 h | 3 500 h |
 | Taux de connexion Strava | Comptes Strava liés ÷ inscriptions payées | > 90 % |
 | Participants actifs jour J | Au moins une activité synchronisée dans les 24 h | > 50 % en moyenne |
-| Défis validés / participant | Médiane sur le mois | > 15 / 30 |
-| Cartes débloquées | Nombre moyen de cartes par participant | > 20 |
-| Revenu des packs | Chiffre d'affaires des achats en cours de jeu | à définir (Q3) |
-| Litiges anti-triche | Cas nécessitant un arbitrage manuel | < 2 % des validations |
-| Coût infra mensuel | Hébergement + base + envoi de notifications | < 30 € |
+| Défis validés / participant | Médiane sur le mois | > 15 / 30 | — |
+| Cartes débloquées | Nombre moyen de cartes par participant | > 20 | — |
+| Taux de connexion Strava | Comptes liés ÷ inscriptions payées | > 90 % | — |
+| Revenu des packs | Chiffre d'affaires des achats en cours de jeu, **reversé intégralement** | bonus, non budgété | — |
+| Litiges anti-triche | Cas nécessitant un arbitrage manuel | < 2 % des validations | — |
+| Coût infra mensuel | Hébergement + base + envoi de notifications | < 30 € | — |
 
 ### 5.4 Économie du projet — à instruire en Phase 2
 
-Les trois niveaux d'inscription tels que définis à ce jour :
+**Décisions prises par le PO :** le montant reversé **progresse avec le niveau**
+(question Q2 tranchée), et le revenu des packs achetés en cours de jeu est **reversé
+intégralement** (question Q3 tranchée).
 
-| Niveau | Nom | Prix | Reversé à la fondation | Contrepartie |
+Les trois niveaux d'inscription :
+
+| Niveau | Nom | Prix | Contrepartie |
+| --- | --- | --- | --- |
+| 1 | Sportif engagé | 12 € | Accès complet au jeu |
+| 2 | Sportif chevronné | 30 € | Niveau 1 + médaille premium expédiée en fin de défi |
+| 3 | Sportif légendaire | 50 € | Niveau 2 + 2 packs de cartes dont une légendaire garantie |
+
+**Répartition proposée**, sous hypothèse d'une médaille à 10 € tout compris
+(fabrication, conditionnement, expédition — à confirmer, question Q4) :
+
+| Niveau | Prix | Frais Stripe | Médaille | **Reversé** | Marge de sécurité |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 12 € | ~0,43 € | — | **12,00 €** | −0,43 € *(comblé par l'association)* |
+| 2 | 30 € | ~0,70 € | ~10 € | **18,00 €** | +1,30 € |
+| 3 | 50 € | ~1,00 € | ~10 € | **35,00 €** | +4,00 € |
+
+Les packs offerts au niveau 3 sont des cartes numériques : leur coût marginal est nul.
+
+**Projection de collecte** selon la répartition des participants entre les trois
+niveaux :
+
+| Répartition N1 / N2 / N3 | Reversé par participant | à 400 part. | à 600 part. | à 800 part. |
 | --- | --- | --- | --- | --- |
-| 1 | Sportif engagé | 12 € | 12 € (annoncé « 100 % ») | Accès au jeu |
-| 2 | Sportif chevronné | 30 € | 12 € | Accès au jeu + médaille premium envoyée en fin de défi |
-| 3 | Sportif légendaire | 50 € | 12 € | Niveau 2 + 2 packs de cartes dont une légendaire garantie |
+| Prudente — 65 / 25 / 10 | 15,80 € | 6 320 € | 9 480 € | 12 640 € |
+| Médiane — 50 / 30 / 20 | 18,40 € | 7 360 € | 11 040 € | 14 720 € |
+| Optimiste — 40 / 35 / 25 | 19,85 € | 7 940 € | 11 910 € | 15 880 € |
 
-**Trois observations que le PRD devra trancher :**
+Le revenu des packs vendus en cours de jeu s'ajoute intégralement à ces montants.
 
-**a) Le don ne progresse pas avec le prix.** Un « sportif légendaire » à 50 € reverse le
-même montant à la fondation qu'un « sportif engagé » à 12 €. Les 38 € d'écart financent
-la médaille et les cartes. C'est défendable — ce sont des achats avec contrepartie — mais
-c'est contre-intuitif pour un participant qui pense « payer plus = donner plus ». Il faut
-soit assumer et l'expliquer clairement, soit indexer une part du don sur le niveau.
+> **Le point clé : même sans un seul participant supplémentaire, la grille à trois
+> niveaux fait passer la collecte de 5 000 € à environ 7 400 €.** Le recrutement de
+> nouveaux participants vient multiplier ce gain, il ne le remplace pas.
 
-**b) « 100 % du montant remis en don » est arithmétiquement faux.** Stripe prélève une
+**Deux points restent à arbitrer :**
+
+**a) « 100 % du montant remis en don » est arithmétiquement faux.** Stripe prélève une
 commission sur chaque encaissement — de l'ordre de 1,5 % + 0,25 € pour une carte
-européenne, soit environ **0,43 € sur 12 €**. Le montant réellement disponible est donc
-d'environ 11,57 €. Annoncer « 100 % » sans nuance expose l'association à un reproche de
-communication trompeuse. Deux issues possibles : reformuler (« l'intégralité du montant
-net des frais bancaires »), ou que l'association complète la différence sur ses fonds
-propres et puisse alors l'annoncer sans réserve.
+européenne, soit environ **0,43 € sur 12 €**. Annoncer « 100 % » sans nuance expose
+l'association à un reproche de communication trompeuse. Deux issues : reformuler
+(« l'intégralité du montant, net des frais bancaires »), ou que l'association comble la
+différence sur ses fonds propres — environ 260 € pour 600 participants — et puisse alors
+l'annoncer sans réserve. *Recommandation : la seconde.*
 
-**c) La marge de la médaille est étroite.** Au niveau 2, il reste environ 17,30 € après
-le don de 12 € et les frais Stripe, pour financer une médaille « ultra premium », son
-conditionnement et son expédition. Selon la qualité visée et le volume, cette marge peut
-devenir négative. La médaille est **le seul poste de coût variable du projet** et le seul
-capable de transformer une collecte réussie en perte financière. Elle doit être chiffrée
-et arbitrée avant l'ouverture des inscriptions.
-
-**Ordre de grandeur du reversement**, sur la base de 12 € par participant :
-
-| Participants | Reversement (hors packs) |
-| --- | --- |
-| 100 | ~1 200 € |
-| 300 | ~3 600 € |
-| 500 | ~6 000 € |
-
-Le revenu des packs achetés en cours de jeu vient s'y ajouter — sa destination (don
-intégral, ou financement des coûts) reste à décider.
+**b) La marge de la médaille est étroite et c'est le seul risque de perte du projet.**
+La répartition ci-dessus repose sur une hypothèse de 10 € par médaille. À 15 €, le
+niveau 2 devient déficitaire de 3,70 € par participant. La médaille est le **seul poste
+de coût variable** du projet et le seul capable de transformer une collecte réussie en
+perte financière. Son prix doit être ferme avant l'ouverture des inscriptions, et le
+montant reversé par niveau doit être fixé **après** ce chiffrage, pas avant.
 
 ---
 
@@ -446,6 +489,12 @@ ou écartés en Phase 3.
 - **Juridiques :** les sommes versées sont des frais d'inscription et des achats avec
   contrepartie, **pas des dons ouvrant droit à réduction d'impôt**. Aucun reçu fiscal,
   aucun CERFA. Cela doit être annoncé sans ambiguïté dans l'application et dans les CGV.
+- **Design du jeu — principe posé par le PO :** **aucun avantage compétitif ne peut être
+  acheté.** L'intégralité des défis du mois doit être réalisable sans acheter le moindre
+  pack ; les packs sont un bonus pour les joueurs les plus enthousiastes. Conséquence
+  directe sur le produit : **le classement officiel se fonde sur la performance sportive
+  et les défis réussis, jamais sur les cartes possédées.** La collection est un objectif
+  personnel, distinct du classement.
 
 ### 9.2 Hypothèses clés
 
@@ -492,14 +541,18 @@ ou écartés en Phase 3.
 
 ### 10.2 Questions ouvertes
 
-- **Q1 — Objectif chiffré.** Quels sont les résultats des 4 éditions précédentes
-  (participants, montant collecté) ? Ce sont les seules données réelles disponibles, et
-  elles doivent servir de base aux objectifs plutôt qu'une estimation.
-- **Q2 — Le don doit-il progresser avec le niveau ?** Assume-t-on que les trois niveaux
-  reversent 12 €, ou indexe-t-on une part du don sur le prix payé ?
-- **Q3 — Destination du revenu des packs.** Les achats en cours de jeu sont-ils reversés
-  intégralement, ou financent-ils d'abord les coûts (médailles, infrastructure) ?
-- **Q4 — Coût réel de la médaille.** Un fournisseur est-il identifié ? Quel prix
+- ~~**Q1 — Objectif chiffré.**~~ ✅ **Tranchée.** Édition 4 : 400 participants,
+  5 000 € reversés, 30 000 km, 3 500 heures. Objectifs de l'édition 5 fixés en
+  section 5.
+- ~~**Q2 — Le don doit-il progresser avec le niveau ?**~~ ✅ **Tranchée.** Oui, le
+  montant reversé progresse avec le niveau. Répartition proposée en section 5.4, à
+  confirmer après chiffrage de la médaille.
+- ~~**Q3 — Destination du revenu des packs.**~~ ✅ **Tranchée.** Reversé intégralement.
+  Corollaire posé par le PO : **le jeu doit être intégralement jouable sans acheter le
+  moindre pack** — les packs sont un bonus, jamais une nécessité.
+- **Q4 — Coût réel de la médaille.** *Question devenue la plus urgente des questions
+  ouvertes : la répartition du don par niveau en dépend directement.* Un fournisseur
+  est-il identifié ? Quel prix
   unitaire, à quel volume, et avec quel délai de fabrication ?
 - **Q5 — Engagement de volume sur les médailles.** Faut-il commander avant de connaître
   le nombre exact d'inscrits de niveau 2 et 3 ? Si oui, qui porte le risque de stock ?
