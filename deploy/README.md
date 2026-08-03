@@ -5,12 +5,14 @@ versionnés : le serveur ne doit jamais porter de configuration qui n'existe pas
 
 | Fichier | Rôle |
 | --- | --- |
+| [`ACCES-VPS.md`](ACCES-VPS.md) | **Procédure de mise en place des accès — à lire en premier** |
 | `Dockerfile` | Image applicative, en trois étapes |
 | `docker-compose.yml` | Pile de services : Caddy, production, préproduction, worker |
 | `Caddyfile` | Reverse proxy, HTTPS automatique, en-têtes de sécurité |
 | `.env.example` | Variables d'infrastructure — modèle, sans valeurs |
+| `scripts/bootstrap-vps.sh` | Préparation initiale du serveur, à lancer une fois |
 | `crontab` | Tâches planifiées *(story 1.4)* |
-| `scripts/` | Déploiement et retour arrière *(stories 1.3 et 1.4)* |
+| `scripts/deploy.sh` | Déploiement et retour arrière *(stories 1.3 et 1.4)* |
 
 ---
 
