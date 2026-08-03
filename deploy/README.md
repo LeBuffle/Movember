@@ -48,11 +48,26 @@ docker compose -f docker-compose.first-run.yml up -d --build
 
 Le site répond alors sur `http://ADRESSE_IP_DU_VPS:3000`.
 
+**Si le port 3000 est déjà occupé** — le VPS héberge peut-être d'autres projets :
+
+```bash
+# Voir ce qui l'utilise
+docker ps --format 'table {{.Names}}\t{{.Ports}}'
+ss -tlnp | grep :3000
+
+# Puis démarrer sur un autre port, sans rien arrêter
+FIRST_RUN_PORT=3100 docker compose -f docker-compose.first-run.yml up -d
+```
+
 Pour l'arrêter :
 
 ```bash
 docker compose -f docker-compose.first-run.yml down
 ```
+
+> ⚠️ **À anticiper pour la mise en production :** Caddy a besoin des ports **80 et 443**.
+> Si un autre serveur web tourne déjà sur ce VPS, il faudra soit l'arrêter, soit faire
+> passer les deux sites derrière un unique reverse proxy. À vérifier avant la story 1.3.
 
 > ⚠️ **Cette configuration n'est pas faite pour la production** : HTTP sans chiffrement,
 > port ouvert sans reverse proxy, aucun en-tête de sécurité. Elle sert à valider la chaîne

@@ -7,6 +7,9 @@
 #   docker compose -f docker-compose.first-run.yml up -d --build
 #   → le site est sur http://ADRESSE_IP_DU_VPS:3000
 #
+#   Si le port 3000 est déjà pris sur le serveur, en choisir un autre :
+#   FIRST_RUN_PORT=3100 docker compose -f docker-compose.first-run.yml up -d
+#
 #   Pour l'arrêter :
 #   docker compose -f docker-compose.first-run.yml down
 #
@@ -35,7 +38,9 @@ services:
         APP_VERSION: first-run
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Le VPS héberge peut-être déjà d'autres projets : le port côté hôte est
+      # donc choisissable, pour ne rien avoir à arrêter.
+      - "${FIRST_RUN_PORT:-3000}:3000"
     environment:
       APP_ENVIRONMENT: development
     healthcheck:
