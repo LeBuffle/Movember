@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/*
+ * Provisional base styles only.
+ * The project colour palette, typography scale and component library are
+ * defined in story 1.5 (charte graphique). Do not build on these values.
+ */
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}

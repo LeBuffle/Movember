@@ -1,0 +1,10 @@
+.next
+node_modules
+coverage
+package-lock.json
+.bmad-core
+.claude
+
+# Business documentation is hand-written and line-wrapped deliberately.
+# Reformatting it produces large, meaningless diffs in reviews.
+*.md
