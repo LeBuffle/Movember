@@ -78,11 +78,56 @@ fi
 usermod -aG docker "$DEPLOY_USER"
 ok "membre du groupe docker"
 
+AUTH_KEYS="/home/$DEPLOY_USER/.ssh/authorized_keys"
 install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh"
-touch "/home/$DEPLOY_USER/.ssh/authorized_keys"
-chown "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh/authorized_keys"
-chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
+touch "$AUTH_KEYS"
+chown "$DEPLOY_USER:$DEPLOY_USER" "$AUTH_KEYS"
+chmod 600 "$AUTH_KEYS"
 ok "dossier .ssh prêt"
+
+# --- Public key -----------------------------------------------------------
+#
+# The account is created with --disabled-password, which is what we want: it
+# can only ever be reached by key. The consequence is that `ssh-copy-id`
+# cannot work — it needs a password to log in and drop the key. So the key is
+# installed from here, where we already have root.
+info "Clé publique de déploiement"
+if [[ -s "$AUTH_KEYS" ]]; then
+  ok "$(wc -l <"$AUTH_KEYS") clé(s) déjà autorisée(s)"
+fi
+
+cat <<'EOF'
+
+  Sur VOTRE ordinateur, générez la paire de clés si ce n'est pas déjà fait :
+
+    ssh-keygen -t ed25519 -f ~/.ssh/defi-movember-deploy -N "" -C "github-actions"
+
+  Puis affichez la clé PUBLIQUE et copiez la ligne entière :
+
+    cat ~/.ssh/defi-movember-deploy.pub
+
+  Elle commence par « ssh-ed25519 » — c'est la clé publique, elle se partage
+  sans risque. Ne collez JAMAIS ici le fichier sans « .pub ».
+
+EOF
+
+read -r -p "Collez la clé publique (ou laissez vide pour passer) : " PUBKEY
+
+if [[ -n "$PUBKEY" ]]; then
+  if [[ "$PUBKEY" == *"PRIVATE KEY"* ]]; then
+    echo
+    warn "C'est une clé PRIVÉE. Rien n'a été enregistré."
+    warn "Considérez-la comme compromise : supprimez-la et générez-en une autre."
+    exit 1
+  elif [[ "$PUBKEY" != ssh-* ]]; then
+    warn "Format inattendu — une clé publique commence par « ssh- ». Ignorée."
+  elif grep -qF "$PUBKEY" "$AUTH_KEYS" 2>/dev/null; then
+    ok "cette clé est déjà autorisée"
+  else
+    printf '%s\n' "$PUBKEY" >>"$AUTH_KEYS"
+    ok "clé autorisée"
+  fi
+fi
 
 # --- Application directory ------------------------------------------------
 info "Dossier applicatif : $APP_DIR"
@@ -105,16 +150,13 @@ cat <<EOF
 
  ÉTAPE SUIVANTE — depuis VOTRE ordinateur, pas depuis le serveur :
 
-   1. Générer une paire de clés dédiée au déploiement
-      ssh-keygen -t ed25519 -f ~/.ssh/defi-movember-deploy -N "" -C "github-actions"
-
-   2. Envoyer la clé PUBLIQUE sur le serveur
-      ssh-copy-id -i ~/.ssh/defi-movember-deploy.pub $DEPLOY_USER@${IP_ADDR:-IP_DU_SERVEUR}
-
-   3. Vérifier que la connexion fonctionne
+   1. Vérifier que la connexion fonctionne, SANS mot de passe demandé
       ssh -i ~/.ssh/defi-movember-deploy $DEPLOY_USER@${IP_ADDR:-IP_DU_SERVEUR} "docker ps"
 
-   4. Copier la clé PRIVÉE dans les secrets GitHub du dépôt
+      Si un mot de passe est demandé, la clé publique n'a pas été enregistrée :
+      relancez ce script et collez-la à l'invite.
+
+   2. Copier la clé PRIVÉE dans les secrets GitHub du dépôt
       cat ~/.ssh/defi-movember-deploy
       → GitHub → Settings → Secrets and variables → Actions → New secret
         VPS_SSH_KEY  = le contenu affiché, en entier
@@ -124,10 +166,14 @@ cat <<EOF
    La clé privée ne doit être collée QUE dans GitHub. Jamais dans une
    conversation, jamais dans le dépôt, jamais par e-mail.
 
+   ssh-copy-id ne fonctionne pas ici, et c'est normal : le compte est créé
+   sans mot de passe, or ssh-copy-id en a besoin pour déposer la clé. C'est
+   pourquoi ce script s'en charge lui-même.
+
  DURCISSEMENT RECOMMANDÉ — à faire vous-même, sans précipitation :
 
    Ces commandes peuvent vous couper l'accès à votre propre serveur si
-   elles sont lancées avant d'avoir vérifié l'étape 3 ci-dessus.
+   elles sont lancées avant d'avoir vérifié l'étape 1 ci-dessus.
 
    # Pare-feu : n'ouvrir que SSH, HTTP et HTTPS
    ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443/tcp && ufw enable
@@ -139,7 +185,7 @@ cat <<EOF
    apt install -y fail2ban
 
    # Interdire la connexion root et par mot de passe
-   # (UNIQUEMENT après avoir confirmé que l'étape 3 fonctionne)
+   # (UNIQUEMENT après avoir confirmé que l'étape 1 fonctionne)
    sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
    sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
    systemctl restart ssh
