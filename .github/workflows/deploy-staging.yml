@@ -64,16 +64,35 @@ jobs:
 
       - name: Vérifier que le site répond
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://staging.defi-movember.fr/api/health || echo 000)
+          # Retried rather than checked once: on the very first deployment for
+          # a host name, Traefik still has to obtain the Let's Encrypt
+          # certificate, which takes a few seconds to a minute. Asking
+          # immediately after the container goes healthy reports a failure for
+          # a deployment that actually worked.
+          #
           # 401 is the expected answer: staging sits behind basic auth. It
-          # proves Traefik routes to the right container and TLS works, which
-          # is what this step is checking.
-          if [ "$code" = "401" ] || [ "$code" = "200" ]; then
-            echo "✓ La préproduction répond (HTTP $code)"
-          else
-            echo "✗ Réponse inattendue : HTTP $code" >&2
-            exit 1
-          fi
+          # proves Traefik routes to the right container and that TLS works,
+          # which is what this step checks.
+          for attempt in $(seq 1 12); do
+            # No `|| echo` fallback here: curl already prints 000 on a
+            # connection failure, so adding one concatenated the two into an
+            # unreadable "000000".
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://staging.defi-movember.fr/api/health) || true
+
+            case "$code" in
+              401|200)
+                echo "✓ La préproduction répond (HTTP $code) après $attempt tentative(s)"
+                exit 0
+                ;;
+            esac
+
+            echo "  tentative $attempt/12 — HTTP $code, nouvel essai dans 10s"
+            sleep 10
+          done
+
+          echo "✗ La préproduction n'a pas répondu (dernier code : HTTP $code)" >&2
+          echo "  Le déploiement lui-même a réussi — vérifier Traefik et le certificat." >&2
+          exit 1
 
       - name: Effacer la clé
         if: always()
