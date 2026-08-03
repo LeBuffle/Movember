@@ -1071,6 +1071,35 @@ ses `$` doublés** dans le fichier d'environnement. Sans cela, Docker Compose in
 fin du hash comme une variable et le tronque silencieusement : l'authentification devient
 impossible, sans le moindre message d'erreur.
 
+### 9.2 bis — Cohabitation avec les autres projets du VPS
+
+Le serveur n'est pas dédié à DEFI Movember. Il héberge déjà PrestaShop et sa base MySQL,
+n8n et son Traefik, Ollama, deux instances d'Open-WebUI et AcroHub.
+
+**Ressources constatées :** 4 cœurs, 15 Go de mémoire dont environ 12 Go disponibles,
+124 Go de disque libre. C'est confortable : une application Next.js consomme de l'ordre de
+100 à 300 Mo, et 600 utilisateurs simultanés ne sont pas un volume qui inquiète à cette
+échelle. **Le goulot d'étranglement du 1ᵉʳ novembre sera la base de données et les envois
+de notifications, pas le serveur web.**
+
+**Le point de vigilance est ailleurs : la machine n'a aucun espace d'échange (swap).**
+Quand la mémoire vient à manquer, le noyau ne ralentit pas — il tue un processus, et
+choisit la victime selon sa consommation, pas selon son importance. Ollama, qui charge des
+modèles de plusieurs gigaoctets d'un seul coup, peut provoquer cette situation.
+
+Deux protections en découlent :
+
+1. **Chaque conteneur du projet porte une limite de mémoire** (768 Mo en production,
+   384 Mo en préproduction, 512 Mo pour le worker). Cela rend la consommation prévisible
+   dans les deux sens : l'application ne peut pas affamer ses voisines, et son empreinte
+   est connue plutôt que supposée.
+2. **L'ajout d'un espace d'échange sur l'hôte est recommandé au PO.** Il transforme une
+   saturation brutale — un processus tué sans préavis — en simple ralentissement. C'est
+   une action côté serveur, hors du périmètre de ce dépôt.
+
+> Ces limites protègent aussi les autres projets du VPS. C'est la contrepartie de la
+> cohabitation : on s'engage sur une empreinte maximale.
+
 **Images.** Construites par GitHub Actions, publiées sur le registre de conteneurs GitHub,
 récupérées par le VPS. Le serveur ne compile rien — il ne fait que télécharger et
 redémarrer. C'est plus rapide, plus reproductible, et ça évite qu'un déploiement échoue
