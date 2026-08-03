@@ -1,0 +1,35 @@
+name: Vérifications
+
+# Runs on every branch and every pull request. Nothing reaches the server
+# without passing this first.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    name: Format, lint, types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Same command developers run locally, so a green local run means a
+      # green pipeline.
+      - name: Vérifier (format, lint, typage, tests)
+        run: npm run check
+
+      # Type-checking does not catch every build failure — a broken import in
+      # a server component only shows up here.
+      - name: Construire l'application
+        run: npm run build

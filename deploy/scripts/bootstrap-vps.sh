@@ -132,7 +132,19 @@ fi
 # --- Application directory ------------------------------------------------
 info "Dossier applicatif : $APP_DIR"
 install -d -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$APP_DIR"
-ok "prêt"
+
+# The repository is usually cloned as root before this script runs, which
+# leaves the deployment account unable to write to it. Reclaiming ownership
+# here is what lets automated deployments pull and rebuild.
+if [[ -d "$APP_DIR/.git" ]]; then
+  chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
+  ok "dépôt existant, propriété transférée à $DEPLOY_USER"
+  # Git refuses to operate on a repository owned by another user; harmless
+  # here since the directory now belongs to the deployment account.
+  su - "$DEPLOY_USER" -c "git config --global --add safe.directory $APP_DIR" || true
+else
+  ok "prêt"
+fi
 
 # --- Summary --------------------------------------------------------------
 IP_ADDR="$(hostname -I 2>/dev/null | awk '{print $1}')"

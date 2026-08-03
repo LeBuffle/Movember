@@ -74,6 +74,46 @@ docker compose -f docker-compose.first-run.yml down
 
 ---
 
+## Première mise en ligne
+
+À faire **une seule fois**, sur le VPS, avant que le déploiement automatique puisse
+fonctionner.
+
+```bash
+cd /opt/defi-movember && git pull
+sudo bash deploy/scripts/bootstrap-vps.sh   # si ce n'est pas déjà fait
+cd deploy
+
+# 1. Configuration de l'infrastructure
+cp .env.example .env
+nano .env      # domaines, réseau Traefik, mot de passe de la préproduction
+
+# 2. Mot de passe de la préproduction
+#    Le | sed double les $ : sans lui, Docker Compose tronque le hash et
+#    l'authentification devient impossible, sans message d'erreur.
+docker run --rm httpd:alpine htpasswd -nbB po 'mot-de-passe-choisi' | sed -e 's/\$/\$\$/g'
+#    → reporter le résultat dans STAGING_BASIC_AUTH
+
+# 3. Variables applicatives — vides pour l'instant, remplies au fil des epics
+cp ../.env.example .env.production
+cp ../.env.example .env.staging
+
+# 4. Restreindre l'accès à ces fichiers
+chmod 600 .env .env.production .env.staging
+
+# 5. Arrêter l'essai temporaire, qui n'a plus lieu d'être
+docker compose -f docker-compose.first-run.yml down
+```
+
+À partir de là, **chaque push sur la branche de travail déploie automatiquement la
+préproduction**. Pour lancer un déploiement à la main :
+
+```bash
+bash deploy/scripts/deploy.sh <sha-du-commit> staging
+```
+
+---
+
 ## Installation sur le serveur
 
 ```bash
