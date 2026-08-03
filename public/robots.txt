@@ -1,0 +1,14 @@
+# DEFI Movember
+#
+# Le site public a vocation à être indexé : c'est par là que passe le
+# recrutement des participants.
+#
+# La préproduction, elle, est protégée par mot de passe et renvoie un en-tête
+# X-Robots-Tag: noindex posé par Caddy — elle ne dépend pas de ce fichier.
+
+User-agent: *
+Allow: /
+
+# Routes techniques, sans intérêt pour un moteur de recherche.
+Disallow: /api/
+Disallow: /design
