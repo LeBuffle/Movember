@@ -1,41 +1,48 @@
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import { Alert } from "@/components/ui/alert";
 import { APP_VERSION } from "@/lib/app-version";
 
 /**
  * Provisional landing page.
  *
- * Replaced by the real public home page in story 1.9, once the design system
- * from story 1.5 is available. Its only job right now is to prove the app is
- * built, deployed and served.
+ * Replaced by the real public home page in story 1.9, which adds the pricing
+ * tiers, the collection counter and the tax notice. Its job right now is to
+ * show the design system on a real page.
  */
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 px-6 py-16">
-      <p className="text-sm font-semibold tracking-widest text-neutral-500 uppercase">
-        Édition 2026
-      </p>
+    <>
+      <SiteHeader />
 
-      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-        DEFI Movember
-      </h1>
-
-      <p className="text-lg text-neutral-700">
-        Un mois, un défi par jour, une collection à compléter.
-      </p>
-
-      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-        <p className="font-medium">Application en construction</p>
-        <p className="mt-1 text-sm text-neutral-600">
-          Le site ouvrira aux inscriptions à la mi-octobre 2026.
+      <main className="mx-auto max-w-3xl px-4 py-16">
+        <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
+          Novembre 2026
         </p>
-      </div>
 
-      <footer className="mt-8 border-t border-neutral-200 pt-6 text-sm text-neutral-500">
-        <p>
-          Projet indépendant porté par une association loi 1901. Ce site n’est
-          pas l’application officielle de la fondation Movember.
+        <h1 className="text-ink mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+          Un mois, un défi par jour,
+          <br />
+          une collection à compléter.
+        </h1>
+
+        <p className="text-ink-muted mt-4 text-lg">
+          Vous faites déjà du sport. Reliez votre compte Strava, relevez le défi
+          du jour, gagnez des cartes — et soutenez la cause.
         </p>
-        <p className="mt-2 font-mono text-xs">version {APP_VERSION}</p>
-      </footer>
-    </main>
+
+        <div className="mt-8">
+          <Alert tone="info" title="Application en construction">
+            Les inscriptions ouvriront à la mi-octobre 2026.
+          </Alert>
+        </div>
+
+        <p className="text-ink-muted mt-10 font-mono text-xs">
+          version {APP_VERSION}
+        </p>
+      </main>
+
+      <SiteFooter />
+    </>
   );
 }

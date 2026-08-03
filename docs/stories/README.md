@@ -16,7 +16,7 @@
 | 1.2 | [Conteneurisation Docker et reverse proxy](1.2.conteneurisation.md) | Draft | 1.1 |
 | 1.3 | [Déploiement automatisé vers la préproduction](1.3.deploiement-preproduction.md) | Draft | 1.2 · **accès VPS** |
 | 1.4 | [Déploiement en production et retour arrière](1.4.deploiement-production.md) | Draft | 1.3 |
-| 1.5 | [Charte graphique et composants de base](1.5.charte-graphique.md) | Draft | 1.1 |
+| 1.5 | [Charte graphique et composants de base](1.5.charte-graphique.md) | **Review** | 1.1 |
 | 1.6 | [Base de données, schéma initial et RLS](1.6.base-de-donnees.md) | Draft | 1.1 · **projet Supabase** |
 | 1.7 | [Authentification des comptes](1.7.authentification.md) | Draft | 1.6 |
 | 1.8 | [PWA installable](1.8.pwa-installable.md) | Draft | 1.1 |

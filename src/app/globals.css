@@ -1,25 +1,72 @@
 @import "tailwindcss";
 
-/*
- * Provisional base styles only.
- * The project colour palette, typography scale and component library are
- * defined in story 1.5 (charte graphique). Do not build on these values.
- */
+/* =========================================================================
+ * DEFI Movember — design tokens
+ *
+ * Brand colours are blue and orange (CLAUDE.md §5). Identity is specific to
+ * this project: no Movember Foundation logo, imagery or brand element is
+ * ever used.
+ *
+ * CONTRAST — read before changing any value.
+ * Every colour below that can carry text has been checked against WCAG 2.1
+ * AA (4.5:1 for body text, 3:1 for large text and UI boundaries), and
+ * `tests/unit/contrast.test.ts` reads THIS FILE and fails the build if a
+ * ratio regresses.
+ *
+ * The trap is orange. `--color-brand-orange` (#ea580c) only reaches 3.56:1
+ * on white: it is an ACCENT — fills, borders, decoration — and must never
+ * carry small text, nor be used as a background behind white text. When
+ * orange has to carry text, use `--color-brand-orange-ink` (5.18:1).
+ * ========================================================================= */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* --- Brand ----------------------------------------------------------- */
+  /* 6.70:1 on white — safe for text and as a button fill behind white text */
+  --color-brand-blue: #1d4ed8;
+  --color-brand-blue-dark: #1e3a8a;
+  --color-brand-blue-soft: #eff6ff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* 3.56:1 on white — ACCENT ONLY, never small text, never behind white text */
+  --color-brand-orange: #ea580c;
+  /* 5.18:1 on white — the orange to use whenever text is involved */
+  --color-brand-orange-ink: #c2410c;
+  --color-brand-orange-soft: #fff7ed;
+
+  /* --- Neutrals -------------------------------------------------------- */
+  --color-ink: #171717;
+  --color-ink-muted: #525252;
+  --color-line: #e5e5e5;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #fafafa;
+
+  /* --- Semantic states -------------------------------------------------- */
+  /* Never used alone: every state also carries an icon and a label (AC 6) */
+  --color-success: #15803d;
+  --color-success-soft: #f0fdf4;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fef2f2;
+
+  /* --- Typography ------------------------------------------------------- */
   --font-sans:
     system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  /* A single, consistent focus ring across the whole app. Never remove it:
+     the admin back-office and the payment flow must stay keyboard-usable. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-blue);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
