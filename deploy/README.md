@@ -35,6 +35,31 @@ nom de domaine.
 
 ---
 
+## Premier essai, sans domaine
+
+Pour vérifier que Docker fonctionne et voir le site tourner avant d'avoir un nom de
+domaine :
+
+```bash
+git clone https://github.com/LeBuffle/Movember.git /opt/defi-movember
+cd /opt/defi-movember/deploy
+docker compose -f docker-compose.first-run.yml up -d --build
+```
+
+Le site répond alors sur `http://ADRESSE_IP_DU_VPS:3000`.
+
+Pour l'arrêter :
+
+```bash
+docker compose -f docker-compose.first-run.yml down
+```
+
+> ⚠️ **Cette configuration n'est pas faite pour la production** : HTTP sans chiffrement,
+> port ouvert sans reverse proxy, aucun en-tête de sécurité. Elle sert à valider la chaîne
+> Docker, puis à être arrêtée.
+
+---
+
 ## Installation sur le serveur
 
 ```bash

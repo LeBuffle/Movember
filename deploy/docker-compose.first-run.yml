@@ -1,0 +1,52 @@
+# DEFI Movember — premier essai sur le VPS
+#
+# Objectif : vérifier que Docker fonctionne et voir le site tourner, AVANT
+# d'avoir un nom de domaine et sans mettre en place HTTPS.
+#
+# Utilisation, depuis le dossier deploy/ :
+#   docker compose -f docker-compose.first-run.yml up -d --build
+#   → le site est sur http://ADRESSE_IP_DU_VPS:3000
+#
+#   Pour l'arrêter :
+#   docker compose -f docker-compose.first-run.yml down
+#
+# ⚠️ CE FICHIER N'EST PAS FAIT POUR LA PRODUCTION.
+#
+#   - le site est en HTTP, pas en HTTPS : tout circule en clair
+#   - le port 3000 est ouvert sur internet, sans reverse proxy devant
+#   - il n'y a ni en-têtes de sécurité, ni protection par mot de passe
+#
+#   Il sert à valider la chaîne Docker, puis à être arrêté. La vraie mise en
+#   ligne se fait avec docker-compose.yml, une fois le domaine réservé
+#   (story 1.3).
+#
+# Il doit être appelé explicitement avec -f : contrairement à un fichier
+# nommé docker-compose.override.yml, il n'est jamais chargé tout seul. On ne
+# risque donc pas de le laisser traîner en production sans s'en rendre compte.
+
+name: defi-movember-first-run
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: first-run
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      APP_ENVIRONMENT: development
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
