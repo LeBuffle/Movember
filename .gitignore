@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Builds
+.next/
+out/
+build/
+dist/
+
+# Tests / couverture
+coverage/
+*.lcov
+
+# Environnement & secrets — NE JAMAIS COMMITTER
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Supabase (local)
+.branches
+.temp
+supabase/.temp/
+
+# Vercel
+.vercel
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.idea/
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
