@@ -3,9 +3,18 @@
 # Run from this directory:
 #   docker compose up -d
 #
-# Production and staging run side by side on the same host, in separate
-# containers, with separate databases and separate key sets. Caddy tells them
-# apart by domain name (architecture §9.1).
+# This VPS already runs Traefik (the `n8n-traefik-1` container), which owns
+# ports 80 and 443 and holds the Let's Encrypt certificates for every other
+# project on the machine. DEFI Movember therefore plugs into it rather than
+# bringing its own reverse proxy: one proxy, one certificate store, no port
+# conflict, and one less moving part to operate in November.
+#
+# Traefik runs with `exposedbydefault=false`, so nothing is published unless
+# it carries `traefik.enable=true`.
+#
+# Production and staging run side by side in separate containers, with
+# separate databases and separate key sets. Traefik tells them apart by host
+# name (architecture §9.1).
 #
 # PostgreSQL is deliberately absent: the database stays on Supabase. We take
 # on what is simple and stateless — serving a web app — and delegate what is
@@ -13,32 +22,39 @@
 
 name: defi-movember
 
-services:
-  caddy:
-    image: caddy:2-alpine
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-      - caddy-logs:/var/log/caddy
-    environment:
-      ACME_EMAIL: ${ACME_EMAIL}
-      APP_DOMAIN: ${APP_DOMAIN}
-      STAGING_DOMAIN: ${STAGING_DOMAIN}
-      STAGING_USER: ${STAGING_USER}
-      STAGING_PASSWORD_HASH: ${STAGING_PASSWORD_HASH}
-      CSP_CONNECT_SRC: ${CSP_CONNECT_SRC:-}
-    depends_on:
-      - app
-      - app-staging
-    networks:
-      - web
+# Header policy shared by both sites, so production and staging can never
+# drift apart on security headers.
+#
+# The CSP still allows `unsafe-inline`, which Next.js requires as configured
+# today: it emits inline bootstrap scripts and styles without a nonce.
+# Tightening it to a nonce-based policy is a deliberate task of the security
+# review (story 11.8) — doing it blind here would break hydration.
+#
+# CSP_CONNECT_SRC widens `connect-src` as integrations land:
+#   Supabase (story 1.6), Stripe (epic 2), Sentry (story 1.11).
+x-security-headers: &security-headers
+  traefik.http.middlewares.movember-security.headers.stsSeconds: "31536000"
+  traefik.http.middlewares.movember-security.headers.stsIncludeSubdomains: "true"
+  traefik.http.middlewares.movember-security.headers.frameDeny: "true"
+  traefik.http.middlewares.movember-security.headers.contentTypeNosniff: "true"
+  traefik.http.middlewares.movember-security.headers.referrerPolicy: "strict-origin-when-cross-origin"
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
+x-healthcheck: &healthcheck
+  test:
+    [
+      "CMD",
+      "node",
+      "-e",
+      "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+    ]
+  interval: 30s
+  timeout: 5s
+  start_period: 20s
+  retries: 3
+
+services:
   app:
     image: ${APP_IMAGE:-defi-movember:local}
     build:
@@ -47,27 +63,25 @@ services:
       args:
         APP_VERSION: ${APP_VERSION:-local}
     restart: always
-    # Never published to the host: reachable only through Caddy.
+    # Never published to the host: reachable only through Traefik.
     expose:
       - "3000"
     env_file:
       - .env.production
     environment:
       APP_ENVIRONMENT: production
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 5s
-      start_period: 20s
-      retries: 3
+    healthcheck: *healthcheck
     networks:
-      - web
+      - proxy
+    labels:
+      <<: *security-headers
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
+      traefik.http.routers.movember.rule: Host(`${APP_DOMAIN}`)
+      traefik.http.routers.movember.entrypoints: websecure
+      traefik.http.routers.movember.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
+      traefik.http.routers.movember.middlewares: movember-security@docker
+      traefik.http.services.movember.loadbalancer.server.port: "3000"
 
   app-staging:
     image: ${STAGING_IMAGE:-defi-movember:staging}
@@ -83,20 +97,22 @@ services:
       - .env.staging
     environment:
       APP_ENVIRONMENT: staging
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 5s
-      start_period: 20s
-      retries: 3
+    healthcheck: *healthcheck
     networks:
-      - web
+      - proxy
+    labels:
+      <<: *security-headers
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
+      traefik.http.routers.movember-staging.rule: Host(`${STAGING_DOMAIN}`)
+      traefik.http.routers.movember-staging.entrypoints: websecure
+      traefik.http.routers.movember-staging.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
+      # Password-protected and excluded from search engines: staging runs
+      # against test payment keys and must never be publicly reachable.
+      traefik.http.routers.movember-staging.middlewares: movember-staging-auth@docker,movember-staging-noindex@docker,movember-security@docker
+      traefik.http.middlewares.movember-staging-auth.basicauth.users: ${STAGING_BASIC_AUTH}
+      traefik.http.middlewares.movember-staging-noindex.headers.customResponseHeaders.X-Robots-Tag: "noindex, nofollow, noarchive"
+      traefik.http.services.movember-staging.loadbalancer.server.port: "3000"
 
   # Background queue: Strava activity ingestion, push and e-mail delivery.
   #
@@ -113,6 +129,8 @@ services:
       - .env.production
     environment:
       APP_ENVIRONMENT: production
+    labels:
+      traefik.enable: "false"
     # Placeholder entry point, replaced in epic 3 by the queue runner.
     # It fails loudly on purpose: reusing the web server command here would
     # silently start a second, pointless web server if the profile were
@@ -124,13 +142,12 @@ services:
         "console.error('worker: not implemented yet, see epic 3'); process.exit(1)",
       ]
     networks:
-      - web
+      - proxy
 
 networks:
-  web:
-    driver: bridge
-
-volumes:
-  caddy-data:
-  caddy-config:
-  caddy-logs:
+  # Traefik's network, created by another project on this host. Declared
+  # external so this stack never tries to create or delete it — nothing here
+  # may disturb the services already running on the VPS.
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-n8n_default}

@@ -7,8 +7,7 @@ versionnés : le serveur ne doit jamais porter de configuration qui n'existe pas
 | --- | --- |
 | [`ACCES-VPS.md`](ACCES-VPS.md) | **Procédure de mise en place des accès — à lire en premier** |
 | `Dockerfile` | Image applicative, en trois étapes |
-| `docker-compose.yml` | Pile de services : Caddy, production, préproduction, worker |
-| `Caddyfile` | Reverse proxy, HTTPS automatique, en-têtes de sécurité |
+| `docker-compose.yml` | Pile de services : production, préproduction, worker — branchés sur le Traefik du VPS |
 | `.env.example` | Variables d'infrastructure — modèle, sans valeurs |
 | `scripts/bootstrap-vps.sh` | Préparation initiale du serveur, à lancer une fois |
 | `crontab` | Tâches planifiées *(story 1.4)* |
@@ -20,18 +19,22 @@ versionnés : le serveur ne doit jamais porter de configuration qui n'existe pas
 
 | Service | Rôle | Exposé ? |
 | --- | --- | --- |
-| `caddy` | Reverse proxy, certificats TLS, en-têtes de sécurité | ports 80 et 443 |
-| `app` | Application — production | non, via Caddy uniquement |
-| `app-staging` | Application — préproduction, protégée par mot de passe | non, via Caddy uniquement |
+| `app` | Application — production | non, via Traefik uniquement |
+| `app-staging` | Application — préproduction, protégée par mot de passe | non, via Traefik uniquement |
 | `worker` | File de traitement *(vide jusqu'à l'epic 3)* | non, sous profil |
+
+**Le reverse proxy n'appartient pas à ce projet.** Le VPS fait déjà tourner Traefik, qui
+détient les ports 80 et 443 et les certificats de tous les projets de la machine. DEFI
+Movember s'y branche par des étiquettes Docker plutôt que d'installer un second proxy :
+un seul point d'entrée, un seul magasin de certificats, aucun conflit de port.
 
 **La base de données n'est pas ici.** Elle reste chez Supabase : on prend en charge ce
 qui est simple et sans état — servir une application web — et on délègue ce qui est
 critique et opérationnel.
 
 Production et préproduction tournent **côte à côte sur le même serveur**, dans des
-conteneurs séparés, avec des bases et des jeux de clés distincts. Caddy les distingue par
-nom de domaine.
+conteneurs séparés, avec des bases et des jeux de clés distincts. Traefik les distingue
+par nom de domaine.
 
 ---
 
@@ -65,10 +68,6 @@ Pour l'arrêter :
 docker compose -f docker-compose.first-run.yml down
 ```
 
-> ⚠️ **À anticiper pour la mise en production :** Caddy a besoin des ports **80 et 443**.
-> Si un autre serveur web tourne déjà sur ce VPS, il faudra soit l'arrêter, soit faire
-> passer les deux sites derrière un unique reverse proxy. À vérifier avant la story 1.3.
-
 > ⚠️ **Cette configuration n'est pas faite pour la production** : HTTP sans chiffrement,
 > port ouvert sans reverse proxy, aucun en-tête de sécurité. Elle sert à valider la chaîne
 > Docker, puis à être arrêtée.
@@ -91,8 +90,10 @@ cp ../.env.example .env.staging           # variables applicatives — préprodu
 chmod 600 .env .env.production .env.staging
 
 # 4. Générer le mot de passe de la préproduction
-docker run --rm caddy:2-alpine caddy hash-password --plaintext 'mot-de-passe-choisi'
-#    puis reporter le résultat dans STAGING_PASSWORD_HASH
+#    Le | sed double les $, sans quoi Docker Compose tronque le hash
+#    et l'authentification devient impossible sans message d'erreur.
+docker run --rm httpd:alpine htpasswd -nbB po 'mot-de-passe-choisi' | sed -e 's/\$/\$\$/g'
+#    puis reporter le résultat dans STAGING_BASIC_AUTH
 
 # 5. Démarrer
 docker compose up -d
@@ -111,16 +112,16 @@ Le daemon Docker est nécessaire.
 # Construire l'image
 docker build -f deploy/Dockerfile -t defi-movember:local .
 
-# La lancer seule, sans Caddy ni certificats
+# La lancer seule, sans reverse proxy ni certificats
 docker run --rm -p 3000:3000 -e APP_ENVIRONMENT=development defi-movember:local
 
 # Puis vérifier
 curl http://localhost:3000/api/health
 ```
 
-Pour la pile complète, il faut des noms de domaine résolvant vers la machine : Caddy
-demande de vrais certificats. C'est donc la préproduction du VPS qui sert d'environnement
-de vérification réel (story 1.3), pas le poste de développement.
+Pour la pile complète, il faut des noms de domaine résolvant vers le VPS et le Traefik
+qui y tourne : les certificats sont réels. C'est donc la préproduction du VPS qui sert
+d'environnement de vérification (story 1.3), pas le poste de développement.
 
 ---
 
@@ -146,11 +147,14 @@ dans `docs/runbook.md` (story 1.11).
   build, pour qu'ils ne puissent pas se retrouver dans une couche d'image.
 - **Conteneurs sans privilèges.** L'application tourne sous un utilisateur dédié, jamais
   `root`.
-- **Rien n'est publié sur l'hôte** en dehors de Caddy : `app` et `app-staging` ne sont
-  joignables que par le réseau interne.
+- **Aucun port n'est publié sur l'hôte** : `app` et `app-staging` ne sont joignables que
+  par le réseau Docker de Traefik.
 - **La préproduction est protégée** par mot de passe et exclue des moteurs de recherche.
   Elle fonctionne avec les clés de paiement de test : elle ne doit jamais être publiquement
   accessible.
 - **La politique de sécurité de contenu autorise encore `unsafe-inline`**, ce qu'impose
   Next.js sans nonce. Son durcissement est une tâche identifiée de la revue de sécurité
   (story 11.8).
+- **Le réseau Traefik est déclaré `external`** : cette pile ne peut ni le créer ni le
+  supprimer. Rien de ce qui est fait ici ne peut perturber les services déjà en place sur
+  le VPS.

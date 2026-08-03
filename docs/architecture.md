@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | v1.1 — Phase 3 BMAD (Architect) |
+| **Version** | v1.2 — Phase 3 BMAD (Architect) |
 | **Date** | 3 août 2026 |
 | **Auteur** | Agent Architect (BMAD) |
 | **Statut** | En attente de validation PO |
@@ -18,6 +18,7 @@ backend, la base de données, les intégrations et le déploiement.
 | --- | --- | --- | --- |
 | 2026-08-03 | v1 | Rédaction initiale à partir du PRD v1 | Agent Architect |
 | 2026-08-03 | v1.1 | **Hébergement sur VPS Hostinger** décidé par le PO (remplace Vercel) : déploiement, tâches planifiées, sauvegardes, supervision, coûts et risques révisés. Modèle de données étendu aux règles de jeu précisées par le PO (défis individualisés, classements multiples, raretés commune/rare/épique/légendaire) | Agent Architect |
+| 2026-08-03 | v1.2 | **Caddy remplacé par le Traefik déjà en place sur le VPS**, découvert lors du premier déploiement : il détient les ports 80 et 443 et les certificats des autres projets de la machine | Agent Architect |
 
 ---
 
@@ -79,8 +80,8 @@ ajusté.** J'ai conçu le système pour que cet ajustement reste possible sans t
 ### 2.1 Synthèse technique
 
 Application **Next.js (App Router, TypeScript)** conteneurisée avec **Docker** et
-déployée sur un **VPS Hostinger**, derrière un reverse proxy **Caddy** qui gère les
-certificats HTTPS automatiquement. La base de données, l'authentification et le stockage
+déployée sur un **VPS Hostinger**, derrière le reverse proxy **Traefik déjà présent sur
+la machine**, qui gère les certificats HTTPS automatiquement. La base de données, l'authentification et le stockage
 des fichiers restent chez **Supabase** (PostgreSQL managé, sécurité au niveau des
 lignes). L'application sert les trois parcours — public, participant, administrateur —
 depuis un même dépôt et un même déploiement.
@@ -195,7 +196,7 @@ données personnelles restent dans l'Union européenne (NFR10).
 | Sécurité des données | Row Level Security | — | Les règles d'accès vivent dans la base, pas seulement dans le code |
 | Fichiers | Supabase Storage | — | Visuels des cartes, images du fil d'actualité |
 | Conteneurisation | Docker + Docker Compose | — | Déploiement reproductible, redémarrage automatique |
-| Reverse proxy | Caddy | 2.x | HTTPS et renouvellement des certificats automatiques, configuration en quelques lignes |
+| Reverse proxy | Traefik *(déjà en place sur le VPS)* | 2.x/3.x | Détient déjà les ports 80/443 et les certificats des autres projets ; on s'y branche par étiquettes Docker |
 | Tâches planifiées | cron système du VPS | — | Disponible nativement, sans dépendance ni surcoût |
 | Système | Debian ou Ubuntu LTS | — | Mises à jour de sécurité automatiques |
 | Paiement | Stripe Checkout | API 2025+ | Aucune donnée de carte dans l'application |
@@ -926,8 +927,7 @@ la rupture.
 │   └── cards/                 # visuels fournis par le PO
 ├── deploy/                    # ← infrastructure VPS, versionnée
 │   ├── Dockerfile
-│   ├── docker-compose.yml     #   caddy, app, app-staging, worker
-│   ├── Caddyfile              #   HTTPS, protection de la préproduction
+│   ├── docker-compose.yml     #   app, app-staging, worker + étiquettes Traefik
 │   ├── crontab                #   tâches planifiées (décision D7)
 │   └── scripts/               #   deploy.sh, rollback.sh, backup.sh, restore.sh
 ├── tests/                     # unit/, e2e/
@@ -1027,7 +1027,7 @@ la base.
 | Production | Le jeu réel | `<domaine>` | projet Supabase de production | mode réel | application de production |
 
 Les deux environnements serveur tournent **sur le même VPS**, dans des conteneurs
-distincts, avec des bases et des jeux de clés séparés. Caddy les distingue par nom de
+distincts, avec des bases et des jeux de clés séparés. Traefik les distingue par nom de
 domaine.
 
 **La préproduction remplace les aperçus par pull request.** Elle est redéployée
@@ -1044,13 +1044,32 @@ paiements en mode test serait un problème de crédibilité.
 
 | Conteneur | Rôle | Redémarrage |
 | --- | --- | --- |
-| `caddy` | Reverse proxy, HTTPS automatique, en-têtes de sécurité, protection de la préproduction | `always` |
 | `app` | Next.js en mode standalone — production | `always` |
 | `app-staging` | Next.js — préproduction | `always` |
 | `worker` | File de traitement : activités Strava, envois push et e-mail | `always` |
 
+**Le reverse proxy n'appartient pas à cette pile.** Le VPS fait déjà tourner Traefik,
+déployé par un autre projet, qui détient les ports 80 et 443 et les certificats
+Let's Encrypt de toutes les applications de la machine. DEFI Movember s'y branche par
+**étiquettes Docker** — routeur, résolveur de certificats, middlewares — plutôt que
+d'installer un second proxy.
+
+Ce choix n'était pas celui de la v1 de ce document, qui prévoyait Caddy. Il s'est imposé
+au premier déploiement : deux proxys ne peuvent pas se partager les ports 80 et 443, et
+c'est de toute façon la meilleure configuration — un seul point d'entrée pour le serveur,
+un seul magasin de certificats, une seule chose à surveiller en novembre.
+
+**Le réseau de Traefik est déclaré `external`** : cette pile ne peut ni le créer ni le
+supprimer. Rien de ce que fait DEFI Movember ne peut perturber les services déjà en
+production sur le VPS — c'est la garantie qui rend la cohabitation acceptable.
+
 Le cron système du VPS appelle les routes planifiées de `app` (décision D7). La base de
 données n'est **pas** sur le VPS : elle reste chez Supabase.
+
+**Un piège à connaître.** Le hash bcrypt qui protège la préproduction doit voir **tous
+ses `$` doublés** dans le fichier d'environnement. Sans cela, Docker Compose interprète la
+fin du hash comme une variable et le tronque silencieusement : l'authentification devient
+impossible, sans le moindre message d'erreur.
 
 **Images.** Construites par GitHub Actions, publiées sur le registre de conteneurs GitHub,
 récupérées par le VPS. Le serveur ne compile rien — il ne fait que télécharger et
