@@ -42,7 +42,7 @@ quand 600 personnes attendent leur défi du jour.
 | 11.6 | Pages légales : CGV, confidentialité, mentions légales | M |
 | 11.7 | Revue d'accessibilité des parcours public et participant | S |
 | 11.8 | Durcissement du serveur et revue de sécurité | M |
-| 11.9 | **Répétition générale sur données de test** | M |
+| 11.9 | **Répétition générale sur données de test** — dont mesure de la consommation mémoire réelle, puis pose de limites informées sur les conteneurs | M |
 | 11.10 | Procédure d'exploitation complète (`docs/runbook.md`) | M |
 
 ## Points d'attention RGPD

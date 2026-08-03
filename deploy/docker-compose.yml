@@ -71,16 +71,10 @@ services:
     environment:
       APP_ENVIRONMENT: production
     healthcheck: *healthcheck
-    # The VPS is shared with several other projects, one of which (Ollama) can
-    # claim a lot of memory at once, and the host has no swap. A hard ceiling
-    # keeps this app predictable in both directions: it can never starve the
-    # neighbours, and its own footprint is known rather than assumed.
-    deploy:
-      resources:
-        limits:
-          memory: 768M
-        reservations:
-          memory: 256M
+    # No memory limit yet, on purpose: the app has never run under real load,
+    # so any ceiling set today would be a guess. A guessed limit is worse than
+    # none — it can kill a healthy container without warning. It gets measured
+    # and set during the dress rehearsal (story 11.9).
     networks:
       - proxy
     labels:
@@ -108,12 +102,6 @@ services:
     environment:
       APP_ENVIRONMENT: staging
     healthcheck: *healthcheck
-    # Smaller than production on purpose: staging must never be the reason
-    # production runs short of memory.
-    deploy:
-      resources:
-        limits:
-          memory: 384M
     networks:
       - proxy
     labels:
@@ -147,10 +135,6 @@ services:
       APP_ENVIRONMENT: production
     labels:
       traefik.enable: "false"
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     # Placeholder entry point, replaced in epic 3 by the queue runner.
     # It fails loudly on purpose: reusing the web server command here would
     # silently start a second, pointless web server if the profile were

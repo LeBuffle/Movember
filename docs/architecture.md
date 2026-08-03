@@ -1073,37 +1073,29 @@ impossible, sans le moindre message d'erreur.
 
 ### 9.2 bis — Cohabitation avec les autres projets du VPS
 
-Le serveur n'est pas dédié à DEFI Movember. Il héberge déjà PrestaShop et sa base MySQL,
-n8n et son Traefik, Ollama, deux instances d'Open-WebUI et AcroHub.
+Le serveur n'est pas dédié à DEFI Movember. Il héberge aussi AcroHub — le seul autre
+projet réellement actif — ainsi que n8n et son Traefik. PrestaShop, Ollama et les
+instances d'Open-WebUI sont déployés mais inutilisés.
 
 **Ressources constatées :** 4 cœurs, 15 Go de mémoire dont environ 12 Go disponibles,
 124 Go de disque libre. C'est confortable : une application Next.js consomme de l'ordre de
 100 à 300 Mo, et 600 utilisateurs simultanés ne sont pas un volume qui inquiète à cette
 échelle. **Le goulot d'étranglement du 1ᵉʳ novembre sera la base de données et les envois
-de notifications, pas le serveur web.**
+de notifications, pas le serveur web.** Il n'y a donc pas lieu d'étaler artificiellement la
+publication du défi quotidien pour ménager la machine.
 
-**Le point de vigilance est ailleurs : la machine n'a aucun espace d'échange (swap).**
-Quand la mémoire vient à manquer, le noyau ne ralentit pas — il tue un processus, et
-choisit la victime selon sa consommation, pas selon son importance. Ollama, qui charge des
-modèles de plusieurs gigaoctets d'un seul coup, peut provoquer cette situation.
+**Aucune limite de mémoire n'est fixée sur les conteneurs, et c'est délibéré.**
+L'application n'a jamais tourné sous charge réelle : tout plafond posé aujourd'hui serait
+une estimation. Or une limite estimée est pire que pas de limite du tout — elle peut faire
+tuer un conteneur en bonne santé, au pire moment, sans avertissement. La consommation sera
+**mesurée pendant la répétition générale** (story 11.9), et les limites posées ensuite sur
+la base de ce qui aura été observé.
 
-Deux protections en découlent :
-
-1. **Chaque conteneur du projet porte une limite de mémoire** (768 Mo en production,
-   384 Mo en préproduction, 512 Mo pour le worker). Cela rend la consommation prévisible
-   dans les deux sens : l'application ne peut pas affamer ses voisines, et son empreinte
-   est connue plutôt que supposée.
-2. **L'ajout d'un espace d'échange sur l'hôte est recommandé au PO.** Il transforme une
-   saturation brutale — un processus tué sans préavis — en simple ralentissement. C'est
-   une action côté serveur, hors du périmètre de ce dépôt.
-
-> Ces limites protègent aussi les autres projets du VPS. C'est la contrepartie de la
-> cohabitation : on s'engage sur une empreinte maximale.
-
-**Images.** Construites par GitHub Actions, publiées sur le registre de conteneurs GitHub,
-récupérées par le VPS. Le serveur ne compile rien — il ne fait que télécharger et
-redémarrer. C'est plus rapide, plus reproductible, et ça évite qu'un déploiement échoue
-faute de mémoire sur un petit VPS.
+**Point de vigilance restant : la machine n'a aucun espace d'échange (swap).** Quand la
+mémoire vient à manquer, le noyau ne ralentit pas — il tue un processus, choisi selon sa
+consommation et non selon son importance. Ajouter quelques gigaoctets d'espace d'échange
+transforme une saturation brutale en simple ralentissement. C'est une action côté serveur,
+recommandée au PO, hors du périmètre de ce dépôt.
 
 ### 9.3 Chaîne d'intégration et de déploiement
 
