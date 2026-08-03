@@ -81,10 +81,17 @@ services:
       <<: *security-headers
       traefik.enable: "true"
       traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
-      traefik.http.routers.movember.rule: Host(`${APP_DOMAIN}`)
+      # Serves both the bare domain and www, with www permanently redirected
+      # to the bare one so a single canonical address is shared and indexed.
+      traefik.http.routers.movember.rule: Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)
       traefik.http.routers.movember.entrypoints: websecure
       traefik.http.routers.movember.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
-      traefik.http.routers.movember.middlewares: movember-security@docker
+      traefik.http.routers.movember.middlewares: movember-www@docker,movember-security@docker
+      # Only rewrites hosts starting with `www.`; the bare domain passes
+      # through untouched. `$$` escapes the capture group for Compose.
+      traefik.http.middlewares.movember-www.redirectregex.regex: ^https://www\.(.*)
+      traefik.http.middlewares.movember-www.redirectregex.replacement: https://$${1}
+      traefik.http.middlewares.movember-www.redirectregex.permanent: "true"
       traefik.http.services.movember.loadbalancer.server.port: "3000"
 
   app-staging:
