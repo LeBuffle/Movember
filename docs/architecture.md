@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | v1 — Phase 3 BMAD (Architect) |
+| **Version** | v1.1 — Phase 3 BMAD (Architect) |
 | **Date** | 3 août 2026 |
 | **Auteur** | Agent Architect (BMAD) |
 | **Statut** | En attente de validation PO |
@@ -17,6 +17,7 @@ backend, la base de données, les intégrations et le déploiement.
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
 | 2026-08-03 | v1 | Rédaction initiale à partir du PRD v1 | Agent Architect |
+| 2026-08-03 | v1.1 | **Hébergement sur VPS Hostinger** décidé par le PO (remplace Vercel) : déploiement, tâches planifiées, sauvegardes, supervision, coûts et risques révisés. Modèle de données étendu aux règles de jeu précisées par le PO (défis individualisés, classements multiples, raretés) | Agent Architect |
 
 ---
 
@@ -32,11 +33,17 @@ dans un même programme — pas de découpage compliqué, parce qu'à cette tail
 n'apporterait que des ennuis.
 
 **Les briques retenues.** Next.js pour le site, Supabase pour la base de données et les
-comptes, Stripe pour les paiements, Strava pour les activités sportives, Vercel pour
-l'hébergement. Ce sont les mêmes outils que sur tes autres projets, ils sont gratuits ou
-quasi gratuits à notre taille, et ce sont les plus rapides à mettre en œuvre. C'est ce
-dernier point qui a pesé le plus : la ressource la plus rare du projet, c'est le temps,
-pas l'argent.
+comptes, Stripe pour les paiements, Strava pour les activités sportives, et **ton VPS
+Hostinger pour l'hébergement**. Ce sont les mêmes outils que sur tes autres projets.
+
+**Note sur l'hébergement.** La première version de ce document recommandait Vercel. Tu as
+choisi le VPS Hostinger : c'est ta décision et je l'applique. C'est **moins cher** — le
+serveur est déjà payé — et ça **règle la question juridique** de l'offre Vercel gratuite
+pour un site qui encaisse de l'argent. En contrepartie, il faut construire le déploiement
+(environ une journée de travail) et **quelqu'un doit pouvoir relever le serveur s'il
+tombe en novembre**. J'ai prévu ce qu'il faut pour que ça n'arrive presque jamais et que
+ce soit simple à traiter si ça arrive : redémarrage automatique, surveillance, alerte, et
+une procédure écrite. Le détail est en section 9.6.
 
 **Le point le plus important du document.** Les défis et les cartes ne sont **pas écrits
 dans le code**. Ils sont enregistrés dans la base de données comme des fiches. Créer un
@@ -44,13 +51,15 @@ défi ou une carte en plein mois de novembre, c'est remplir un formulaire dans l
 back-office — pas me demander de modifier le programme. C'est ce qui rend la promesse de
 la refonte tenable, et ça conditionne une bonne partie des choix techniques qui suivent.
 
-**Ce que ça va coûter.** Rien pendant le développement. Environ **40 € par mois d'octobre
-à décembre**, soit **environ 130 € pour toute l'édition** — 1,3 % d'une collecte de
-10 000 €. Le détail est en section 12. Une précision honnête : le PRD visait moins de
-30 € par mois, et j'arrive à 40 € sur les trois mois critiques. La différence vient de
-deux postes que je ne recommande pas de sacrifier — les sauvegardes quotidiennes de la
-base et l'envoi des e-mails de secours. Sur l'année entière, la moyenne reste bien
-en dessous de 30 €.
+**Ce que ça va coûter.** Le VPS est déjà payé, donc le seul vrai surcoût est Supabase
+Pro. Environ **25 € par mois d'octobre à décembre**, soit **environ 75 € pour toute
+l'édition** — moins de 1 % d'une collecte de 10 000 €, et **sous l'objectif de 30 € par
+mois du PRD**. Le passage au VPS a fait économiser une vingtaine d'euros par mois. Le
+détail est en section 12.
+
+**Un point de vigilance sur les frais Stripe.** Ils représenteront environ **450 €** pour
+600 inscriptions — soit six fois le coût technique du projet. C'est le premier poste de
+dépense et il est incompressible.
 
 **Les trois choses qui peuvent faire échouer le projet, et aucune n'est technique.**
 L'autorisation de Strava, le compte Stripe, et le prix de la médaille. Je peux tout
@@ -69,16 +78,18 @@ ajusté.** J'ai conçu le système pour que cet ajustement reste possible sans t
 
 ### 2.1 Synthèse technique
 
-Application **Next.js (App Router, TypeScript)** déployée sur **Vercel**, adossée à
-**Supabase** (PostgreSQL, authentification, stockage de fichiers, sécurité au niveau des
+Application **Next.js (App Router, TypeScript)** conteneurisée avec **Docker** et
+déployée sur un **VPS Hostinger**, derrière un reverse proxy **Caddy** qui gère les
+certificats HTTPS automatiquement. La base de données, l'authentification et le stockage
+des fichiers restent chez **Supabase** (PostgreSQL managé, sécurité au niveau des
 lignes). L'application sert les trois parcours — public, participant, administrateur —
 depuis un même dépôt et un même déploiement.
 
 Les traitements de fond (synchronisation Strava, évaluation des défis, envoi des
 notifications, calcul des classements) sont déclenchés par **événements** — un webhook
-Strava, un webhook Stripe — ou par **tâches planifiées** exécutées depuis Supabase. Le
-contenu du jeu (défis, cartes, règles de tirage, seuils anti-triche) est **stocké en base
-de données**, jamais codé en dur.
+Strava, un webhook Stripe — ou par **tâches planifiées** exécutées par le cron système du
+VPS. Le contenu du jeu (défis, cartes, règles de tirage, seuils anti-triche) est **stocké
+en base de données**, jamais codé en dur.
 
 Les paiements passent par **Stripe Checkout** : aucune donnée de carte ne touche
 l'application. Les notifications utilisent le **Web Push** standard via un service
@@ -95,8 +106,19 @@ d'activité »** isole Strava, pour que Garmin puisse s'ajouter plus tard sans r
 └────────────────────────────────┬─────────────────────────────────────┘
                                  │ HTTPS
 ┌────────────────────────────────▼─────────────────────────────────────┐
-│                    NEXT.JS sur VERCEL (région eu)                    │
-│  Rendu serveur  │  Server Actions  │  Route Handlers (webhooks, API) │
+│                      VPS HOSTINGER (Docker)                          │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │ CADDY — reverse proxy, HTTPS automatique, en-têtes sécurité    │  │
+│  └───────────────┬──────────────────────────┬─────────────────────┘  │
+│  ┌───────────────▼──────────────┐ ┌─────────▼────────────────────┐   │
+│  │ app  (Next.js standalone)    │ │ app-staging (préproduction)  │   │
+│  │ rendu · webhooks · API       │ │ staging.<domaine>            │   │
+│  └───────────────┬──────────────┘ └──────────────────────────────┘   │
+│  ┌───────────────▼──────────────┐ ┌──────────────────────────────┐   │
+│  │ worker — file de traitement  │ │ cron système                 │   │
+│  │ Strava, push, e-mails        │ │ défi du jour, rattrapage,    │   │
+│  └──────────────────────────────┘ │ classements, sauvegardes     │   │
+│                                    └──────────────────────────────┘   │
 └───┬───────────────────┬──────────────────┬───────────────────┬───────┘
     │                   │                  │                   │
 ┌───▼────────────┐ ┌────▼──────┐ ┌─────────▼────────┐ ┌────────▼──────┐
@@ -106,36 +128,58 @@ d'activité »** isole Strava, pour que Garmin puisse s'ajouter plus tard sans r
 │ • Auth         │ │ Webhooks  │ │ Webhooks         │ │               │
 │ • Storage      │ │ Refunds   │ │ API activités    │ │               │
 │ • RLS          │ │           │ │                  │ │               │
-│ • Edge Funcs   │ └───────────┘ └──────────────────┘ └───────────────┘
-│ • pg_cron ─────┼─► tâches planifiées (rattrapage, classements,
-└────────────────┘    publication du défi, relances)
+└────────────────┘ └───────────┘ └──────────────────┘ └───────────────┘
 ```
 
 ### 2.3 Choix de plateforme
 
-**Retenu : Vercel + Supabase.**
+**Retenu, sur décision du PO : VPS Hostinger + Supabase managé.**
 
-| Critère | Vercel + Supabase | VPS Hostinger | AWS |
+| Critère | VPS Hostinger (retenu) | Vercel | AWS |
 | --- | --- | --- | --- |
-| Coût mensuel à notre volume | ~40 € (3 mois) | ~5-10 € | 15-40 €, imprévisible |
-| Temps de mise en route | quelques heures | 2-3 jours | 1 semaine+ |
-| Maintenance système | nulle | à notre charge | partielle |
-| Déploiement continu | inclus | à construire | à construire |
-| Sauvegardes | incluses (offre payante) | à construire | à configurer |
-| Cohérence avec les autres projets du PO | totale | partielle | nulle |
+| Coût mensuel additionnel | 0 € — serveur déjà payé | ~19 € | 15-40 €, imprévisible |
+| Temps de mise en route | ~1 journée | quelques heures | 1 semaine+ |
+| Maintenance système | à notre charge | nulle | partielle |
+| Déploiement continu | à construire | inclus | à construire |
+| Aperçus automatiques par pull request | non — préproduction permanente à la place | inclus | non |
+| Question juridique sur l'usage commercial | aucune | offre gratuite ambiguë | aucune |
+| Montée en charge | manuelle (sans objet à 800 utilisateurs) | automatique | automatique |
+| Point de panne unique | oui | non | non |
 
-**Alternative écartée : VPS Hostinger.** Moins cher de 30 € par mois, mais impose de
-gérer soi-même le système, les certificats, les sauvegardes et le déploiement. Sur un
-projet où une seule personne développe en huit semaines, ces trois jours de mise en place
-et la charge d'exploitation pendant novembre coûtent plus cher que les 30 € économisés.
-Le critère d'arbitrage du projet dit « le moins coûteux **à qualité égale** » — ici la
-qualité n'est pas égale, parce que le risque d'exploitation ne l'est pas.
+**Pourquoi ce choix se défend.** Le serveur est déjà payé, ce qui ramène le coût
+additionnel d'hébergement à zéro et fait passer le projet **sous le plafond de 30 € par
+mois du PRD**. Il lève aussi une ambiguïté réelle : l'offre gratuite de Vercel est
+réservée à un usage non commercial, et un site qui encaisse des paiements s'y situe en
+zone grise. Enfin, à 800 utilisateurs, aucune des capacités de mise à l'échelle de Vercel
+n'est nécessaire — un VPS modeste absorbe cette charge sans difficulté.
 
-**Alternative écartée : AWS.** Puissance et prix à l'usage sans rapport avec un projet de
-800 utilisateurs ; complexité et délai de mise en œuvre rédhibitoires.
+**Ce que ce choix coûte, et comment on le compense.**
 
-**Régions :** Supabase à Francfort (`eu-central-1`), fonctions Vercel en région
-européenne. Toutes les données personnelles restent dans l'Union européenne (NFR10).
+| Ce qu'on perd | Compensation retenue |
+| --- | --- |
+| Les aperçus déployés automatiquement à chaque pull request | Une **préproduction permanente** sur `staging.<domaine>`, redéployée automatiquement à chaque push sur la branche de travail. Le PO valide dessus depuis son téléphone, comme prévu |
+| L'absence totale de maintenance système | Conteneurs Docker avec redémarrage automatique, mises à jour de sécurité automatisées, supervision et alerte (section 9.6) |
+| La redondance | Snapshots Hostinger + sauvegardes de base hors serveur + procédure de restauration écrite et **testée avant octobre** |
+| Le déploiement clé en main | Chaîne GitHub Actions → SSH → Docker, à construire une fois (~1 journée) |
+
+**Alternative écartée : Vercel.** Recommandée dans la v1 de ce document pour sa rapidité
+de mise en œuvre et l'absence de maintenance. Écartée par décision du PO au profit d'une
+infrastructure déjà payée et sans ambiguïté juridique. Le compromis est explicite : on
+échange environ une journée de mise en place et une charge d'exploitation résiduelle
+contre une vingtaine d'euros mensuels et la maîtrise complète de l'hébergement.
+
+**Alternative écartée : AWS.** Puissance et tarification à l'usage sans rapport avec un
+projet de 800 utilisateurs ; complexité et délai de mise en œuvre rédhibitoires.
+
+**Alternative écartée : héberger aussi PostgreSQL sur le VPS.** Économiserait les 23 €
+de Supabase Pro, mais mettrait à notre charge les sauvegardes, la réplication, les
+correctifs de sécurité et l'authentification — soit exactement ce qui prend du temps et
+casse en production. **Garder la base chez Supabase est le bon partage :** on prend en
+charge ce qui est simple et statique (servir une application web), on délègue ce qui est
+critique et opérationnel (les données).
+
+**Régions :** VPS Hostinger en Europe, Supabase à Francfort (`eu-central-1`). Toutes les
+données personnelles restent dans l'Union européenne (NFR10).
 
 ### 2.4 Stack détaillée
 
@@ -150,7 +194,10 @@ européenne. Toutes les données personnelles restent dans l'Union européenne (
 | Authentification | Supabase Auth | — | E-mail/mot de passe, intégré à la sécurité de la base |
 | Sécurité des données | Row Level Security | — | Les règles d'accès vivent dans la base, pas seulement dans le code |
 | Fichiers | Supabase Storage | — | Visuels des cartes, images du fil d'actualité |
-| Tâches planifiées | pg_cron + pg_net | — | Indépendant de l'offre Vercel, gratuit |
+| Conteneurisation | Docker + Docker Compose | — | Déploiement reproductible, redémarrage automatique |
+| Reverse proxy | Caddy | 2.x | HTTPS et renouvellement des certificats automatiques, configuration en quelques lignes |
+| Tâches planifiées | cron système du VPS | — | Disponible nativement, sans dépendance ni surcoût |
+| Système | Debian ou Ubuntu LTS | — | Mises à jour de sécurité automatiques |
 | Paiement | Stripe Checkout | API 2025+ | Aucune donnée de carte dans l'application |
 | Activités | API Strava | v3 | Imposé |
 | Notifications | Web Push (VAPID) + `web-push` | — | Standard, gratuit, sans service tiers |
@@ -287,35 +334,52 @@ effet de bord souhaitable, encourage l'installation.
 dépendance externe, complexité de configuration et question RGPD supplémentaire, pour un
 besoin que le standard couvre.
 
-### D7 — Tâches planifiées côté base de données
+### D7 — Tâches planifiées par le cron système du VPS
 
-**Décision.** Les traitements récurrents — publication du défi du jour, rattrapage
-Strava, recalcul des classements, relance des inactifs, expiration des jetons — sont
-déclenchés par `pg_cron` dans Supabase, qui appelle des routes protégées de
-l'application.
+**Décision.** Les traitements récurrents — publication et attribution des défis du jour,
+rattrapage Strava, recalcul des classements, relance des inactifs, rafraîchissement des
+jetons, sauvegardes — sont déclenchés par le **cron système du VPS**, qui appelle des
+routes protégées de l'application.
 
-**Pourquoi.** Les tâches planifiées de Vercel sont limitées en nombre et en fréquence sur
-l'offre gratuite. `pg_cron` est inclus dans Supabase sans surcoût et découple le
-projet de l'offre d'hébergement.
+**Pourquoi.** Le VPS dispose d'un cron natif, gratuit, sans limite de fréquence et sans
+dépendance externe. C'est l'un des bénéfices directs du choix d'hébergement.
 
-**Compromis accepté.** La planification n'est pas visible dans le code de l'application
-mais dans une migration de base de données. Elle est donc versionnée dans le dépôt, ce
-qui préserve la traçabilité.
+**Compromis accepté.** La planification vit dans un fichier de configuration du serveur
+plutôt que dans le code. Elle est donc **versionnée dans le dépôt** (`deploy/crontab`) et
+installée par le script de déploiement, ce qui préserve la traçabilité et évite qu'elle
+diverge silencieusement.
 
-**Alternative écartée.** Vercel Cron : simple, mais contraint le choix d'offre.
+**Alternative écartée.** `pg_cron` dans Supabase : retenu dans la v1 quand
+l'hébergement était Vercel. Reste une solution de repli valable si le cron du VPS pose
+problème, mais ajoute une indirection inutile maintenant qu'on dispose d'un serveur.
 
-### D8 — Séparation stricte entre classement et collection
+### D8 — Le classement des cartes ne compte que les cartes gagnées, jamais les cartes achetées
 
-**Décision.** Le classement officiel se calcule exclusivement à partir des **défis
-réussis et de la performance sportive**. Les cartes possédées **n'entrent dans aucun
-classement**. La complétion de l'album est affichée séparément, comme objectif personnel.
+**Le problème posé.** Le PO souhaite un classement sur le nombre de cartes — secondaire,
+mais présent. Or les packs sont achetables, et le niveau 3 en offre deux à l'inscription.
+Un classement sur le nombre total de cartes serait donc directement achetable, ce
+qu'interdit la règle « aucun avantage compétitif ne s'achète » (NFR20).
 
-**Pourquoi.** Sans cette séparation, acheter des packs ferait monter au classement — ce
-que la décision produit D2 du PRD interdit explicitement (NFR20).
+**Décision.** Le classement collection se calcule **uniquement sur les cartes obtenues
+par le jeu** — tirage quotidien et défis réussis. Les cartes issues d'un **pack acheté**
+ou du **bonus de niveau 3** sont exclues du calcul.
 
-**Traduction technique.** Les tables `card_grants` et `challenge_results` sont
-indépendantes. Aucune requête de classement ne lit `card_grants`. C'est vérifié par un
-test automatisé dédié.
+**En clair.** Acheter des packs remplit ton album et t'aide à le compléter, ce qui est
+l'intérêt du pack. Mais ça ne te fait pas gagner une place au classement. Le classement
+récompense ce que tu as gagné en faisant du sport.
+
+**Traduction technique.** La colonne `card_grants.source` distingue déjà l'origine de
+chaque carte. Le classement collection ne compte que `source IN ('challenge',
+'daily_draw')`. Les valeurs `pack` et `tier_bonus` sont exclues.
+
+**Deux compteurs distincts sont affichés dans l'album**, sans ambiguïté pour le joueur :
+« cartes gagnées » (celle qui compte au classement) et « collection complète »
+(l'ensemble, achats inclus).
+
+**Le classement général reste purement sportif.** Il se fonde sur les points des défis
+réussis (décision D14) et ne lit jamais `card_grants`. Un test automatisé vérifie les
+deux règles : aucune carte achetée dans le classement collection, aucune carte du tout
+dans le classement général.
 
 ### D9 — Minimisation des données sportives dès la réception
 
@@ -368,6 +432,77 @@ affectée à la contrepartie. Les frais réels sont récupérés auprès de Stri
 **Pourquoi.** Si la grille de répartition évolue en cours d'édition, les paiements déjà
 encaissés ne doivent pas changer rétroactivement. Et l'association a besoin d'un compte
 rendu rapprochable ligne à ligne avec son relevé Stripe (NFR15).
+
+### D13 — Chaque participant reçoit son propre défi, tiré d'un catalogue
+
+**Décision.** L'administrateur ne crée pas « le défi du 12 novembre ». Il alimente un
+**catalogue de défis**, chacun caractérisé par son type d'activité, sa difficulté et sa
+durée. Chaque jour, une tâche planifiée **attribue un défi à chaque participant** en
+tirant dans ce catalogue.
+
+**Pourquoi cette conception.** Elle sert directement ce que le PO a demandé : des défis
+différents d'un participant à l'autre, de difficultés variables, sur des sports variés.
+Elle a un bénéfice moins évident mais décisif : **elle supprime l'obligation pour
+l'organisation de produire un défi chaque matin de novembre**. Le catalogue est constitué
+en octobre ; novembre se déroule tout seul, et le back-office sert à ajuster, pas à
+alimenter en urgence.
+
+**Règles d'attribution.**
+- Aucun participant ne reçoit deux fois le même défi dans l'édition, tant que le
+  catalogue le permet.
+- L'attribution évite de donner un défi de natation à quelqu'un qui n'a jamais nagé — un
+  ajustement simple fondé sur les sports déjà pratiqués, avec repli sur un défi
+  polyvalent si l'historique est insuffisant.
+- L'administrateur peut **forcer un défi commun à tous** pour une journée donnée : c'est
+  le mécanisme des défis collectifs et des animations spéciales.
+
+**Compromis accepté.** Un catalogue trop petit produirait des répétitions. Il faut donc
+prévoir un volume suffisant — de l'ordre de plusieurs dizaines de défis pour 30 jours,
+avec plusieurs variantes de difficulté par sport. C'est un travail de contenu à mener en
+septembre, à signaler comme tel dans le découpage en stories.
+
+**Alternative écartée.** Un défi unique quotidien identique pour tous : plus simple à
+construire, mais exclut mécaniquement les sports que le participant ne pratique pas, et
+impose à l'organisation d'être présente chaque jour.
+
+### D14 — Le classement général se fonde sur des points, pas sur un nombre de défis
+
+**Le problème posé.** Puisque les défis diffèrent d'un participant à l'autre et que
+certains sont plus durs ou plus longs que d'autres, compter le **nombre** de défis réussis
+avantagerait celui qui a tiré les défis les plus faciles.
+
+**Décision.** Chaque défi du catalogue porte une **valeur en points** reflétant sa
+difficulté et sa durée. Le classement général cumule ces points. Le nombre brut de défis
+réussis reste affiché, mais comme **classement secondaire**, aux côtés des autres.
+
+**Les classements retenus** (tous calculés sur l'édition en cours) :
+
+| Classement | Base de calcul | Rang |
+| --- | --- | --- |
+| **Général** | Points des défis réussis | Principal |
+| Défis réalisés | Nombre de défis réussis | Secondaire |
+| Cartes gagnées | Cartes obtenues **par le jeu uniquement** (décision D8) | Secondaire |
+| Kilomètres — course | Distance cumulée, activités de course | Secondaire |
+| Kilomètres — vélo | Distance cumulée, activités de vélo | Secondaire |
+| Nombre d'activités | Activités enregistrées sur la période | Secondaire |
+| Temps d'activité | Durée cumulée, tous sports | Secondaire |
+| **Équipes** | Points de l'équipe, normalisés par le nombre de membres | Principal collectif |
+
+**Pourquoi plusieurs classements plutôt qu'un seul.** À 600 participants, un classement
+unique n'intéresse que les dix premiers. Sept classements thématiques donnent à chacun
+une catégorie où il peut figurer honorablement — le cycliste, l'assidu, le collectionneur,
+le régulier. C'est un levier de rétention plus efficace qu'un podium unique, et le coût
+technique est marginal : tous se calculent depuis les mêmes données.
+
+**Traduction technique.** Tous les classements sont produits par une même vue
+matérialisée rafraîchie périodiquement, avec une colonne de rang par catégorie. Aucun
+calcul à l'affichage.
+
+**Point à trancher avec le PO.** La difficulté d'un défi ne détermine pas la rareté de la
+carte obtenue — c'est une règle explicite du PO. La seule récompense d'un défi difficile
+est donc le nombre de points. **Il faut que l'écart de points soit assez marqué pour que
+tenter un défi dur en vaille la peine** : un rapport de 1 à 3 entre un défi facile et un
+défi difficile est un point de départ raisonnable, à ajuster.
 
 ---
 
@@ -449,39 +584,63 @@ partager le même compte Strava**, qui serait la triche la plus simple.
 `is_manual`, `is_trainer`, `is_flagged`, `raw_hash`, `imported_at`.
 Unicité sur (`provider`, `provider_activity_id`).
 
-**`challenges`** — le cœur du moteur (décision D2).
-`id`, `edition_id`, `day` (date), `title`, `description`, `evaluator`
+**`challenges`** — le **catalogue** de défis (décisions D2 et D13). Une ligne est un défi
+disponible, pas un défi daté.
+`id`, `edition_id`, `title`, `description`, `evaluator`
 (`distance` | `duration` | `elevation` | `streak` | `multisport` | `collective` |
-`surprise`), `config` (jsonb), `reward_rules` (jsonb), `scope` (`all` | `team`),
-`scope_ref`, `status` (`draft` | `scheduled` | `published` | `closed`),
-`published_at`, `points`.
+`surprise`), `config` (jsonb), `sport_family` (`run` | `bike` | `swim` | `strength` |
+`walk` | `any`), `difficulty` (`facile` | `moyen` | `difficile`), `points`,
+`duration_scope` (`day` | `multi_day`), `duration_days`, `reward_rules` (jsonb),
+`is_active`, `created_by`, `created_at`.
 
 Exemple de `config` pour un défi de distance :
 ```json
 { "min_distance_meters": 5000, "sport_types": ["run", "trail_run"], "window": "day" }
 ```
-Exemple de `reward_rules` :
+Exemple de `reward_rules` — la carte est tirée au sort, indépendamment de la difficulté :
 ```json
-{ "cards": 1, "rarity_weights": { "commune": 70, "rare": 25, "epique": 5 } }
+{ "cards": 1, "draw": "random_weighted" }
 ```
 
-**`challenge_results`** — le résultat par participant.
-`id`, `challenge_id`, `profile_id`, `status` (`pending` | `succeeded` | `failed` |
-`manual_override`), `progress` (jsonb), `points_awarded`, `evaluated_at`,
-`overridden_by`, `override_reason`.
-Unicité sur (`challenge_id`, `profile_id`).
+**`challenge_assignments`** — le défi attribué à un participant pour une date donnée
+(décision D13). C'est ici que vit le calendrier, pas dans `challenges`.
+`id`, `edition_id`, `profile_id`, `challenge_id`, `assigned_for` (date),
+`expires_on` (null si sans limite), `status` (`open` | `succeeded` | `failed` |
+`manual_override`), `progress` (jsonb), `points_awarded`, `completed_at`,
+`overridden_by`, `override_reason`, `created_at`.
+Unicité sur (`profile_id`, `challenge_id`) — un participant ne reçoit jamais deux fois le
+même défi.
+
+> **Les défis ne se bloquent pas les uns les autres.** Un défi non réussi reste `open` et
+> peut être validé plus tard ; le défi du lendemain est attribué indépendamment. Un
+> participant peut donc avoir plusieurs défis ouverts simultanément, et **une seule
+> activité peut en valider plusieurs d'un coup** — une sortie vélo de 30 km valide à la
+> fois « 20 km à vélo » et « 1 heure d'activité ». C'est une exigence explicite du PO, et
+> elle impose que l'évaluation parcoure **tous** les défis ouverts du participant à chaque
+> nouvelle activité, pas seulement celui du jour.
 
 **`cards`** / **`card_grants`**
 `cards` : `id`, `edition_id`, `code`, `name`, `description`, `rarity`
-(`commune` | `rare` | `epique` | `legendaire` | `mythique`), `image_path`, `series`,
-`is_active`, `released_at`.
-`card_grants` : `id`, `profile_id`, `card_id`, `source` (`challenge` | `pack` |
-`tier_bonus` | `admin`), `source_ref`, `granted_at`.
+(`commune` | `rare` | `tres_rare` | `epique`), `image_path`, `series`
+(regroupement thématique : formes, couleurs), `is_active`, `released_at`.
+
+> Les cartes sont sur le thème de la moustache — formes, couleurs, noms fantaisistes
+> (« mono moustache », « moustache girlie », « moustache fine », « moustache touffue »,
+> « moustache cowboy », « moustache d'or », « moustache teinte », « moustache blanche »).
+> Quatre niveaux de rareté : commune, rare, très rare, épique.
+
+`card_grants` : `id`, `profile_id`, `card_id`, `source` (`challenge` | `daily_draw` |
+`pack` | `tier_bonus` | `admin`), `source_ref`, `granted_at`.
+
+> **La colonne `source` porte l'intégrité du classement collection** (décision D8) : seules
+> les valeurs `challenge` et `daily_draw` y sont comptées.
 
 **`packs`** / **`pack_purchases`**
-`packs` : `id`, `edition_id`, `name`, `price_cents`, `card_count`, `composition_rules`
-(jsonb), `is_active`.
-`pack_purchases` : `id`, `profile_id`, `pack_id`, `payment_id`, `opened_at`.
+`packs` : `id`, `edition_id`, `name`, `price_cents`, `card_count` (**5** pour le pack
+booster), `composition_rules` (jsonb : poids par rareté, garanties éventuelles),
+`is_active`.
+`pack_purchases` : `id`, `profile_id`, `pack_id`, `payment_id`, `source`
+(`purchase` | `tier_bonus`), `opened_at`.
 
 **`push_subscriptions`**
 `id`, `profile_id`, `endpoint`, `p256dh`, `auth`, `user_agent`, `created_at`,
@@ -512,15 +671,21 @@ Unicité sur (`challenge_id`, `profile_id`).
 `id`, `admin_id`, `action`, `target_table`, `target_id`, `payload` (jsonb),
 `created_at`.
 
-**`leaderboard_entries`** — vue matérialisée, rafraîchie périodiquement.
-`profile_id`, `edition_id`, `team_id`, `challenges_succeeded`, `points`,
-`total_distance_meters`, `total_duration_seconds`, `rank_individual`, `rank_team`,
-`computed_at`.
+**`leaderboard_entries`** — vue matérialisée alimentant **tous** les classements
+(décision D14), rafraîchie périodiquement.
+`profile_id`, `edition_id`, `team_id`,
+`points` · `challenges_succeeded` · `cards_earned` *(hors packs et bonus)* ·
+`run_distance_meters` · `bike_distance_meters` · `activity_count` ·
+`total_duration_seconds`,
+puis un rang par catégorie : `rank_points`, `rank_challenges`, `rank_cards`,
+`rank_run`, `rank_bike`, `rank_activities`, `rank_duration`,
+et `computed_at`.
 
 > Un classement recalculé à chaque affichage pour 800 participants serait coûteux et
 > instable. Une vue matérialisée rafraîchie toutes les quinze minutes rend l'affichage
 > instantané, et un décalage de quelques minutes est sans importance dans un jeu qui dure
-> un mois.
+> un mois. Les sept classements se calculent en une seule passe sur les mêmes données :
+> en ajouter un de plus est quasiment gratuit.
 
 ### 4.3 Sécurité au niveau des lignes (RLS)
 
@@ -672,30 +837,48 @@ Strava → WEBHOOK (activity create/update)
             4. NORMALISE (couche D3) et MINIMISE (décision D9)
             5. enregistre dans activities (ignore si déjà connue)
             6. contrôles anti-triche → signale si nécessaire (D10)
-            7. identifie les défis actifs du jour
-            8. exécute l'évaluateur de chaque défi
-            9. si réussi → attribue les cartes selon reward_rules
-           10. notifie (push ou e-mail)
+            7. charge TOUS les défis encore ouverts du participant (pas seulement
+               celui du jour — décision D13)
+            8. exécute l'évaluateur de chacun
+            9. pour chaque défi réussi → attribue une carte tirée au sort
+           10. notifie (push ou e-mail), en regroupant si plusieurs défis validés
            11. marque le classement à recalculer
 ```
+
+**Une activité peut valider plusieurs défis à la fois.** C'est une exigence explicite du
+PO, et c'est la raison pour laquelle l'étape 7 balaie tous les défis ouverts. Si trois
+défis tombent d'un coup, le participant reçoit trois cartes et **une seule notification
+groupée** — trois notifications successives seraient perçues comme du bruit.
 
 **Le tirage des cartes est transactionnel.** Une erreur en cours ne peut pas laisser un
 participant avec un défi validé sans carte, ou une carte attribuée deux fois.
 
-### 6.4 Publication du défi du jour
+### 6.4 Attribution quotidienne des défis
 
 ```
-pg_cron (chaque jour à 6h00, heure de Paris)
-   └→ appelle /api/cron/publish-challenge (protégée par secret partagé)
-        ├→ passe le défi du jour en « published »
-        ├→ envoie la notification push à tous les abonnés
-        ├→ envoie l'e-mail de repli aux non-abonnés
+cron système (chaque jour à 6h00, heure de Paris)
+   └→ appelle /api/cron/assign-daily (protégée par secret partagé)
+        ├→ pour chaque participant actif :
+        │    ├→ si un défi commun est imposé par l'admin → l'attribuer à tous
+        │    └→ sinon → tirer un défi du catalogue :
+        │         • jamais déjà attribué à ce participant
+        │         • cohérent avec les sports qu'il pratique
+        │         • en variant la difficulté au fil des jours
+        ├→ notifie chaque participant de son défi du jour (push, ou e-mail en repli)
         └→ publie une entrée dans le fil d'actualité
 ```
 
-Si l'administrateur n'a rien programmé pour la journée, aucun défi n'est publié et une
-**alerte est envoyée aux administrateurs** — un jour sans défi est un incident, pas un
-silence.
+**Deux garde-fous.**
+
+Si le catalogue est **épuisé** pour un participant — tous les défis compatibles déjà
+attribués — le système bascule sur un défi générique de rattrapage et **alerte les
+administrateurs**. Un participant sans défi est un incident silencieux : c'est exactement
+le type de panne qu'on ne découvre que par une réclamation, donc il faut qu'elle
+s'annonce.
+
+Si le catalogue passe sous un **seuil d'alerte** (moins de dix défis inutilisés en
+moyenne par participant), une alerte est envoyée pour laisser le temps de l'enrichir avant
+la rupture.
 
 ---
 
@@ -730,13 +913,19 @@ silence.
 │   ├── types/                 # types générés depuis le schéma de base
 │   └── styles/
 ├── supabase/
-│   ├── migrations/            # schéma versionné, y compris pg_cron
+│   ├── migrations/            # schéma versionné
 │   └── seed/                  # jeu de données de démonstration
 ├── public/
 │   ├── manifest.json          # manifeste PWA
 │   └── cards/                 # visuels fournis par le PO
+├── deploy/                    # ← infrastructure VPS, versionnée
+│   ├── Dockerfile
+│   ├── docker-compose.yml     #   caddy, app, app-staging, worker
+│   ├── Caddyfile              #   HTTPS, protection de la préproduction
+│   ├── crontab                #   tâches planifiées (décision D7)
+│   └── scripts/               #   deploy.sh, rollback.sh, backup.sh, restore.sh
 ├── tests/                     # unit/, e2e/
-├── docs/                      # brief, prd, architecture, epics, stories
+├── docs/                      # brief, prd, architecture, epics, stories, runbook
 └── .github/workflows/
 ```
 
@@ -810,7 +999,7 @@ explicitement dans la politique de confidentialité.
 | Sous-traitant | Rôle | Localisation |
 | --- | --- | --- |
 | Supabase | Base de données, authentification, fichiers | Francfort (UE) |
-| Vercel | Hébergement applicatif | Région UE |
+| Hostinger | Hébergement applicatif (VPS) | Union européenne |
 | Stripe | Paiement | UE (Irlande) |
 | Strava | Source des activités | États-Unis — encadré par le consentement explicite |
 | Resend | Envoi d'e-mails | UE |
@@ -825,38 +1014,112 @@ la base.
 
 ### 9.1 Environnements
 
-| Environnement | Usage | Base | Stripe | Strava |
-| --- | --- | --- | --- | --- |
-| Local | Développement | Supabase local | mode test | application de test |
-| Préproduction | Vérification avant fusion | projet Supabase dédié | mode test | application de test |
-| Production | Le jeu réel | projet Supabase de production | mode réel | application de production |
+| Environnement | Usage | Adresse | Base | Stripe | Strava |
+| --- | --- | --- | --- | --- | --- |
+| Local | Développement | `localhost` | Supabase local | mode test | application de test |
+| Préproduction | Validation du PO | `staging.<domaine>` | projet Supabase dédié | mode test | application de test |
+| Production | Le jeu réel | `<domaine>` | projet Supabase de production | mode réel | application de production |
 
-Chaque pull request génère automatiquement un **aperçu déployé** : le PO peut voir le
-résultat sur son téléphone avant de valider, sans rien installer. C'est ce qui rend le
-circuit de validation tenable pour un PO non développeur.
+Les deux environnements serveur tournent **sur le même VPS**, dans des conteneurs
+distincts, avec des bases et des jeux de clés séparés. Caddy les distingue par nom de
+domaine.
 
-### 9.2 Chaîne d'intégration
+**La préproduction remplace les aperçus par pull request.** Elle est redéployée
+automatiquement à chaque push sur la branche de travail. Le PO ouvre `staging.<domaine>`
+sur son téléphone et valide ce qu'il voit, sans rien installer — c'est ce qui rend le
+circuit de validation tenable pour un PO non développeur, et c'est la compensation
+explicite du renoncement à Vercel.
+
+**La préproduction n'est pas publique** : accès protégé par mot de passe au niveau du
+reverse proxy, et exclusion des moteurs de recherche. Un site de test indexé qui prend des
+paiements en mode test serait un problème de crédibilité.
+
+### 9.2 Composition Docker
+
+| Conteneur | Rôle | Redémarrage |
+| --- | --- | --- |
+| `caddy` | Reverse proxy, HTTPS automatique, en-têtes de sécurité, protection de la préproduction | `always` |
+| `app` | Next.js en mode standalone — production | `always` |
+| `app-staging` | Next.js — préproduction | `always` |
+| `worker` | File de traitement : activités Strava, envois push et e-mail | `always` |
+
+Le cron système du VPS appelle les routes planifiées de `app` (décision D7). La base de
+données n'est **pas** sur le VPS : elle reste chez Supabase.
+
+**Images.** Construites par GitHub Actions, publiées sur le registre de conteneurs GitHub,
+récupérées par le VPS. Le serveur ne compile rien — il ne fait que télécharger et
+redémarrer. C'est plus rapide, plus reproductible, et ça évite qu'un déploiement échoue
+faute de mémoire sur un petit VPS.
+
+### 9.3 Chaîne d'intégration et de déploiement
 
 ```
-Pull request
+Push sur la branche de travail
   └→ GitHub Actions : format, typage, tests unitaires, build
-  └→ Vercel : déploiement d'aperçu (URL unique)
-       └→ validation du PO
-            └→ squash merge dans main
-                 └→ migrations de base appliquées
-                 └→ déploiement en production
+       └→ image publiée sur le registre GitHub
+            └→ SSH vers le VPS → déploiement en PRÉPRODUCTION
+                 └→ validation du PO sur staging.<domaine>
+                      └→ squash merge dans main
+                           └→ GitHub Actions : build + image « production »
+                                └→ SSH vers le VPS :
+                                     1. migrations de base appliquées
+                                     2. nouvelle image récupérée
+                                     3. bascule des conteneurs
+                                     4. contrôle de santé
+                                     5. retour à la version précédente si échec
 ```
 
-**Les migrations sont versionnées dans le dépôt** et appliquées avant le déploiement. Une
+**L'accès SSH se fait par clé dédiée**, stockée dans les secrets GitHub, avec un
+utilisateur de déploiement aux droits limités — jamais `root`.
+
+**Retour arrière.** Les images précédentes sont conservées et étiquetées. Revenir à la
+version antérieure prend moins d'une minute. C'est le filet de sécurité indispensable
+quand on déploie en plein mois de novembre.
+
+**Les migrations sont versionnées dans le dépôt** et appliquées avant la bascule. Une
 modification de schéma faite à la main dans l'interface Supabase serait perdue au
 déploiement suivant : c'est interdit par convention.
 
-### 9.3 Sauvegardes
+### 9.4 Sauvegardes
 
-Sauvegardes quotidiennes automatiques à partir de l'offre Supabase Pro, activée en
-octobre (NFR17). En complément, un export hebdomadaire est déposé hors plateforme pendant
-tout novembre. **Perdre la base pendant le jeu serait irrattrapable** : les activités
-Strava peuvent être réimportées, mais pas les cartes attribuées ni les défis validés.
+Trois niveaux, parce que perdre la base pendant le jeu serait irrattrapable — les
+activités Strava peuvent être réimportées, mais **pas les cartes attribuées ni les défis
+validés**.
+
+| Niveau | Contenu | Fréquence | Emplacement |
+| --- | --- | --- | --- |
+| Supabase Pro | Sauvegarde complète automatique | quotidienne | Supabase (NFR17) |
+| Export automatisé | `pg_dump` déclenché par le cron du VPS | quotidienne en novembre | VPS, rotation sur 14 jours |
+| Copie hors site | Le même export, copié ailleurs | hebdomadaire | Stockage externe |
+
+**La restauration doit être testée avant octobre**, pas découverte en novembre. Une
+sauvegarde jamais restaurée n'est pas une sauvegarde.
+
+### 9.5 Durcissement du serveur
+
+Pare-feu n'ouvrant que 80, 443 et le port SSH · authentification SSH par clé uniquement,
+mot de passe désactivé, connexion `root` interdite · mises à jour de sécurité automatiques
+· `fail2ban` contre les tentatives répétées · conteneurs exécutés sans privilèges · aucun
+secret dans les images, tous injectés à l'exécution depuis un fichier d'environnement
+protégé sur le serveur.
+
+### 9.6 Supervision et conduite à tenir en novembre
+
+C'est la contrepartie du choix d'hébergement : personne d'autre ne surveille le serveur.
+
+| Dispositif | Rôle |
+| --- | --- |
+| Contrôle de santé externe (UptimeRobot ou équivalent, offre gratuite) | Interroge le site toutes les 5 minutes, alerte par e-mail et SMS en cas d'indisponibilité |
+| Redémarrage automatique des conteneurs | Un plantage applicatif se répare tout seul en quelques secondes |
+| Alerte sur espace disque et mémoire | Prévient avant la saturation, pas après |
+| Sentry | Remonte les erreurs applicatives en production |
+| Alerte métier | Défi non attribué, catalogue épuisé, webhook Stripe en échec, connexion Strava massivement expirée |
+| Snapshot Hostinger avant chaque déploiement majeur | Retour à un serveur entier en cas de problème système |
+
+**Procédure écrite.** Un document `docs/runbook.md` sera produit en Phase 5 : comment
+redémarrer l'application, restaurer une sauvegarde, revenir à la version précédente, et
+que faire si le VPS ne répond plus. Il doit être compréhensible par le PO seul, un
+dimanche soir de novembre. **C'est une livraison obligatoire, pas une option.**
 
 ---
 
@@ -922,45 +1185,39 @@ comptable. C'est le seul moyen de découvrir en octobre ce qu'on découvrirait s
 
 | Poste | Développement (août-sept.) | Édition (oct.-déc.) | Remarque |
 | --- | --- | --- | --- |
-| Vercel | 0 € (offre Hobby) | **~19 €** (offre Pro) | *Voir la réserve ci-dessous* |
+| VPS Hostinger | 0 € | **0 €** | Serveur déjà payé et déjà utilisé par le PO |
 | Supabase | 0 € (offre gratuite) | **~23 €** (offre Pro) | Nécessaire pour les sauvegardes quotidiennes (NFR17) |
 | Resend | 0 € | **0 à 18 €** | Gratuit jusqu'à quelques milliers d'e-mails ; payant si le repli est très sollicité |
-| Nom de domaine | ~12 €/an | — | |
+| Nom de domaine | ~12 €/an | — | À réserver |
 | Sentry | 0 € | 0 € | Offre gratuite suffisante |
+| Surveillance externe | 0 € | 0 € | Offre gratuite suffisante |
 | Web Push | 0 € | 0 € | Standard, sans service tiers |
-| **Total mensuel** | **~0 €** | **~42 €** | |
+| **Total mensuel** | **~0 €** | **~25 €** | **Sous l'objectif du PRD** |
 
-**Total pour l'édition : environ 130 € sur trois mois**, plus le domaine. Soit **1,3 %
-d'une collecte de 10 000 €**.
+**Total pour l'édition : environ 75 € sur trois mois**, plus le domaine. Soit **moins de
+1 % d'une collecte de 10 000 €**.
 
 **Frais Stripe**, distincts de l'infrastructure : de l'ordre de 1,5 % + 0,25 € par
 transaction, soit environ **450 €** pour 600 inscriptions et quelques packs. C'est le
-premier poste de coût du projet, et il est incompressible.
+premier poste de coût du projet — **six fois le coût technique** — et il est
+incompressible.
 
-### 12.2 Réserve sur l'offre Vercel
+### 12.2 Effet du choix d'hébergement sur le budget
 
-L'offre gratuite de Vercel est réservée à un usage personnel non commercial. Un site
-associatif qui encaisse des paiements se situe dans une zone grise. **Recommandation :
-budgéter l'offre Pro par précaution**, ou interroger Vercel avant octobre. Le risque à ne
-rien faire — une suspension du site pendant novembre — est sans commune mesure avec les
-19 € mensuels.
+Le passage de Vercel au VPS fait économiser environ **19 € par mois sur trois mois**, soit
+57 € sur l'édition, et fait passer le total **sous le plafond de 30 € mensuels fixé par le
+PRD** (NFR6) — objectif que la v1 de ce document ne tenait pas.
 
-### 12.3 Écart avec l'objectif du PRD
+Ce n'est pas gratuit pour autant : le coût s'est déplacé de l'argent vers le **temps de
+mise en place** (environ une journée pour construire la chaîne de déploiement) et vers la
+**charge d'exploitation** pendant novembre. Sur un projet où le temps est la ressource la
+plus rare, c'est un arbitrage à assumer consciemment — ce que le PO a fait.
 
-Le PRD fixait un plafond de 30 € par mois (NFR6). J'arrive à 42 € sur les trois mois de
-l'édition, et 0 € le reste de l'année — soit **une moyenne annuelle d'environ 11 € par
-mois**, largement sous l'objectif.
-
-Le dépassement ponctuel vient de deux postes que je ne recommande pas de sacrifier :
-
-- **Les sauvegardes quotidiennes** (23 €). Économiser cette somme, c'est accepter de
-  perdre le jeu en cours de mois sans possibilité de restauration.
-- **L'offre Vercel Pro** (19 €). Économiser cette somme, c'est accepter un risque de
-  suspension pendant l'édition.
-
-Si le PO souhaite malgré tout rester sous 30 €, l'arbitrage possible est de conserver
-l'offre Vercel gratuite après confirmation écrite de Vercel, ce qui ramène le total à
-~23 € par mois. **Je ne recommande pas de renoncer aux sauvegardes.**
+**Un seul poste reste non négociable : les sauvegardes quotidiennes** (23 €). Économiser
+cette somme reviendrait à accepter de perdre le jeu en cours de mois sans possibilité de
+restauration. Le PO a indiqué envisager le passage à Supabase Pro : c'est la bonne
+décision, et elle doit être effective **avant l'ouverture des inscriptions**, pas au
+premier incident.
 
 ---
 
@@ -980,6 +1237,10 @@ l'offre Vercel gratuite après confirmation écrite de Vercel, ce qui ramène le
 | T10 | Deux comptes de jeu sur un même compte Strava | 🟡 Moyen | Contrainte d'unicité en base sur l'identifiant d'athlète |
 | T11 | Pic de charge à la publication du défi | 🟢 Faible | Envoi des notifications par lots, classements en vue matérialisée |
 | T12 | Visuels des cartes livrés tardivement | 🟡 Moyen | Visuels de remplacement en développement ; l'album fonctionne indépendamment des images définitives |
+| T13 | **Le VPS tombe pendant le jeu et personne ne le relève** | 🟠 Élevé | Redémarrage automatique des conteneurs, surveillance externe avec alerte SMS, snapshots Hostinger, retour arrière en une minute, et **procédure écrite compréhensible par le PO seul** (section 9.6). C'est le risque propre au choix d'hébergement, et le seul dont la réponse repose sur une personne disponible |
+| T14 | Catalogue de défis trop maigre — répétitions ou rupture | 🟠 Élevé | Alerte automatique sous seuil, défi générique de rattrapage, et **constitution du catalogue traitée comme une story à part entière en septembre** (décision D13) |
+| T15 | Défaut de sécurité du serveur (accès non autorisé) | 🟡 Moyen | Durcissement décrit en section 9.5 ; aucune donnée sensible sur le VPS — la base et les comptes restent chez Supabase, ce qui limite fortement la portée d'une compromission |
+| T16 | Points de défi mal calibrés — classement général perçu comme injuste | 🟡 Moyen | Points modifiables en base sans redéploiement ; recalcul complet du classement possible à tout moment (décision D14) |
 
 ---
 
@@ -987,13 +1248,17 @@ l'offre Vercel gratuite après confirmation écrite de Vercel, ce qui ramène le
 
 | # | Question | Recommandation | Échéance |
 | --- | --- | --- | --- |
-| A1 | Offre Vercel Pro (~19 €/mois sur 3 mois) ou vérification préalable de l'éligibilité à l'offre gratuite ? | Budgéter Pro | Avant octobre |
-| A2 | Offre Supabase Pro (~23 €/mois sur 3 mois) pour les sauvegardes quotidiennes ? | **Oui, sans réserve** | Avant octobre |
-| A3 | Portée Strava `activity:read_all` (inclut les activités privées) ? | Oui, avec consentement explicite et minimisation | Phase 4 |
+| ~~A1~~ | ~~Offre Vercel~~ | ✅ **Résolue** — hébergement sur VPS Hostinger | — |
+| A2 | Offre Supabase Pro (~23 €/mois sur 3 mois) pour les sauvegardes quotidiennes | **Oui, sans réserve** — le PO l'envisage déjà ; à activer avant l'ouverture des inscriptions | Avant octobre |
+| A3 | Portée Strava `activity:read_all` (inclut les activités privées) | Oui, avec consentement explicite et minimisation | Phase 4 |
 | A4 | Durée de conservation des activités après l'édition (point P10 du PRD) | 12 mois | Phase 4 |
 | A5 | Traitement des activités saisies à la main sur Strava (point P11 du PRD) | Exclues ; les imports depuis une montre restent acceptés | Phase 4 |
-| A6 | Nom de domaine de l'édition | À choisir et réserver rapidement | Août |
+| A6 | Nom de domaine de l'édition | À réserver — le PO s'en occupe | Août |
 | A7 | Compte Sentry pour la remontée des erreurs | Oui, offre gratuite | Phase 4 |
+| **A8** | **« Carte légendaire garantie » au niveau 3, alors que les raretés retenues s'arrêtent à « épique »** | Renommer la promesse en **« carte épique garantie »**, ou ajouter une 5ᵉ rareté « légendaire » au-dessus d'épique. *Recommandation : renommer — quatre raretés suffisent pour 50 cartes* | **Avant l'ouverture des inscriptions** — c'est une promesse commerciale affichée |
+| **A9** | **Une carte par défi réussi, ou une carte par jour maximum ?** | Une carte **par défi réussi** : cohérent avec le rattrapage de plusieurs défis d'un coup, et plus lisible pour le joueur | Phase 4 |
+| **A10** | Écart de points entre un défi facile et un défi difficile | Rapport de 1 à 3 pour commencer, ajustable en base sans redéploiement | Phase 4 |
+| **A11** | Volume cible du catalogue de défis | Au moins 60 à 80 défis répartis sur les sports et les difficultés, à produire en septembre | Septembre |
 
 ---
 
@@ -1004,8 +1269,26 @@ l'offre Vercel gratuite après confirmation écrite de Vercel, ce qui ramène le
 1. **Créer l'application Strava et engager la demande de relèvement de quota** (T2).
 2. **Faire confirmer par Strava la conformité de l'usage prévu** (T1).
 3. **Ouvrir et faire valider le compte Stripe de l'association** (T3).
-4. **Réserver le nom de domaine** (A6).
+4. **Réserver le nom de domaine** (A6) — en cours côté PO.
 5. **Obtenir un devis ferme de médaille** — conditionne la grille de dons (point P1 du PRD).
+6. **Passer Supabase en offre Pro** avant l'ouverture des inscriptions (A2).
+7. **Fournir les accès au VPS Hostinger** : adresse, utilisateur de déploiement, clé SSH,
+   version du système. Nécessaire pour construire la chaîne de déploiement de l'epic 1.
+
+### 15.1 bis — Précédent à étudier : mycols.app
+
+Le PO signale [mycols.app](https://mycols.app/fr) comme application française récupérant
+les activités Strava et proposant des classements entre utilisateurs. Le site n'a pas pu
+être consulté depuis l'environnement de développement.
+
+**C'est un précédent encourageant sur le risque T1** — il suggère qu'un usage de ce type
+est praticable — mais **ce n'est pas une preuve** : leurs conditions d'accord avec Strava
+nous sont inconnues, et une application peut fonctionner un temps sans être conforme.
+Cela ne dispense donc pas de la vérification directe auprès de Strava.
+
+En revanche, c'est une **source d'inspiration utile** sur deux points concrets : le
+parcours de connexion Strava et la présentation des classements. À regarder au moment de
+concevoir ces écrans.
 
 ### 15.2 Passation au PO et au Scrum Master (Phase 4)
 
