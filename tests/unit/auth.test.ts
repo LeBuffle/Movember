@@ -104,6 +104,53 @@ describe("les liens d’e-mail qui échouent disent pourquoi", () => {
   });
 });
 
+describe("les adresses de retour ne viennent jamais de la requête", () => {
+  const confirmation = readFileSync(
+    path.join(import.meta.dirname, "../../src/app/auth/confirmation/route.ts"),
+    "utf8",
+  );
+
+  it("la route de confirmation n’utilise pas l’origine de la requête", () => {
+    // Le serveur autonome de Next renvoie l'adresse à laquelle le conteneur
+    // est attaché — 0.0.0.0:3000 — et non celle que le visiteur a tapée. Une
+    // confirmation réelle a atterri sur http://0.0.0.0:3000/mon-compte.
+    // Les en-têtes Host et X-Forwarded-* n'y changent rien : vérifié sur le
+    // vrai serveur de production.
+    expect(confirmation).not.toMatch(/nextUrl\.origin|\borigin\b\s*\}/);
+    expect(confirmation).toMatch(/absoluteUrl\(/);
+  });
+
+  it("construit ses adresses à partir de la variable d’environnement", () => {
+    // Et non d'un en-tête : `X-Forwarded-Host` est envoyable par n'importe
+    // qui, et bâtir une redirection dessus offre un renvoi vers un site
+    // choisi par l'attaquant — au moment précis où le participant vient de
+    // cliquer un lien que nous lui avons envoyé.
+    // Commentaires retirés : le fichier explique justement pourquoi il
+    // n'utilise pas `X-Forwarded-Host`, et citerait donc le terme cherché.
+    const helper = readFileSync(
+      path.join(import.meta.dirname, "../../src/lib/site-url.ts"),
+      "utf8",
+    )
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+
+    expect(helper).toMatch(/process\.env\.NEXT_PUBLIC_SITE_URL/);
+    expect(helper).not.toMatch(/x-forwarded/i);
+  });
+
+  it("n’a qu’une seule définition de l’adresse du site", () => {
+    // Elle était dupliquée dans les actions d'authentification ; deux copies
+    // finissent par diverger.
+    const actions = readFileSync(
+      path.join(import.meta.dirname, "../../src/lib/auth/actions.ts"),
+      "utf8",
+    );
+
+    expect(actions).toMatch(/from "@\/lib\/site-url"/);
+    expect(actions).not.toMatch(/function siteUrl/);
+  });
+});
+
 describe("validation du pseudonyme", () => {
   it.each(["Jean-Pierre", "MoustacheDor", "L'Ours", "Coureur 42", "Ana_B"])(
     "accepte « %s »",

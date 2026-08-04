@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { ROUTES } from "@/lib/auth/routes";
+import { absoluteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -10,9 +11,16 @@ import { createClient } from "@/lib/supabase/server";
  * Exchanges the one-time code for a session, then sends the participant on.
  * A route handler rather than a page because it must set cookies, which a
  * server component cannot do.
+ *
+ * Destinations are built with `absoluteUrl`, never from the request. The
+ * reason is written out in `lib/site-url.ts`, and it is not theoretical:
+ * this route sent a real confirmation to `http://0.0.0.0:3000/mon-compte` —
+ * the address the container binds to, which Next's standalone server returns
+ * as the request origin. The confirmation itself had worked; the participant
+ * simply landed nowhere.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const next = searchParams.get("next");
 
@@ -23,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     return NextResponse.redirect(
-      `${origin}${ROUTES.signIn}?erreur=lien-invalide`,
+      absoluteUrl(`${ROUTES.signIn}?erreur=lien-invalide`),
     );
   }
 
@@ -32,9 +40,9 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      `${origin}${ROUTES.signIn}?erreur=lien-expire`,
+      absoluteUrl(`${ROUTES.signIn}?erreur=lien-expire`),
     );
   }
 
-  return NextResponse.redirect(`${origin}${destination}`);
+  return NextResponse.redirect(absoluteUrl(destination));
 }

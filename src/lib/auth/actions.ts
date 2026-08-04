@@ -13,6 +13,7 @@ import {
   signUpSchema,
   updateProfileSchema,
 } from "@/lib/auth/schemas";
+import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = {
@@ -20,10 +21,6 @@ export type FormState = {
   message?: string;
   success?: boolean;
 };
-
-function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 /**
  * Only allows relative paths, so a crafted link cannot use the sign-in
