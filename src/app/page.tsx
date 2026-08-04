@@ -1,60 +1,124 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { InstallState } from "@/components/pwa/install-state";
+import { CollectiveFigures } from "@/components/marketing/collective-figures";
+import { EditionCalendar } from "@/components/marketing/edition-calendar";
+import { HowItWorks } from "@/components/marketing/how-it-works";
+import { TaxNotice } from "@/components/marketing/tax-notice";
+import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
-import { APP_VERSION } from "@/lib/app-version";
+import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { getRegistrationTiers } from "@/lib/registration/tiers";
+
+export const metadata: Metadata = {
+  title: "DEFI Movember — un mois, un défi par jour",
+  description:
+    "Un défi sportif par jour pendant tout novembre, une collection de cartes à compléter, " +
+    "et une inscription reversée à la fondation Movember. Projet indépendant porté par une " +
+    "association loi 1901.",
+};
 
 /**
- * Provisional landing page.
+ * Public home page.
  *
- * Replaced by the real public home page in story 1.9, which adds the pricing
- * tiers, the collection counter and the tax notice. Its job right now is to
- * show the design system on a real page.
+ * The one page a share leads to, and the only one most visitors will read.
+ * It has under a minute to convey five things: the cause, the rules, the
+ * price, what you get, and — this one is an obligation rather than a
+ * argument — that none of it is a tax-deductible donation.
+ *
+ * Order is deliberate. The tax notice sits directly above the prices, not
+ * below them and not in the footer: someone who reads the amounts must have
+ * read what those amounts are (AC 3). Story 1.9 could have satisfied the
+ * letter of that criterion with a line in the footer; it would have missed
+ * the point of `CLAUDE.md` §6.
+ *
+ * Statically rendered, with no request to the database. Everything shown
+ * comes from `lib/edition/calendar.ts` and `lib/registration/tiers.ts`,
+ * which epic 2 rewires to Supabase once there is something real to count.
  */
-export default function Home() {
+export default async function Home() {
+  const tiers = await getRegistrationTiers();
+
   return (
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-16">
-        <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
-          Novembre 2026
-        </p>
+      <main>
+        {/* --- Accroche ------------------------------------------------- */}
+        <section className="mx-auto max-w-3xl px-4 pt-12 pb-14 sm:pt-16">
+          <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
+            Novembre {EDITION_YEAR}
+          </p>
 
-        <h1 className="text-ink mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Un mois, un défi par jour,
-          <br />
-          une collection à compléter.
-        </h1>
+          <h1 className="text-ink mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+            Un mois, un défi par jour,
+            <br />
+            une collection à compléter.
+          </h1>
 
-        <p className="text-ink-muted mt-4 text-lg">
-          Vous faites déjà du sport. Reliez votre compte Strava, relevez le défi
-          du jour, gagnez des cartes — et soutenez la cause.
-        </p>
+          <p className="text-ink-muted mt-5 text-lg">
+            Vous faites déjà du sport. Reliez votre compte Strava, relevez le
+            défi du jour, gagnez des cartes moustachues — et faites avancer la
+            lutte contre les cancers masculins et le mal-être des hommes.
+          </p>
 
-        <div className="mt-8">
-          <Alert tone="info" title="Application en construction">
-            Les inscriptions ouvriront à la mi-octobre 2026.
-          </Alert>
+          <div className="mt-8">
+            <Alert tone="info" title="Les inscriptions ne sont pas ouvertes">
+              Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu commence le
+              1ᵉʳ novembre.
+            </Alert>
+          </div>
+        </section>
+
+        {/* --- Règle du jeu --------------------------------------------- */}
+        <div className="bg-surface-sunken border-line border-y">
+          <div className="mx-auto max-w-3xl px-4 py-14">
+            <HowItWorks />
+          </div>
         </div>
 
-        {/*
-          Diagnostic line, on the home page because that is the ONLY page an
-          installed application can reach: it opens on `start_url` and has no
-          address bar, so anything put anywhere else cannot be looked at from
-          inside the installed app. Which is exactly where it needs to be
-          looked at.
-
-          Story 1.9 replaces this page. It must move this indicator to
-          `/mon-compte` rather than drop it — epic 6 needs a way to answer
-          "is this participant actually installed?" when someone reports
-          never getting a notification.
-        */}
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          <p className="text-ink-muted font-mono text-xs">
-            version {APP_VERSION}
+        {/* --- Tarifs, précédés de la mention fiscale -------------------- */}
+        <section
+          aria-labelledby="tarifs"
+          className="mx-auto max-w-5xl px-4 py-14"
+        >
+          <h2 id="tarifs" className="text-ink text-2xl font-bold sm:text-3xl">
+            Trois façons de participer
+          </h2>
+          <p className="text-ink-muted mt-2">
+            L’inscription finance la collecte. Le jeu est le même pour tout le
+            monde : aucun défi, aucun classement ne s’achète.
           </p>
-          <InstallState />
+
+          <TaxNotice className="mt-6" />
+
+          <div className="mt-8">
+            <TierCards tiers={tiers} />
+          </div>
+
+          <p className="text-ink-muted mt-6 text-sm">
+            Les montants reversés sont ceux sur lesquels l’association s’engage
+            ; le reste couvre la médaille et les cartes. Les conditions
+            complètes figurent dans les{" "}
+            <Link href="/cgv" className="underline underline-offset-4">
+              conditions générales de vente
+            </Link>
+            .
+          </p>
+        </section>
+
+        {/* --- Chiffres --------------------------------------------------- */}
+        <div className="bg-surface-sunken border-line border-y">
+          <div className="mx-auto max-w-3xl px-4 py-14">
+            <CollectiveFigures />
+          </div>
+        </div>
+
+        {/* --- Calendrier ------------------------------------------------- */}
+        <div className="mx-auto max-w-3xl px-4 py-14">
+          <EditionCalendar />
         </div>
       </main>
 

@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { INDEPENDENCE_NOTICE } from "@/lib/legal/notices";
+
 /**
  * Public site footer.
  *
@@ -16,11 +18,7 @@ export function SiteFooter() {
   return (
     <footer className="border-line bg-surface-sunken mt-16 border-t">
       <div className="text-ink-muted mx-auto max-w-5xl space-y-4 px-4 py-8 text-sm">
-        <p>
-          Projet indépendant porté par une association loi 1901. Ce site n’est
-          pas l’application officielle de la fondation Movember et n’utilise
-          aucun de ses logos ou visuels.
-        </p>
+        <p>{INDEPENDENCE_NOTICE}</p>
 
         <nav aria-label="Informations légales">
           <ul className="flex flex-wrap gap-x-6 gap-y-2">

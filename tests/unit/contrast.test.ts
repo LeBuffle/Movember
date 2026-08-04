@@ -4,7 +4,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { CHALLENGE_STATUS_LABELS } from "@/lib/challenges/status";
-import { AA_BODY_TEXT, AA_NON_TEXT, contrastRatio } from "@/lib/contrast";
+import {
+  AA_BODY_TEXT,
+  AA_LARGE_TEXT,
+  AA_NON_TEXT,
+  contrastRatio,
+} from "@/lib/contrast";
 
 /**
  * Reads the real stylesheet rather than a duplicated copy of the palette, so
@@ -38,6 +43,7 @@ describe("design tokens", () => {
         "brand-blue-dark",
         "brand-orange",
         "brand-orange-ink",
+        "brand-orange-on-blue",
         "ink",
         "ink-muted",
         "success",
@@ -88,6 +94,30 @@ describe("accent orange is constrained to non-text use", () => {
     // tribal knowledge: if someone brightens the orange further, this fails.
     expect(contrastRatio(colors["brand-orange"], WHITE)).toBeLessThan(
       AA_BODY_TEXT,
+    );
+  });
+});
+
+describe("accent text over the brand blue", () => {
+  // The rest of the palette assumes dark text on white. The social sharing
+  // image reverses that, and got caught: the accent orange sits at 1.88:1 on
+  // the brand blue — legible to nobody.
+  it("the accent orange is unusable on blue, which is why a variant exists", () => {
+    expect(
+      contrastRatio(colors["brand-orange"], colors["brand-blue"]),
+    ).toBeLessThan(AA_NON_TEXT);
+  });
+
+  it("the on-blue variant is readable as large text", () => {
+    expect(
+      contrastRatio(colors["brand-orange-on-blue"], colors["brand-blue"]),
+    ).toBeGreaterThanOrEqual(AA_LARGE_TEXT);
+  });
+
+  it("and is NOT to be used on white", () => {
+    // Named for where it belongs, and pinned here so the name stays true.
+    expect(contrastRatio(colors["brand-orange-on-blue"], WHITE)).toBeLessThan(
+      AA_NON_TEXT,
     );
   });
 });

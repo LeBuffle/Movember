@@ -63,6 +63,7 @@ async function readBrandColours() {
     blue: read("brand-blue"),
     blueDark: read("brand-blue-dark"),
     orange: read("brand-orange"),
+    orangeOnBlue: read("brand-orange-on-blue"),
   };
 }
 
@@ -183,6 +184,45 @@ function buildIco(images) {
 }
 
 /* -------------------------------------------------------------------------
+ * Social sharing image
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The 1200×630 image shown when someone shares a link on a social network or
+ * in a messaging app.
+ *
+ * Recruitment for this edition happens by sharing, so this image is not
+ * decoration: it is what a link looks like in a group chat. Without one, the
+ * link shows as a bare grey rectangle.
+ *
+ * The text is drawn into the image rather than composed at request time.
+ * The result is a static file, served like any other, with nothing to render
+ * per crawl — and crawlers are impatient.
+ */
+function socialImageSvg({ blue, blueDark, orange, orangeOnBlue }) {
+  const scale = 0.5;
+  const markX = 96;
+  const markY = 150;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${blue}"/>
+      <stop offset="1" stop-color="${blueDark}"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(${markX - MARK_BOX.x * scale} ${markY - MARK_BOX.y * scale}) scale(${scale})">
+    <path d="${MOUSTACHE_PATH}" fill="${orange}"/>
+  </g>
+  <text x="96" y="360" font-family="DejaVu Sans" font-size="76" font-weight="bold" fill="#ffffff">DEFI Movember</text>
+  <text x="96" y="432" font-family="DejaVu Sans" font-size="38" fill="#ffffff" opacity="0.92">Un mois, un défi par jour,</text>
+  <text x="96" y="482" font-family="DejaVu Sans" font-size="38" fill="#ffffff" opacity="0.92">une collection à compléter.</text>
+  <text x="96" y="556" font-family="DejaVu Sans" font-size="26" fill="${orangeOnBlue}">Novembre 2026 · projet associatif indépendant</text>
+</svg>`;
+}
+
+/* -------------------------------------------------------------------------
  * Generation
  * ---------------------------------------------------------------------- */
 
@@ -228,6 +268,21 @@ async function main() {
   ]);
   await writeFile(path.join(root, "src/app/favicon.ico"), ico);
   written.push(`src/app/favicon.ico  ${(ico.length / 1024).toFixed(1)} ko`);
+
+  // Next serves this as the Open Graph image from its file name alone.
+  // Resized explicitly: librsvg renders at `density / 72` times the declared
+  // size, so leaving it to chance produces an image that is nearly right and
+  // therefore reframed by every network that receives it.
+  const social = await sharp(Buffer.from(socialImageSvg(colours)), {
+    density: 144,
+  })
+    .resize(1200, 630)
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+  await writeFile(path.join(root, "src/app/opengraph-image.png"), social);
+  written.push(
+    `src/app/opengraph-image.png  ${(social.length / 1024).toFixed(1)} ko`,
+  );
 
   console.log(
     `Couleurs lues dans globals.css : ${colours.blue} / ${colours.orange}\n`,

@@ -14,8 +14,8 @@ thème sport / moustache.
 
 Phase 5 — développement en cours. Brief, PRD, Architecture et Sprint 0 sont validés.
 
-Epic 1 (Fondations et squelette déployable) : stories 1.1, 1.2, 1.3, 1.5, 1.6, 1.7 et
-1.8 en revue. Restent 1.4, 1.9, 1.10 et 1.11.
+Epic 1 (Fondations et squelette déployable) : stories 1.1, 1.2, 1.3, 1.5, 1.6, 1.7,
+1.8 et 1.9 en revue. Restent 1.4, 1.10 et 1.11.
 
 ## Démarrage rapide
 
@@ -54,7 +54,7 @@ avant toute pull request.
 src/
 ├── app/            # pages et routes (App Router)
 │   ├── api/        # routes serveur : webhooks, tâches planifiées, santé
-│   ├── manifest.ts # manifeste PWA, servi sur /manifest.webmanifest
+│   ├── manifest.webmanifest/ # manifeste PWA (route)
 │   └── sw.ts       # service worker, compilé vers public/sw.js au build
 ├── components/     # composants d'interface
 ├── lib/            # logique métier et intégrations
@@ -97,15 +97,16 @@ consommé par le contrôle de santé Docker, la chaîne de déploiement et la su
 
 ## Exécution conteneurisée
 
-L'application tourne en conteneur Docker derrière un reverse proxy Caddy, sur le VPS.
+L'application tourne en conteneur Docker derrière Traefik, le reverse proxy déjà
+présent sur le VPS.
 
 ```bash
 docker build -f deploy/Dockerfile -t defi-movember:local .
 docker run --rm -p 3000:3000 -e APP_ENVIRONMENT=development defi-movember:local
 ```
 
-La pile complète (Caddy, production, préproduction) et son installation sur le serveur
-sont décrites dans [`deploy/README.md`](deploy/README.md).
+La pile complète (production, préproduction, étiquettes Traefik) et son installation sur
+le serveur sont décrites dans [`deploy/README.md`](deploy/README.md).
 
 ## Sécurité
 
@@ -119,7 +120,7 @@ variables. Voir [`CLAUDE.md`](CLAUDE.md) §9.
 | --- | --- | --- |
 | Project Brief | [`docs/brief.md`](docs/brief.md) | ✅ validé (v1.1) |
 | PRD | [`docs/prd.md`](docs/prd.md) | ✅ validé (v1.1) |
-| Architecture | [`docs/architecture.md`](docs/architecture.md) | ✅ validé (v1.1) |
+| Architecture | [`docs/architecture.md`](docs/architecture.md) | ✅ validé (v1.2) |
 | Epics | [`docs/epics/`](docs/epics/) | ✅ validés |
 | Stories | [`docs/stories/`](docs/stories/) | Epic 1 détaillé |
 | Plan de démarrage | [`docs/plan-demarrage-dev.md`](docs/plan-demarrage-dev.md) | ✅ validé |

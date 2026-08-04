@@ -20,7 +20,7 @@
 | 1.6 | [Base de données, schéma initial et RLS](1.6.base-de-donnees.md) | **Review** | 1.1 |
 | 1.7 | [Authentification des comptes](1.7.authentification.md) | **Review** | 1.6 |
 | 1.8 | [PWA installable](1.8.pwa-installable.md) | **Review** | 1.1 |
-| 1.9 | [Page d'accueil publique et mentions obligatoires](1.9.page-accueil-publique.md) | Draft | 1.5 |
+| 1.9 | [Page d'accueil publique et mentions obligatoires](1.9.page-accueil-publique.md) | **Review** | 1.5 |
 | 1.10 | [Coquille du back-office et rôle administrateur](1.10.coquille-back-office.md) | Draft | 1.7 |
 | 1.11 | [Supervision, alertes et procédure d'exploitation](1.11.supervision-runbook.md) | Draft | 1.4 |
 

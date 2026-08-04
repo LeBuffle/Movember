@@ -4,9 +4,26 @@ import "./globals.css";
 import { THEME_COLOR } from "@/lib/brand";
 
 export const metadata: Metadata = {
+  /* Social networks need an absolute address for the sharing image, and Next
+     builds it from here. Without it, the image is advertised as a relative
+     path, which every crawler drops — the link then shows as a bare grey
+     rectangle in the group chat it was shared into. */
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
   title: "DEFI Movember",
   description:
     "Un mois, un défi par jour, une collection à compléter. Collecte de fonds au profit de la fondation Movember.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "DEFI Movember",
+  },
+  twitter: {
+    /* The wide card. The default is a small square thumbnail, which crops
+       the wordmark out of the sharing image entirely. */
+    card: "summary_large_image",
+  },
   /* The manifest link is written by hand below, not declared here — the
      reason is documented at the tag itself. */
   /* iOS ignores the manifest icons entirely and reads this one instead. */

@@ -4,7 +4,7 @@
 # recrutement des participants.
 #
 # La préproduction, elle, est protégée par mot de passe et renvoie un en-tête
-# X-Robots-Tag: noindex posé par Caddy — elle ne dépend pas de ce fichier.
+# X-Robots-Tag: noindex posé par Traefik — elle ne dépend pas de ce fichier.
 
 User-agent: *
 Allow: /

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AccountForm } from "@/components/auth/account-form";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { InstallState } from "@/components/pwa/install-state";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
 import { createClient } from "@/lib/supabase/server";
@@ -55,6 +56,19 @@ export default async function AccountPage() {
               Visible de vous seul et de l’organisation. Jamais des autres
               participants.
             </p>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardTitle>Application installée</CardTitle>
+          <CardBody>
+            <p>
+              Sur iPhone, les notifications quotidiennes ne fonctionnent que si
+              l’application a été ajoutée à l’écran d’accueil.
+            </p>
+            <div className="mt-3">
+              <InstallState />
+            </div>
           </CardBody>
         </Card>
 

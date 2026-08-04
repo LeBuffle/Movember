@@ -31,6 +31,11 @@
   /* 5.18:1 on white — the orange to use whenever text is involved */
   --color-brand-orange-ink: #c2410c;
   --color-brand-orange-soft: #fff7ed;
+  /* The palette above is built for dark-on-white. This one is the reverse
+     case: 3.97:1 ON THE BRAND BLUE, for accent text over a blue surface —
+     the social sharing image today, any blue panel later. Unreadable on
+     white (1.7:1), which is why it is named for where it belongs. */
+  --color-brand-orange-on-blue: #fdba74;
 
   /* --- Neutrals -------------------------------------------------------- */
   --color-ink: #171717;
