@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epics 1 et 2 détaillés · epics 3 à 11 à détailler au fil de l'avancement |
+| **Statut** | Epics 1, 2 et 4 détaillés · epics 3 et 5 à 11 à détailler au fil de l'avancement |
 
 ---
 
@@ -86,6 +86,50 @@ les trois branches sont indépendantes.
 > minutes et donne immédiatement des clés de test ; la validation par Stripe — qui demande
 > les pièces de l'association — n'est nécessaire que pour encaisser réellement, donc en
 > octobre.
+
+---
+
+## Epic 4 : Moteur de défis
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 4.1 | [Schéma du catalogue et validation des configurations](4.1.schema-catalogue-defis.md) | Draft | 1.6 |
+| 4.2 | [Création et modification d'un défi depuis le back-office](4.2.back-office-catalogue.md) | Draft | 4.1, 1.10 |
+| 4.3 | [**Premier évaluateur de bout en bout : distance**](4.3.premier-evaluateur-distance.md) | Draft | 4.1 |
+| 4.4 | [Attribution quotidienne individuelle](4.4.attribution-quotidienne.md) | Draft | 4.1, 1.4 |
+| 4.5 | [Défis cumulables](4.5.defis-cumulables.md) | Draft | 4.3, 4.4 |
+| 4.6 | [Défis en cours et progression côté participant](4.6.affichage-defis-en-cours.md) | Draft | 4.4 |
+| 4.7 | [Les six évaluateurs restants](4.7.evaluateurs-restants.md) | Draft | 4.3 |
+| 4.8 | [Défi commun imposé à tous](4.8.defi-commun.md) | Draft | 4.4 |
+| 4.9 | [Historique des défis](4.9.historique-defis.md) | Draft | 4.5 |
+| 4.10 | [Arbitrage manuel](4.10.arbitrage-manuel.md) | Draft | 4.5, 1.10 |
+
+### Ordre d'exécution
+
+```
+4.1 ──┬──► 4.3 ──┬──► 4.5 ──┬──► 4.9
+      │          │          └──► 4.10
+      │          └──► 4.7
+      ├──► 4.2
+      └──► 4.4 ──┬──► 4.6
+                 └──► 4.8
+```
+
+**4.3 avant tout le reste des évaluateurs, et c'est délibéré.** Un seul type mené du
+catalogue jusqu'au résultat affiché : si le modèle d'évaluateur est mal conçu, on le
+découvre sur un type, pas sur sept.
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| **Activités sportives** *(epic 3)* | 4.3 et suivantes | **Un jeu d'activités simulées est livré par la story 4.3**, comme le prévoyait la story 3.1. Tout l'epic se développe et se teste sans Strava |
+| **Participants actifs** *(epic 2)* | 4.4 en production | Se développe et se teste avec des comptes de préproduction |
+| **Catalogue rédigé** | rien techniquement | ⚠️ **Chantier de contenu à mener en septembre** : plusieurs dizaines de défis, avec des variantes de difficulté par sport. C'est le risque principal de l'epic, et il n'est pas technique |
+
+> **Le catalogue est un travail de contenu, pas de développement.** Un catalogue trop
+> maigre produit des répétitions sur trente jours, et le code ne peut rien y faire. Compter
+> 60 à 80 défis pour tenir un mois sans lasser.
 
 ---
 
