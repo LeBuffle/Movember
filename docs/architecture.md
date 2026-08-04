@@ -898,6 +898,8 @@ la rupture.
 │   │   ├── (public)/          # accueil, tarifs, classements publics, CGV
 │   │   ├── (participant)/     # espace de jeu, protégé
 │   │   ├── (admin)/           # back-office, protégé et réservé au rôle admin
+│   │   ├── manifest.ts        # manifeste PWA, servi sur /manifest.webmanifest
+│   │   ├── sw.ts              # service worker, compilé vers public/sw.js
 │   │   └── api/
 │   │       ├── webhooks/      # stripe, strava
 │   │       └── cron/          # points d'entrée des tâches planifiées
@@ -923,7 +925,7 @@ la rupture.
 │   ├── migrations/            # schéma versionné
 │   └── seed/                  # jeu de données de démonstration
 ├── public/
-│   ├── manifest.json          # manifeste PWA
+│   ├── icons/                 # jeu d'icônes PWA (généré, voir scripts/)
 │   └── cards/                 # visuels fournis par le PO
 ├── deploy/                    # ← infrastructure VPS, versionnée
 │   ├── Dockerfile

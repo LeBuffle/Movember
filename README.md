@@ -14,7 +14,8 @@ thème sport / moustache.
 
 Phase 5 — développement en cours. Brief, PRD, Architecture et Sprint 0 sont validés.
 
-Epic 1 (Fondations et squelette déployable) : story 1.1 livrée.
+Epic 1 (Fondations et squelette déployable) : stories 1.1, 1.2, 1.3, 1.5, 1.6, 1.7 et
+1.8 en revue. Restent 1.4, 1.9, 1.10 et 1.11.
 
 ## Démarrage rapide
 
@@ -52,14 +53,41 @@ avant toute pull request.
 ```
 src/
 ├── app/            # pages et routes (App Router)
-│   └── api/        # routes serveur : webhooks, tâches planifiées, santé
+│   ├── api/        # routes serveur : webhooks, tâches planifiées, santé
+│   ├── manifest.ts # manifeste PWA, servi sur /manifest.webmanifest
+│   └── sw.ts       # service worker, compilé vers public/sw.js au build
 ├── components/     # composants d'interface
 ├── lib/            # logique métier et intégrations
 ├── types/          # types partagés
 └── styles/
+public/icons/       # jeu d'icônes, généré par scripts/generate-icons.mjs
+scripts/            # outillage ponctuel, hors chaîne de build
 tests/unit/         # tests unitaires (Vitest)
 docs/               # documentation BMAD
-deploy/             # infrastructure (à venir, story 1.2)
+deploy/             # infrastructure (Docker, Traefik, scripts de déploiement)
+```
+
+## Application installable (PWA)
+
+L'application s'installe sur l'écran d'accueil d'un téléphone. C'est une exigence
+technique et pas seulement de confort : **sur iPhone, les notifications ne fonctionnent
+que si l'application a été ajoutée à l'écran d'accueil.**
+
+Deux choses méritent d'être connues avant d'y toucher :
+
+- **Le service worker ne met en cache qu'une liste blanche** — fichiers de build et
+  icônes, rien d'autre (`src/lib/pwa/cache-policy.ts`). Aucune page, aucune réponse
+  d'API : les activités Strava d'un participant ne doivent pas survivre dans le cache
+  d'un téléphone perdu ou partagé. Un test échoue si cette règle est élargie.
+- **Le service worker est désactivé en développement.** Il se vérifie sur la
+  préproduction, qui est de toute façon ce que l'on teste sur un vrai téléphone.
+
+Les icônes sont générées à partir d'une seule source vectorielle. Après un changement
+de couleur de marque ou de logo :
+
+```bash
+npm install --no-save sharp
+node scripts/generate-icons.mjs
 ```
 
 ## Point de santé

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChallengeStatus } from "@/components/game/challenge-status";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { InstallState } from "@/components/pwa/install-state";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -173,6 +174,13 @@ export default function DesignPage() {
 
         <Section title="Chargement">
           <Spinner />
+        </Section>
+
+        <Section
+          title="Mode d’affichage"
+          note="Ouvrez cette page depuis l’écran d’accueil pour vérifier l’installation (story 1.8). Sur iPhone, les notifications de l’epic 6 dépendent de cet état."
+        >
+          <InstallState />
         </Section>
       </main>
 

@@ -22,6 +22,9 @@ const eslintConfig = [
       "build/**",
       "coverage/**",
       "next-env.d.ts",
+      // Compilé par Serwist au build, à partir de src/app/sw.ts.
+      "public/sw.js",
+      "public/swe-worker-*.js",
       ".bmad-core/**",
       ".claude/**",
     ],
