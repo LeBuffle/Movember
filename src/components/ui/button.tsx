@@ -21,6 +21,33 @@ const sizeClasses: Record<ButtonSize, string> = {
   lg: "min-h-13 px-6 text-lg",
 };
 
+/**
+ * The button's look, without the button.
+ *
+ * Extracted so a `<Link>` can carry it. A link that navigates must stay a
+ * link — wrapping it in a `<button>` would lose middle-click, "open in new
+ * tab" and the keyboard behaviour a browser gives anchors for free. Sharing
+ * the classes rather than the element keeps the two identical without
+ * pretending one is the other.
+ */
+export function buttonClasses({
+  variant = "primary",
+  size = "md",
+  className,
+}: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+} = {}): string {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-lg font-semibold",
+    "transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    variantClasses[variant],
+    sizeClasses[size],
+    className,
+  );
+}
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -36,13 +63,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-semibold",
-        "transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        variantClasses[variant],
-        sizeClasses[size],
-        className,
-      )}
+      className={buttonClasses({ variant, size, className })}
       {...props}
     />
   );

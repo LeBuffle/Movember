@@ -11,6 +11,19 @@
  */
 
 /**
+ * Which version of the terms a participant accepted.
+ *
+ * Stored with the acceptance, and that is the point: knowing *when* someone
+ * accepted says nothing about *what*. The terms published in story 1.9 are a
+ * working draft and will be rewritten before registration opens — an
+ * acceptance without a version would prove nothing about either text.
+ *
+ * **Bump this whenever the terms change in substance.** A wording fix does
+ * not count; a change to what the association owes does.
+ */
+export const TERMS_VERSION = "2026-08-04-brouillon";
+
+/**
  * The tax notice.
  *
  * The sums collected are registration fees and purchases with a

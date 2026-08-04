@@ -116,6 +116,10 @@ export type Database = {
           created_at: string;
           activated_at: string | null;
           welcome_email_sent_at: string | null;
+          /* Both set together or neither — enforced by a check constraint.
+             The date alone proves nothing: the terms change. */
+          terms_accepted_at: string | null;
+          terms_version: string | null;
         };
         Insert: {
           id?: string;
@@ -126,6 +130,8 @@ export type Database = {
           created_at?: string;
           activated_at?: string | null;
           welcome_email_sent_at?: string | null;
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
         };
         Update: Partial<
           Database["public"]["Tables"]["registrations"]["Insert"]

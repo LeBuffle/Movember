@@ -43,6 +43,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260803000000_initial_schema.sql` | `editions`, `profiles`, la vue publique, les règles d'accès |
 | `20260804000000_admin_audit_log.sql` | `admin_audit_log` — le journal des actions du back-office |
 | `20260804100000_registrations_payments.sql` | `registration_tiers`, `registrations`, `payments` |
+| `20260804110000_terms_acceptance.sql` | acceptation des CGV, avec sa version |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

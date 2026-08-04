@@ -4,13 +4,23 @@ import { ROUTES } from "@/lib/auth/routes";
 
 export const metadata = { title: "Créer un compte — DEFI Movember" };
 
-export default function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ suite?: string }>;
+}) {
+  const { suite } = await searchParams;
+
   return (
     <AuthForm
       title="Créer un compte"
       intro="Votre pseudonyme sera visible dans les classements. Votre nom et votre adresse e-mail ne le seront jamais."
       action={signUp}
       submitLabel="Créer mon compte"
+      // Carries the page the visitor was heading for — a chosen tier, most
+      // often — all the way through the confirmation e-mail, so they land
+      // back on it rather than on the home page.
+      hiddenFields={{ suite: suite ?? "" }}
       fields={[
         {
           name: "displayName",
@@ -37,7 +47,16 @@ export default function SignUpPage() {
       ]}
       footer={
         <p>
-          Déjà inscrit ? <AuthLink href={ROUTES.signIn}>Se connecter</AuthLink>
+          Déjà inscrit ?{" "}
+          <AuthLink
+            href={
+              suite
+                ? `${ROUTES.signIn}?suite=${encodeURIComponent(suite)}`
+                : ROUTES.signIn
+            }
+          >
+            Se connecter
+          </AuthLink>
         </p>
       }
     />

@@ -49,7 +49,18 @@ export default async function SignInPage({
           </p>
           <p>
             Pas encore de compte ?{" "}
-            <AuthLink href={ROUTES.signUp}>Créer un compte</AuthLink>
+            {/* `suite` suit jusqu'à l'inscription. Sans cela, quelqu'un qui
+                a choisi « Sportif légendaire », crée un compte et retombe
+                sur l'accueil doit tout refaire — ou renonce. */}
+            <AuthLink
+              href={
+                suite
+                  ? `${ROUTES.signUp}?suite=${encodeURIComponent(suite)}`
+                  : ROUTES.signUp
+              }
+            >
+              Créer un compte
+            </AuthLink>
           </p>
         </div>
       }

@@ -107,6 +107,21 @@ export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
   }));
 }
 
+/**
+ * One tier, by slug — the strict counterpart of `getRegistrationTiers`.
+ *
+ * Returns `null` rather than degrading, and callers must treat that as a
+ * refusal. This is the function the payment path uses: an amount that cannot
+ * be read is an amount that must not be charged. The list above may show
+ * nothing when the database is unreachable; this one may not guess.
+ */
+export async function getTierBySlug(
+  slug: string,
+): Promise<RegistrationTier | null> {
+  const tiers = await getRegistrationTiers();
+  return tiers.find((tier) => tier.slug === slug) ?? null;
+}
+
 /** French formatting: comma for decimals, and no cents on a round amount. */
 export function formatEuros(cents: number): string {
   return new Intl.NumberFormat("fr-FR", {

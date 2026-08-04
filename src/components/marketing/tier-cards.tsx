@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonClasses } from "@/components/ui/button";
+import { ROUTES } from "@/lib/auth/routes";
 import { cn } from "@/lib/cn";
 import { formatEuros, type RegistrationTier } from "@/lib/registration/tiers";
 
@@ -64,14 +67,18 @@ function TierCard({ tier }: { tier: RegistrationTier }) {
         ))}
       </ul>
 
-      <Button
-        variant={tier.featured ? "secondary" : "ghost"}
-        size="lg"
-        disabled
-        className="mt-6 w-full"
+      {/* A link, not a button: this navigates. Middle-click and "open in a
+          new tab" work, which they would not inside a `<button>`. */}
+      <Link
+        href={`${ROUTES.participate}/${tier.slug}`}
+        className={buttonClasses({
+          variant: tier.featured ? "secondary" : "ghost",
+          size: "lg",
+          className: "mt-6 w-full",
+        })}
       >
-        Bientôt disponible
-      </Button>
+        Choisir ce niveau
+      </Link>
     </li>
   );
 }

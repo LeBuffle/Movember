@@ -10,7 +10,13 @@
  */
 
 /** Requires a signed-in user. */
-export const PARTICIPANT_PREFIXES = ["/mon-compte", "/jeu"] as const;
+export const PARTICIPANT_PREFIXES = [
+  "/mon-compte",
+  "/jeu",
+  /* Choosing a tier and accepting the terms. Protected because it records an
+     acceptance under someone's name — that requires knowing whose. */
+  "/participer",
+] as const;
 
 /** Requires a signed-in user whose role is `admin`. */
 export const ADMIN_PREFIXES = ["/admin"] as const;
@@ -28,6 +34,7 @@ export const ROUTES = {
   forgotPassword: "/mot-de-passe-oublie",
   newPassword: "/nouveau-mot-de-passe",
   account: "/mon-compte",
+  participate: "/participer",
   home: "/",
 } as const;
 

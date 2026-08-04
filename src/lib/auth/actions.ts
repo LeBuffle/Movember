@@ -45,6 +45,13 @@ export async function signUp(
     return { errors: fieldErrors(parsed.error) };
   }
 
+  // Where to land after confirming. Relative paths only — `safeNext` is the
+  // same check the sign-in flow uses, and it is what stops a crafted link
+  // turning our confirmation e-mail into a redirect to someone else's site.
+  const next = safeNext(formData.get("suite"));
+  const confirmation = new URL(`${siteUrl()}/auth/confirmation`);
+  if (next !== ROUTES.account) confirmation.searchParams.set("next", next);
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -52,7 +59,7 @@ export async function signUp(
     options: {
       // Picked up by the `handle_new_user` trigger to fill `profiles`.
       data: { display_name: parsed.data.displayName },
-      emailRedirectTo: `${siteUrl()}/auth/confirmation`,
+      emailRedirectTo: confirmation.toString(),
     },
   });
 
