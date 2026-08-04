@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { InstallState } from "@/components/pwa/install-state";
 import { Alert } from "@/components/ui/alert";
 import { APP_VERSION } from "@/lib/app-version";
 
@@ -37,9 +38,24 @@ export default function Home() {
           </Alert>
         </div>
 
-        <p className="text-ink-muted mt-10 font-mono text-xs">
-          version {APP_VERSION}
-        </p>
+        {/*
+          Diagnostic line, on the home page because that is the ONLY page an
+          installed application can reach: it opens on `start_url` and has no
+          address bar, so anything put anywhere else cannot be looked at from
+          inside the installed app. Which is exactly where it needs to be
+          looked at.
+
+          Story 1.9 replaces this page. It must move this indicator to
+          `/mon-compte` rather than drop it — epic 6 needs a way to answer
+          "is this participant actually installed?" when someone reports
+          never getting a notification.
+        */}
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <p className="text-ink-muted font-mono text-xs">
+            version {APP_VERSION}
+          </p>
+          <InstallState />
+        </div>
       </main>
 
       <SiteFooter />
