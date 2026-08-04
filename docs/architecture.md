@@ -179,7 +179,7 @@ casse en production. **Garder la base chez Supabase est le bon partage :** on pr
 charge ce qui est simple et statique (servir une application web), on délègue ce qui est
 critique et opérationnel (les données).
 
-**Régions :** VPS Hostinger en Europe, Supabase à Francfort (`eu-central-1`). Toutes les
+**Régions :** VPS Hostinger en Europe, Supabase à Paris (`eu-west-3`). Toutes les
 données personnelles restent dans l'Union européenne (NFR10).
 
 ### 2.4 Stack détaillée
@@ -1004,7 +1004,7 @@ explicitement dans la politique de confidentialité.
 
 | Sous-traitant | Rôle | Localisation |
 | --- | --- | --- |
-| Supabase | Base de données, authentification, fichiers | Francfort (UE) |
+| Supabase | Base de données, authentification, fichiers | Paris (France) |
 | Hostinger | Hébergement applicatif (VPS) | Union européenne |
 | Stripe | Paiement | UE (Irlande) |
 | Strava | Source des activités | États-Unis — encadré par le consentement explicite |

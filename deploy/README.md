@@ -114,6 +114,69 @@ bash deploy/scripts/deploy.sh <sha-du-commit> staging
 
 ---
 
+## Renseigner les clés Supabase
+
+Les clés ne sont **jamais** dans le dépôt : elles vivent uniquement dans les fichiers
+d'environnement du serveur.
+
+### Où les trouver
+
+Dans Supabase → **Project Settings → API** :
+
+| Dans Supabase | Variable |
+| --- | --- |
+| Project URL | `NEXT_PUBLIC_SUPABASE_URL` |
+| `anon` / `public` *(ou « Publishable key »)* | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| `service_role` *(ou « Secret key »)* | `SUPABASE_SERVICE_ROLE_KEY` |
+
+> ⚠️ La clé `service_role` **contourne toute la sécurité de la base**. Elle ne doit
+> jamais être exposée au navigateur ni committée. Le code garantit qu'elle n'est utilisée
+> que côté serveur, mais le fichier qui la contient doit rester en `chmod 600`.
+
+### Les renseigner
+
+```bash
+cd /opt/defi-movember/deploy
+nano .env.staging
+```
+
+Quatre lignes à remplir :
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+NEXT_PUBLIC_SITE_URL=https://staging.defi-movember.fr
+```
+
+### Autoriser le navigateur à joindre Supabase
+
+**Étape facile à oublier**, et son symptôme est déroutant : le site s'affiche mais aucune
+donnée ne charge, sans message d'erreur visible. La politique de sécurité de contenu
+bloque par défaut toute connexion sortante non déclarée.
+
+```bash
+nano .env
+```
+
+```
+CSP_CONNECT_SRC=https://xxxxxxxx.supabase.co wss://xxxxxxxx.supabase.co
+```
+
+*(`wss://` sert aux mises à jour en temps réel, utilisées plus tard par les classements.)*
+
+### Appliquer
+
+```bash
+chmod 600 .env .env.staging
+docker compose up -d app-staging
+```
+
+Les fichiers d'environnement sont lus au démarrage du conteneur : un redémarrage suffit,
+sans reconstruire l'image.
+
+---
+
 ## Installation sur le serveur
 
 ```bash
