@@ -58,6 +58,30 @@ const MESSAGES: Array<{ match: RegExp; message: string }> = [
 const FALLBACK =
   "Une erreur est survenue. Réessayez dans un instant — si cela persiste, contactez l’organisation.";
 
+/**
+ * Messages for the failures that happen on an e-mail link, before any form
+ * is submitted.
+ *
+ * `/auth/confirmation` sends the participant back to the sign-in page with a
+ * code in the address when the link cannot be honoured. Without this, that
+ * page rendered an empty form and said nothing — the participant clicked a
+ * link, landed on a login screen, and had no idea why.
+ *
+ * The "wrong browser" case is the one worth wording carefully: it is not a
+ * broken link, and telling someone their link expired when it did not sends
+ * them requesting a new one that will fail the same way.
+ */
+const LINK_ERRORS: Record<string, string> = {
+  "lien-invalide":
+    "Ce lien est incomplet. Ouvrez-le directement depuis l’e-mail plutôt que de le recopier, ou demandez-en un nouveau.",
+  "lien-expire":
+    "Ce lien n’a pas pu être utilisé. Il a peut-être expiré, ou vous l’avez ouvert dans un autre navigateur que celui où vous vous êtes inscrit — dans ce cas, rouvrez-le depuis le même appareil et le même navigateur.",
+};
+
+export function linkErrorMessage(code: string | undefined): string | undefined {
+  return code ? LINK_ERRORS[code] : undefined;
+}
+
 export function authErrorMessage(error: unknown): string {
   const raw =
     typeof error === "string"

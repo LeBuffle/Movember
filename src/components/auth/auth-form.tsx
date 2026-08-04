@@ -52,6 +52,7 @@ export function AuthForm({
   submitLabel,
   fields,
   hiddenFields,
+  notice,
   footer,
 }: {
   title: string;
@@ -60,6 +61,12 @@ export function AuthForm({
   submitLabel: string;
   fields: AuthField[];
   hiddenFields?: Record<string, string>;
+  /**
+   * Something to say before anything has been submitted — typically why an
+   * e-mail link did not work. Distinct from `state.message`, which only
+   * exists once the form has been sent, and replaced by it as soon as it is.
+   */
+  notice?: string;
   footer?: React.ReactNode;
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(action, {});
@@ -71,11 +78,15 @@ export function AuthForm({
       {intro && <p className="text-ink-muted mt-2">{intro}</p>}
 
       {/* Above the fields, not below: a message under the submit button is
-          easily missed on a phone, where the keyboard hides it. */}
-      {state.message && (
+          easily missed on a phone, where the keyboard hides it.
+
+          The submitted result wins over the arrival notice — once someone
+          has tried to sign in, why their e-mail link failed a minute ago is
+          no longer what they need to read. */}
+      {(state.message ?? notice) && (
         <div className="mt-6">
-          <Alert tone={state.success ? "success" : "danger"}>
-            {state.message}
+          <Alert tone={state.message && state.success ? "success" : "danger"}>
+            {state.message ?? notice}
           </Alert>
         </div>
       )}

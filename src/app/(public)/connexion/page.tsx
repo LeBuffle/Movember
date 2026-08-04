@@ -1,5 +1,6 @@
 import { AuthForm, AuthLink } from "@/components/auth/auth-form";
 import { signIn } from "@/lib/auth/actions";
+import { linkErrorMessage } from "@/lib/auth/messages";
 import { ROUTES } from "@/lib/auth/routes";
 
 export const metadata = { title: "Connexion — DEFI Movember" };
@@ -7,15 +8,19 @@ export const metadata = { title: "Connexion — DEFI Movember" };
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ suite?: string }>;
+  searchParams: Promise<{ suite?: string; erreur?: string }>;
 }) {
-  const { suite } = await searchParams;
+  const { suite, erreur } = await searchParams;
 
   return (
     <AuthForm
       title="Connexion"
       action={signIn}
       submitLabel="Se connecter"
+      // `/auth/confirmation` sends people here with a code when an e-mail
+      // link cannot be honoured. Without this the page rendered an empty
+      // form and explained nothing.
+      notice={linkErrorMessage(erreur)}
       // Carries the page the participant was trying to reach, so they land
       // there rather than on a generic page after signing in.
       hiddenFields={{ suite: suite ?? "" }}

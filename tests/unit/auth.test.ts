@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { authErrorMessage } from "@/lib/auth/messages";
+import { authErrorMessage, linkErrorMessage } from "@/lib/auth/messages";
 import { isAuthRoute, requiresAdmin, requiresSession } from "@/lib/auth/routes";
 import { displayNameSchema, passwordSchema } from "@/lib/auth/schemas";
 
@@ -64,6 +67,40 @@ describe("les messages d'erreur ne révèlent pas si un compte existe", () => {
     expect(message).not.toContain("PGRST301");
     expect(message).not.toContain("pg_catalog");
     expect(message).toMatch(/une erreur est survenue/i);
+  });
+});
+
+describe("les liens d’e-mail qui échouent disent pourquoi", () => {
+  it("explique un lien incomplet", () => {
+    expect(linkErrorMessage("lien-invalide")).toMatch(/incomplet/i);
+  });
+
+  it("évoque le mauvais navigateur, pas seulement l’expiration", () => {
+    // Dire « votre lien a expiré » à quelqu'un qui l'a simplement ouvert sur
+    // un autre appareil l'envoie en demander un nouveau, qui échouera pareil.
+    const message = linkErrorMessage("lien-expire");
+
+    expect(message).toMatch(/navigateur/i);
+    expect(message).toMatch(/même appareil/i);
+  });
+
+  it("ne dit rien quand il n’y a rien à dire", () => {
+    expect(linkErrorMessage(undefined)).toBeUndefined();
+    expect(linkErrorMessage("code-inconnu")).toBeUndefined();
+  });
+
+  it("est bien affiché par la page de connexion", () => {
+    // Le défaut corrigé : la route de confirmation renvoyait un code que la
+    // page ignorait, et le participant tombait sur un formulaire muet.
+    const page = readFileSync(
+      path.join(
+        import.meta.dirname,
+        "../../src/app/(public)/connexion/page.tsx",
+      ),
+      "utf8",
+    );
+
+    expect(page).toMatch(/linkErrorMessage\(erreur\)/);
   });
 });
 
