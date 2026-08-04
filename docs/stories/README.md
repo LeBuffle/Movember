@@ -18,7 +18,7 @@
 | 1.4 | [Déploiement en production et retour arrière](1.4.deploiement-production.md) | Draft | 1.3 |
 | 1.5 | [Charte graphique et composants de base](1.5.charte-graphique.md) | **Review** | 1.1 |
 | 1.6 | [Base de données, schéma initial et RLS](1.6.base-de-donnees.md) | **Review** | 1.1 |
-| 1.7 | [Authentification des comptes](1.7.authentification.md) | Draft | 1.6 |
+| 1.7 | [Authentification des comptes](1.7.authentification.md) | **Review** | 1.6 |
 | 1.8 | [PWA installable](1.8.pwa-installable.md) | Draft | 1.1 |
 | 1.9 | [Page d'accueil publique et mentions obligatoires](1.9.page-accueil-publique.md) | Draft | 1.5 |
 | 1.10 | [Coquille du back-office et rôle administrateur](1.10.coquille-back-office.md) | Draft | 1.7 |

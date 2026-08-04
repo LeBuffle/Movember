@@ -80,6 +80,7 @@ export type Database = {
           display_name: string;
           avatar_url: string | null;
         };
+        Relationships: [];
       };
     };
     Functions: {
@@ -89,5 +90,6 @@ export type Database = {
       };
     };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
