@@ -243,6 +243,70 @@ dans `docs/runbook.md` (story 1.11).
 
 ---
 
+## La fenêtre de mot de passe de la préproduction refuse l'accès
+
+C'est un cas où le navigateur n'affiche **aucun message d'erreur** : il repose la même
+question, indéfiniment. Il faut donc chercher la cause ailleurs que dans l'écran.
+
+### 1. Ce que Traefik a réellement reçu
+
+```bash
+cd /opt/defi-movember/deploy
+
+C=$(docker ps -q --filter "label=com.docker.compose.service=app-staging")
+docker inspect "$C" --format '{{index .Config.Labels "traefik.http.middlewares.movember-staging-auth.basicauth.users"}}' \
+| awk '{ if (length($0)==0) print "VIDE";
+         else if (length($0)>=55) print "COMPLET (" length($0) " caracteres)";
+         else print "TRONQUE (" length($0) " caracteres) : " $0 }'
+```
+
+N'affiche pas le mot de passe, seulement un verdict.
+
+| Verdict | Cause | Correction |
+| --- | --- | --- |
+| **TRONQUÉ** | Les `$` n'ont pas été doublés dans `.env` | régénérer avec le `sed` ci-dessous |
+| **VIDE** | `STAGING_BASIC_AUTH` est dans le mauvais fichier | il va dans `deploy/.env`, **pas** dans `.env.staging` |
+| **COMPLET** | Le réglage est bon | passer au point 2 |
+
+Un hash bcrypt fait 60 caractères. `COMPLET (63)` signifie donc un identifiant de deux
+lettres suivi d'un hash entier — la longueur donne au passage la taille de l'identifiant.
+
+### 2. Le mot de passe lui-même, sans passer par le navigateur
+
+Depuis le VPS :
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -u po https://staging.defi-movember.fr/
+```
+
+`curl` demande le mot de passe et ne le laisse pas dans l'historique du shell.
+
+- **200** — les identifiants sont bons. Le problème est dans le navigateur, qui rejoue une
+  mauvaise combinaison mise en cache. Rouvrir en navigation privée.
+- **401** — le mot de passe saisi n'est pas celui qui a été haché. Le plus souvent parce
+  qu'il contenait un `$`, une apostrophe ou une espace et que le shell en a mangé une
+  partie au moment de la génération.
+
+### 3. Repartir d'un mot de passe simple
+
+Plus rapide que de chercher quel caractère a été mangé :
+
+```bash
+cd /opt/defi-movember/deploy
+
+# Uniquement des lettres et des chiffres : aucun caractère que le shell puisse manger.
+docker run --rm httpd:alpine htpasswd -nbB po 'MoustacheBleue2026' | sed -e 's/\$/\$\$/g'
+# → reporter dans deploy/.env, ligne STAGING_BASIC_AUTH
+
+docker compose up -d --force-recreate app-staging
+```
+
+> **`restart` ne suffit pas.** Traefik lit ce mot de passe sur une étiquette posée à la
+> *création* du conteneur. Un `docker compose restart` relance le conteneur sans relire
+> `.env` : on croit avoir corrigé, rien n'a changé, et on cherche ailleurs.
+
+---
+
 ## Points de sécurité
 
 - **Aucun secret dans les images.** Tout est injecté à l'exécution depuis les fichiers
