@@ -3,9 +3,13 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { ResumePayment } from "@/components/registration/resume-payment";
 import { Alert } from "@/components/ui/alert";
 import { ROUTES } from "@/lib/auth/routes";
+import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { resumeCheckout } from "@/lib/registration/actions";
 import { formatEuros, getTierBySlug } from "@/lib/registration/tiers";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Paiement — DEFI Movember",
@@ -15,26 +19,77 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * Placeholder, replaced by the Stripe redirect in story 2.3.
+ * Where Stripe sends the participant back, and where an unfinished
+ * registration waits.
  *
- * It exists rather than being skipped because the choice and the acceptance
- * are already recorded by the time someone arrives here: leaving them on a
- * dead link, or on a payment form that does not exist, would look like a
- * failure. This says plainly where things stand.
+ * **The state shown comes from the database, never from the address bar.**
+ * `?statut=succes` only means Stripe redirected here; it does not mean the
+ * payment cleared, and anyone can type it. What decides is the registration's
+ * status, which only the webhook changes (architecture D5, story 2.4). So a
+ * participant coming back from a successful payment is told the confirmation
+ * is being processed — not that they are registered — until the row says so.
  *
- * Story 2.3 removes this page: the action will redirect straight to Stripe.
+ * The distinction looks pedantic and is not: a page that announces success
+ * before the payment is confirmed is a page that will, one day in November,
+ * congratulate someone whose card was declined.
  */
-export default async function PaymentPendingPage({
+
+type Statut = "succes" | "abandon" | "indisponible" | "echec" | null;
+
+function readStatut(raw: string | string[] | undefined): Statut {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+
+  return value === "succes" ||
+    value === "abandon" ||
+    value === "indisponible" ||
+    value === "echec"
+    ? value
+    : null;
+}
+
+export default async function PaymentReturnPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ niveau: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { niveau } = await params;
-  const tier = await getTierBySlug(niveau);
+  const [{ niveau }, query] = await Promise.all([params, searchParams]);
 
+  const tier = await getTierBySlug(niveau);
   if (!tier) {
     notFound();
   }
+
+  const statut = readStatut(query.statut);
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Read through the participant's own session: row level security is what
+  // guarantees this shows their registration and nobody else's.
+  const { data: edition } = await supabase
+    .from("editions")
+    .select("id")
+    .eq("year", EDITION_YEAR)
+    .maybeSingle();
+
+  let status: string | null = null;
+
+  if (user && edition) {
+    const { data } = await supabase
+      .from("registrations")
+      .select("status")
+      .eq("profile_id", user.id)
+      .eq("edition_id", edition.id)
+      .maybeSingle();
+
+    status = data?.status ?? null;
+  }
+
+  const isActive = status === "active";
 
   return (
     <>
@@ -42,20 +97,22 @@ export default async function PaymentPendingPage({
 
       <main className="mx-auto w-full max-w-2xl px-4 py-12">
         <h1 className="text-ink text-3xl font-bold tracking-tight">
-          Votre choix est enregistré
+          {isActive ? "Votre inscription est confirmée" : "Votre inscription"}
         </h1>
 
         <p className="text-ink-muted mt-3">
           Niveau <strong>{tier.name}</strong>, {formatEuros(tier.priceCents)}.
-          Vos acceptations ont été conservées.
         </p>
 
-        <div className="mt-8">
-          <Alert tone="info" title="Le paiement n’est pas encore ouvert">
-            Les inscriptions ouvriront à la mi-octobre 2026. Vous n’avez rien
-            payé et rien ne vous sera prélevé : vous retrouverez votre choix ici
-            le moment venu.
-          </Alert>
+        <div className="mt-8 space-y-6">
+          {isActive ? (
+            <Alert tone="success" title="Paiement confirmé">
+              Tout est en ordre. Vous recevrez un e-mail récapitulatif, et vous
+              retrouverez votre inscription dans votre espace.
+            </Alert>
+          ) : (
+            <PendingState statut={statut} />
+          )}
         </div>
 
         <p className="mt-8">
@@ -69,6 +126,75 @@ export default async function PaymentPendingPage({
       </main>
 
       <SiteFooter />
+    </>
+  );
+}
+
+/** Everything that is not "paid and confirmed". */
+function PendingState({ statut }: { statut: Statut }) {
+  if (statut === "succes") {
+    return (
+      <>
+        <Alert tone="info" title="Paiement reçu, confirmation en cours">
+          Votre banque a accepté le paiement. La confirmation nous parvient
+          séparément, en quelques secondes. Rechargez cette page dans un instant
+          — et si rien ne change, écrivez-nous : le paiement est enregistré de
+          notre côté, rien n’est perdu.
+        </Alert>
+
+        <p className="text-ink-muted text-sm">
+          Aucune action de votre part n’est nécessaire, et surtout ne payez pas
+          une seconde fois.
+        </p>
+      </>
+    );
+  }
+
+  if (statut === "abandon") {
+    return (
+      <>
+        <Alert tone="warning" title="Paiement interrompu">
+          Rien n’a été prélevé. Votre choix de niveau et vos acceptations sont
+          conservés : vous pouvez reprendre quand vous voulez.
+        </Alert>
+
+        <ResumePayment action={resumeCheckout} />
+      </>
+    );
+  }
+
+  if (statut === "echec") {
+    return (
+      <>
+        <Alert tone="danger" title="La page de paiement n’a pas pu s’ouvrir">
+          Le problème vient de chez nous, pas de vous, et rien n’a été prélevé.
+          Réessayez dans un instant.
+        </Alert>
+
+        <ResumePayment action={resumeCheckout} label="Réessayer" />
+      </>
+    );
+  }
+
+  if (statut === "indisponible") {
+    return (
+      <Alert tone="info" title="Le paiement n’est pas encore ouvert">
+        Les inscriptions ouvriront à la mi-octobre {EDITION_YEAR}. Vous n’avez
+        rien payé et rien ne vous sera prélevé : vous retrouverez votre choix
+        ici le moment venu.
+      </Alert>
+    );
+  }
+
+  return (
+    <>
+      <Alert tone="info" title="Votre choix est enregistré">
+        Il ne reste qu’à régler l’inscription. Le paiement se fait sur les pages
+        sécurisées de Stripe : votre numéro de carte ne passe jamais par notre
+        application.
+      </Alert>
+
+      <ResumePayment action={resumeCheckout} label="Payer mon inscription" />
     </>
   );
 }

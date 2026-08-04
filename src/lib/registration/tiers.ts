@@ -122,6 +122,20 @@ export async function getTierBySlug(
   return tiers.find((tier) => tier.slug === slug) ?? null;
 }
 
+/**
+ * One tier, by identifier — for resuming a payment.
+ *
+ * Stronger than the slug for that purpose: the tier is read from the
+ * registration already recorded, so nothing the browser sends can change
+ * which one is charged. Same refusal contract as above.
+ */
+export async function getTierById(
+  id: string,
+): Promise<RegistrationTier | null> {
+  const tiers = await getRegistrationTiers();
+  return tiers.find((tier) => tier.id === id) ?? null;
+}
+
 /** French formatting: comma for decimals, and no cents on a round amount. */
 export function formatEuros(cents: number): string {
   return new Intl.NumberFormat("fr-FR", {

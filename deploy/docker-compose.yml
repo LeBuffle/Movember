@@ -35,6 +35,14 @@ name: defi-movember
 #
 # Sentry is not in that list on purpose: the browser's error reports go
 # through our own domain, so they need no exception — see deploy/.env.example.
+#
+# `form-action` names Stripe explicitly (story 2.3). Paying is a redirect to
+# `checkout.stripe.com`, and where JavaScript is not running that redirect
+# follows a native form submission — which several browsers check against
+# this directive. Without the exception, payment would work in most browsers
+# and fail silently in the rest, which is the worst way for it to fail.
+# `connect-src` needs nothing: Checkout is hosted on Stripe's own pages, so
+# no Stripe code ever runs in ours (NFR14).
 x-security-headers: &security-headers
   traefik.http.middlewares.movember-security.headers.stsSeconds: "31536000"
   traefik.http.middlewares.movember-security.headers.stsIncludeSubdomains: "true"
@@ -42,7 +50,7 @@ x-security-headers: &security-headers
   traefik.http.middlewares.movember-security.headers.contentTypeNosniff: "true"
   traefik.http.middlewares.movember-security.headers.referrerPolicy: "strict-origin-when-cross-origin"
   traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
-  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
 
 # Log rotation.
 #
