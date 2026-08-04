@@ -15,6 +15,11 @@ export type ProfileRole = "participant" | "admin";
 export type RegistrationStatus =
   "pending" | "active" | "refunded" | "cancelled";
 export type PaymentKind = "registration" | "pack" | "refund";
+export type AssignmentSource = "draw" | "common" | "manual";
+export type AssignmentStatus = "open" | "completed" | "missed";
+
+import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
+import type { Difficulty, SportFamily } from "@/lib/challenges/sports";
 
 /** Collective targets shown on the public page. */
 export type CollectiveGoals = {
@@ -179,6 +184,78 @@ export type Database = {
           fee_cents?: number | null;
           net_cents?: number | null;
         };
+        Relationships: [];
+      };
+      challenges: {
+        Row: {
+          id: string;
+          edition_id: string;
+          title: string;
+          description: string;
+          evaluator: EvaluatorKey;
+          /** Never trusted as-is — see `src/lib/challenges/config.ts`. */
+          config: Record<string, unknown>;
+          sport_family: SportFamily;
+          difficulty: Difficulty;
+          points: number;
+          duration_scope: "day" | "multi_day";
+          duration_days: number | null;
+          reward_rules: Record<string, unknown>;
+          is_active: boolean;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          title: string;
+          description?: string;
+          evaluator: EvaluatorKey;
+          config?: Record<string, unknown>;
+          sport_family?: SportFamily;
+          difficulty?: Difficulty;
+          points?: number;
+          duration_scope?: "day" | "multi_day";
+          duration_days?: number | null;
+          reward_rules?: Record<string, unknown>;
+          is_active?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["challenges"]["Insert"]>;
+        Relationships: [];
+      };
+      challenge_assignments: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          challenge_id: string;
+          assigned_for: string;
+          source: AssignmentSource;
+          status: AssignmentStatus;
+          completed_at: string | null;
+          /** Snapshot taken at completion — the catalogue's value can move. */
+          points_awarded: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          challenge_id: string;
+          assigned_for: string;
+          source?: AssignmentSource;
+          status?: AssignmentStatus;
+          completed_at?: string | null;
+          points_awarded?: number | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["challenge_assignments"]["Insert"]
+        >;
         Relationships: [];
       };
       admin_audit_log: {

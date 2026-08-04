@@ -93,7 +93,7 @@ les trois branches sont indépendantes.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 4.1 | [Schéma du catalogue et validation des configurations](4.1.schema-catalogue-defis.md) | Draft | 1.6 |
+| 4.1 | [Schéma du catalogue et validation des configurations](4.1.schema-catalogue-defis.md) | **Review** | 1.6 |
 | 4.2 | [Création et modification d'un défi depuis le back-office](4.2.back-office-catalogue.md) | Draft | 4.1, 1.10 |
 | 4.3 | [**Premier évaluateur de bout en bout : distance**](4.3.premier-evaluateur-distance.md) | Draft | 4.1 |
 | 4.4 | [Attribution quotidienne individuelle](4.4.attribution-quotidienne.md) | Draft | 4.1, 1.4 |
