@@ -152,4 +152,31 @@ for img in "${old_images[@]:-}"; do
 done
 ok "${KEEP_IMAGES} images les plus récentes conservées"
 
+# --- Scheduled tasks ------------------------------------------------------
+#
+# Installed from the repository, on production deployments only, replacing
+# whatever was there. That is deliberate: a task added by hand on the server
+# would vanish at the next deployment without anyone noticing, and a task
+# removed from the repository would keep running for months. Installing it
+# every time is what keeps the server and `deploy/crontab` in agreement.
+#
+# Staging is left alone — it has no business running scheduled tasks against
+# a database it shares with production.
+if [[ "$ENVIRONMENT" == "production" ]]; then
+  info "Installation des tâches planifiées"
+
+  if [[ -f "$APP_DIR/deploy/crontab" ]]; then
+    if crontab "$APP_DIR/deploy/crontab"; then
+      ok "$(crontab -l 2>/dev/null | grep -cE '^[^#[:space:]]' || echo 0) tâches installées"
+    else
+      # Not fatal: the application is deployed and serving. Scheduled tasks
+      # matter from epic 4 onwards, and failing the whole deployment over
+      # them would be the wrong trade — but it must be said loudly.
+      printf '  \033[1;31m✗\033[0m Le crontab n'"'"'a pas pu être installé. Les tâches planifiées ne tourneront pas.\n' >&2
+    fi
+  else
+    echo "  deploy/crontab est absent — aucune tâche planifiée installée." >&2
+  fi
+fi
+
 printf '\n\033[1;32m✓ Déploiement %s réussi — %s\033[0m\n\n' "$ENVIRONMENT" "$SHORT_SHA"

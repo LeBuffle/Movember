@@ -10,8 +10,9 @@ versionnés : le serveur ne doit jamais porter de configuration qui n'existe pas
 | `docker-compose.yml` | Pile de services : production, préproduction, worker — branchés sur le Traefik du VPS |
 | `.env.example` | Variables d'infrastructure — modèle, sans valeurs |
 | `scripts/bootstrap-vps.sh` | Préparation initiale du serveur, à lancer une fois |
-| `crontab` | Tâches planifiées *(story 1.4)* |
-| `scripts/deploy.sh` | Déploiement et retour arrière *(stories 1.3 et 1.4)* |
+| `crontab` | Tâches planifiées — **installé depuis le dépôt à chaque déploiement en production** |
+| `scripts/deploy.sh` | Déploiement, avec retour arrière automatique si le conteneur ne démarre pas |
+| `scripts/rollback.sh` | Retour arrière manuel, en une commande *(story 1.4)* |
 | `scripts/check-resources.sh` | Alerte disque et mémoire, lancée par cron *(story 1.11)* |
 | [`../docs/runbook.md`](../docs/runbook.md) | **Que faire quand ça ne va pas — à garder sous la main** |
 
@@ -113,6 +114,84 @@ préproduction**. Pour lancer un déploiement à la main :
 ```bash
 bash deploy/scripts/deploy.sh <sha-du-commit> staging
 ```
+
+---
+
+## Mettre la production en ligne
+
+À faire une fois, quand le domaine est prêt.
+
+### 1. Les enregistrements DNS
+
+Deux entrées de type **A**, pointant sur l'adresse IP du VPS :
+
+| Nom | Valeur |
+| --- | --- |
+| `@` | adresse IP du VPS |
+| `www` | adresse IP du VPS |
+
+`www` est servi et redirigé en permanence vers le domaine nu, pour qu'une seule adresse
+soit partagée et indexée. **Les deux doivent résoudre avant le premier démarrage** :
+Traefik ne peut pas obtenir de certificat pour un nom qui ne pointe nulle part.
+
+Pour vérifier depuis le VPS :
+
+```bash
+dig +short defi-movember.fr www.defi-movember.fr
+```
+
+Les deux lignes doivent afficher l'adresse IP du serveur.
+
+### 2. Les variables applicatives
+
+```bash
+cd /opt/defi-movember/deploy
+nano .env.production
+```
+
+Comme pour la préproduction, avec deux différences qui comptent :
+
+```
+NEXT_PUBLIC_SITE_URL=https://defi-movember.fr
+CRON_SECRET=<une longue chaîne aléatoire>
+```
+
+Pour engendrer le secret des tâches planifiées :
+
+```bash
+openssl rand -base64 32
+```
+
+> `CRON_SECRET` est **tout ce qui sépare les routes planifiées de l'internet ouvert**.
+> À partir de l'epic 4 elles distribuent les défis du jour et tirent les cartes. Un secret
+> court ou deviné, et n'importe qui peut les déclencher : l'application refuse d'ailleurs
+> de fonctionner avec un secret de moins de seize caractères.
+
+### 3. Les secrets GitHub
+
+Le déploiement en production applique les migrations depuis GitHub Actions, avant de
+toucher aux conteneurs. Il lui faut donc un accès à la base :
+
+| Secret | Où le trouver |
+| --- | --- |
+| `SUPABASE_DB_URL` | Supabase → Project Settings → Database → Connection string (URI) |
+
+> Cette chaîne contient le mot de passe de la base. Elle va dans les **secrets GitHub**,
+> jamais dans le dépôt ni dans un fichier du serveur.
+
+### 4. Déclarer le domaine à Supabase
+
+**Authentication → URL Configuration**, ajouter `https://defi-movember.fr/**` aux
+*Redirect URLs*. Sans cela, les liens de confirmation envoyés depuis la production
+retomberont sur l'adresse de la préproduction.
+
+### 5. Démarrer
+
+```bash
+docker compose up -d app
+```
+
+Puis, une fois `main` fusionnée, chaque fusion déploie la production automatiquement.
 
 ---
 

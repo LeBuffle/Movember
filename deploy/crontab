@@ -1,0 +1,46 @@
+# DEFI Movember — scheduled tasks
+#
+# INSTALLED BY `deploy/scripts/deploy.sh`, on every production deployment.
+# It replaces the `deploy` user's crontab wholesale, which is the point: a
+# task added by hand on the server would vanish at the next deployment
+# without anyone noticing, and a task removed from this file would keep
+# running for months. Either way the server and the repository would disagree
+# about what is running — and the repository would be wrong.
+#
+# **Therefore: never edit the crontab on the server. Edit this file.**
+#
+# To see what is actually installed:  crontab -l
+# To install it by hand:              crontab /opt/defi-movember/deploy/crontab
+#
+# Times are in the server's timezone. Check it with `timedatectl` — a task
+# meant for 6 in the morning that runs at 4 because the server is on UTC is a
+# classic, and in November it means a challenge handed out while everyone is
+# asleep.
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# The secret is read from the environment file at call time, never written
+# here: this file is versioned in a public repository.
+# ---------------------------------------------------------------------------
+
+# Disk and memory watch (story 1.11). Every ten minutes.
+*/10 * * * * bash /opt/defi-movember/deploy/scripts/check-resources.sh >> /var/log/defi-movember-resources.log 2>&1
+
+# Proof that the mechanism works (story 1.4). Once a day, at 5:07.
+#
+# Not on the hour, and not at midnight: everything on the internet fires at
+# round o'clock, and a task that shares its minute with thousands of others
+# is a task that times out for reasons of its own.
+#
+# It does nothing but answer. Its value is diagnostic — when a real scheduled
+# task stops running in November, this line says whether cron reaches the
+# application at all, which separates "the plumbing is broken" from "the task
+# is broken".
+7 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 30 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/ping >> /var/log/defi-movember-cron.log 2>&1
+
+# Business tasks arrive with their epics:
+#   - daily challenge assignment .......... epic 4
+#   - Strava catch-up ..................... epic 3
+#   - leaderboard refresh ................. epic 7
+#   - backups ............................. epic 11

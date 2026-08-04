@@ -163,19 +163,26 @@ docker images defi-movember --format '{{.Tag}}\t{{.CreatedSince}}'
 Les trois dernières sont conservées. Repérez celle d'avant l'incident — son étiquette
 finit par le début du numéro de commit.
 
-**Revenir dessus :**
+**Revenir dessus — une commande :**
 
 ```bash
-cd /opt/defi-movember/deploy
-APP_IMAGE=defi-movember:production-XXXXXXX docker compose up -d --force-recreate app
+bash /opt/defi-movember/deploy/scripts/rollback.sh production
 ```
 
-*(remplacez `XXXXXXX` par l'étiquette repérée)*
+Le script liste les versions disponibles, marque celle en service, choisit la précédente,
+demande confirmation, bascule, et attend que le site réponde. S'il ne redémarre pas non
+plus, il vous le dit et vous propose de remonter encore d'un cran :
+
+```bash
+bash /opt/defi-movember/deploy/scripts/rollback.sh production production-XXXXXXX
+```
+
+*(remplacez `XXXXXXX` par l'étiquette repérée dans la liste)*
 
 **Vérifier :**
 
 ```bash
-sleep 30 && curl -s https://defi-movember.fr/api/health | head -c 200
+curl -s https://defi-movember.fr/api/health | head -c 200
 ```
 
 La version affichée doit être celle d'avant.
@@ -329,16 +336,22 @@ les cinq minutes et prévient par e-mail et SMS. À configurer sur un service gr
 | Alerte si | code différent de 200 |
 
 **Alertes disque et mémoire** — un script tourne toutes les dix minutes sur le serveur.
-Pour l'installer :
+
+> **N'éditez jamais le crontab sur le serveur.** Il est réinstallé depuis
+> `deploy/crontab` à chaque déploiement en production : une ligne ajoutée à la main
+> disparaîtrait au déploiement suivant, sans que personne s'en aperçoive. Les tâches
+> planifiées se modifient dans le dépôt, pas sur la machine.
+
+Pour voir ce qui est réellement installé :
 
 ```bash
-crontab -e
+crontab -l
 ```
 
-Ajoutez cette ligne à la fin :
+Si la liste est vide — parce qu'aucun déploiement en production n'a encore eu lieu :
 
-```
-*/10 * * * * bash /opt/defi-movember/deploy/scripts/check-resources.sh >> /var/log/defi-movember-resources.log 2>&1
+```bash
+crontab /opt/defi-movember/deploy/crontab
 ```
 
 Pour l'essayer tout de suite, sans rien envoyer :
@@ -392,11 +405,12 @@ avec ces lots.
 | §2 Lire les journaux | à faire par le PO |
 | §3 Redémarrer | à faire par le PO |
 | §4 Boucle de redémarrage | non — demande de provoquer une panne |
-| §5 Revenir en arrière | testé automatiquement par le script de déploiement, pas à la main |
+| §5 Revenir en arrière | oui — `rollback.sh` vérifié sur ses trois chemins : choix automatique, étiquette explicite, refus quand il n'y a rien à rétablir |
 | §6 Base injoignable | oui, le mode dégradé du contrôle de santé est testé |
 | §7 Variable manquante | oui, les commandes sont vérifiées |
 | §9 Disque plein | commandes vérifiées, situation non provoquée |
 | §11 Script d'alertes | oui, exécuté avec seuils abaissés et webhook réel |
+| §11 Tâches planifiées | fichier versionné et installé par le déploiement ; **l'appel réel reste à vérifier par le PO** |
 
 > **Une procédure écrite mais jamais exécutée est une procédure fausse.** Les lignes
 > marquées « à faire par le PO » doivent être passées au moins une fois, calmement, avant

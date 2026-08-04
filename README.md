@@ -14,8 +14,11 @@ thème sport / moustache.
 
 Phase 5 — développement en cours. Brief, PRD, Architecture et Sprint 0 sont validés.
 
-Epic 1 (Fondations et squelette déployable) : toutes les stories sont en revue sauf
-1.4 (déploiement en production), qui attend un feu vert.
+**Epic 1 (Fondations et squelette déployable) : les onze stories sont en revue.**
+
+La production n'est pas en ligne : elle se déclenche par une fusion dans `main`, et
+c'est une décision, pas un effet de bord. Les étapes préalables sont dans
+[`deploy/README.md`](deploy/README.md).
 
 ## Démarrage rapide
 
