@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AccountForm } from "@/components/auth/account-form";
@@ -75,7 +76,21 @@ export default async function AccountPage() {
         {profile?.role === "admin" && (
           <Card accent>
             <CardTitle>Compte administrateur</CardTitle>
-            <CardBody>Vous avez accès au back-office d’animation.</CardBody>
+            <CardBody>
+              <p>Vous avez accès au back-office d’animation.</p>
+              {/* The only link to /admin in the whole interface. Hiding it
+                  from other participants is a courtesy, not a protection —
+                  the layout, the middleware and the database each refuse the
+                  access on their own. */}
+              <p className="mt-3">
+                <Link
+                  href="/admin"
+                  className="text-brand-blue underline underline-offset-4"
+                >
+                  Ouvrir le back-office
+                </Link>
+              </p>
+            </CardBody>
           </Card>
         )}
       </main>

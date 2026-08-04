@@ -71,6 +71,30 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
       };
+      admin_audit_log: {
+        Row: {
+          id: string;
+          admin_id: string;
+          action: string;
+          target_table: string | null;
+          target_id: string | null;
+          payload: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          action: string;
+          target_table?: string | null;
+          target_id?: string | null;
+          payload?: Record<string, unknown>;
+          created_at?: string;
+        };
+        /* No Update type on purpose: the table is append-only and carries no
+           update or delete policy. Declaring one would suggest otherwise. */
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       /** Pseudonym and avatar only — see the migration for why. */

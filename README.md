@@ -15,7 +15,7 @@ thème sport / moustache.
 Phase 5 — développement en cours. Brief, PRD, Architecture et Sprint 0 sont validés.
 
 Epic 1 (Fondations et squelette déployable) : stories 1.1, 1.2, 1.3, 1.5, 1.6, 1.7,
-1.8 et 1.9 en revue. Restent 1.4, 1.10 et 1.11.
+1.8, 1.9 et 1.10 en revue. Restent 1.4 et 1.11.
 
 ## Démarrage rapide
 

@@ -7,10 +7,41 @@
 -- Deliberately contains NO user account: accounts are created through the
 -- signup flow, which is what fires the profile trigger. Inserting one here
 -- would produce a profile the real flow never creates, and hide a bug.
---
--- To promote yourself to admin, sign up through the app first, then:
---   update public.profiles set role = 'admin' where email = 'votre@email.fr';
 -- =========================================================================
+
+
+-- -------------------------------------------------------------------------
+-- Creating an administrator (story 1.10, AC 8)
+--
+-- Two steps, and the first one cannot be skipped:
+--
+--   1. Sign up through the application, at /inscription, and confirm the
+--      e-mail. This is what creates the row in `profiles`.
+--   2. Run the statement below with that address.
+--
+-- Why not create the account here. An account lives in Supabase's own
+-- `auth.users`, whose columns are internal and change between versions.
+-- Writing into it from a seed would mean shipping a known password in the
+-- repository and bypassing the trigger that fills `profiles` — the very
+-- trigger a demonstration data set should be exercising. The two-step
+-- procedure is slower once and correct always.
+--
+-- Uncomment, replace the address, run:
+--
+--   update public.profiles
+--      set role = 'admin'
+--    where email = 'votre@email.fr';
+--
+-- To check who is an administrator:
+--
+--   select display_name, email from public.profiles where role = 'admin';
+--
+-- To take the role back:
+--
+--   update public.profiles
+--      set role = 'participant'
+--    where email = 'votre@email.fr';
+-- -------------------------------------------------------------------------
 
 insert into public.editions (
   year,

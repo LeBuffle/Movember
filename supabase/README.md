@@ -32,7 +32,16 @@ Pour une première mise en place, ou une correction ponctuelle :
 1. Ouvrir le projet Supabase → **SQL Editor** → **New query**
 2. Copier tout le contenu de `migrations/20260803000000_initial_schema.sql`
 3. Cliquer sur **Run**
-4. Répéter avec `seed.sql`
+4. Répéter avec **chaque migration suivante, dans l'ordre du nom de fichier** —
+   les noms commencent par une date pour cette raison
+5. Répéter avec `seed.sql`
+
+À ce jour, dans l'ordre :
+
+| Fichier | Apporte |
+| --- | --- |
+| `20260803000000_initial_schema.sql` | `editions`, `profiles`, la vue publique, les règles d'accès |
+| `20260804000000_admin_audit_log.sql` | `admin_audit_log` — le journal des actions du back-office |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 
@@ -56,6 +65,16 @@ pour que l'édition 2027 se lance en insérant des données plutôt qu'en redév
 **`profiles`** — le profil de jeu, un par compte. Volontairement minimal : moins cette
 table contient de données personnelles, moins il y a à protéger. Le **pseudonyme** y
 remplace le nom civil, parce que les classements sont publics.
+
+**`admin_audit_log`** — le journal des actions du back-office. Rien n'y écrit encore :
+les écrans arrivent avec les lots 4, 5, 6 et 9. La table existe déjà pour que chacun d'eux
+la trouve prête plutôt que d'en inventer une.
+
+> **Elle est en écriture seule, et c'est tout l'intérêt.** Aucune règle de modification ni
+> de suppression n'existe — pas même pour un administrateur. Un journal que l'on peut
+> corriger après coup ne vaut rien le jour où quelqu'un demande pourquoi un défi a été
+> annulé ou un participant remboursé. Et la règle d'insertion impose d'écrire **sous son
+> propre nom** : il n'y a aucun moyen d'attribuer une action à quelqu'un d'autre.
 
 **`public_profiles`** — une vue exposant **uniquement** l'identifiant, le pseudonyme et
 l'avatar.
@@ -92,3 +111,13 @@ Inscrivez-vous par l'application, puis dans le **SQL Editor** :
 ```sql
 update public.profiles set role = 'admin' where email = 'votre@email.fr';
 ```
+
+Pour vérifier :
+
+```sql
+select display_name, email from public.profiles where role = 'admin';
+```
+
+Le back-office s'ouvre ensuite depuis **Mon compte**, ou directement sur `/admin`. Un
+compte sans ce rôle reçoit une page « cette page n'existe pas » — le refus ne dit pas ce
+qu'il refuse.
