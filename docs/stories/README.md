@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epic 1 détaillé · epics 2 à 11 à détailler au fil de l'avancement |
+| **Statut** | Epics 1 et 2 détaillés · epics 3 à 11 à détailler au fil de l'avancement |
 
 ---
 
@@ -47,6 +47,45 @@ l'ordre qui arrange.
 | Accès au VPS (adresse, utilisateur, clé SSH) | 1.3, 1.4, 1.11 | 1.1, 1.2, 1.5, 1.6, 1.7, 1.8 se mènent sans |
 | Nom de domaine | 1.3 (partiellement) | Déployer sur l'adresse IP, brancher le domaine ensuite |
 | Projet Supabase | 1.6 et suivantes | Aucun — à créer en premier, c'est gratuit et immédiat |
+
+---
+
+## Epic 2 : Inscription payante
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 2.1 | [Schéma des inscriptions et des paiements](2.1.schema-inscriptions-paiements.md) | Draft | 1.6 |
+| 2.2 | [Parcours de choix du niveau](2.2.parcours-choix-niveau.md) | Draft | 2.1, 1.9 |
+| 2.3 | [Création de la session de paiement Stripe](2.3.session-paiement-stripe.md) | Draft | 2.2 |
+| 2.4 | [Webhook de paiement et activation du participant](2.4.webhook-activation.md) | Draft | 2.3 |
+| 2.5 | [Page de confirmation et e-mail de bienvenue](2.5.confirmation-et-bienvenue.md) | Draft | 2.4 |
+| 2.6 | [Ligne comptable avec les frais réels](2.6.ligne-comptable-frais-reels.md) | Draft | 2.4 |
+| 2.7 | [Adresse de livraison des contreparties](2.7.adresse-de-livraison.md) | Draft | 2.4 |
+| 2.8 | [Remboursement depuis le back-office](2.8.remboursement.md) | Draft | 2.6, 1.10 |
+
+### Ordre d'exécution
+
+```
+2.1 ──► 2.2 ──► 2.3 ──► 2.4 ──┬──► 2.5
+                               ├──► 2.6 ──► 2.8
+                               └──► 2.7
+```
+
+Strictement séquentielles jusqu'à 2.4 : chacune a besoin de la précédente. À partir de là,
+les trois branches sont indépendantes.
+
+### Ce qui bloque quoi
+
+| Prérequis externe | Bloque | Contournement |
+| --- | --- | --- |
+| **Compte Stripe** *(même non validé)* | 2.3 et suivantes | **2.1 et 2.2 se mènent sans**. Le mode test suffit pour tout l'epic ; seul le basculement en réel demande un compte validé |
+| Service d'envoi d'e-mails (Resend) | 2.5 | Le reste de l'epic fonctionne sans |
+| Devis de la médaille | aucun | Les montants sont en base : les changer ne demande aucun développement, et les paiements déjà encaissés ne bougent pas |
+
+> **Le compte Stripe est le seul vrai point de passage.** Créer un compte prend quelques
+> minutes et donne immédiatement des clés de test ; la validation par Stripe — qui demande
+> les pièces de l'association — n'est nécessaire que pour encaisser réellement, donc en
+> octobre.
 
 ---
 
