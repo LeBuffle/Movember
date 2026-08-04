@@ -22,7 +22,7 @@
 | 1.8 | [PWA installable](1.8.pwa-installable.md) | **Review** | 1.1 |
 | 1.9 | [Page d'accueil publique et mentions obligatoires](1.9.page-accueil-publique.md) | **Review** | 1.5 |
 | 1.10 | [Coquille du back-office et rôle administrateur](1.10.coquille-back-office.md) | **Review** | 1.7 |
-| 1.11 | [Supervision, alertes et procédure d'exploitation](1.11.supervision-runbook.md) | Draft | 1.4 |
+| 1.11 | [Supervision, alertes et procédure d'exploitation](1.11.supervision-runbook.md) | **Review** | 1.4 |
 
 ### Ordre d'exécution recommandé
 

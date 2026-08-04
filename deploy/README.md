@@ -12,6 +12,8 @@ versionnés : le serveur ne doit jamais porter de configuration qui n'existe pas
 | `scripts/bootstrap-vps.sh` | Préparation initiale du serveur, à lancer une fois |
 | `crontab` | Tâches planifiées *(story 1.4)* |
 | `scripts/deploy.sh` | Déploiement et retour arrière *(stories 1.3 et 1.4)* |
+| `scripts/check-resources.sh` | Alerte disque et mémoire, lancée par cron *(story 1.11)* |
+| [`../docs/runbook.md`](../docs/runbook.md) | **Que faire quand ça ne va pas — à garder sous la main** |
 
 ---
 
@@ -240,6 +242,30 @@ docker compose pull && docker compose up -d   # appliquer une nouvelle image
 
 La procédure complète d'exploitation — redémarrer, restaurer, revenir en arrière — sera
 dans `docs/runbook.md` (story 1.11).
+
+---
+
+## Limite connue : l'application installée et le mot de passe de la préproduction
+
+Sur iPhone, une application ajoutée à l'écran d'accueil s'exécute dans un espace de
+stockage **séparé de Safari**. Les identifiants saisis dans le navigateur n'y sont pas, et
+une application en plein écran n'a plus de barre de navigateur pour les redemander : elle
+affiche `401 Unauthorized` et s'arrête là.
+
+**Le mot de passe HTTP et une application installée sont donc incompatibles.** Ce n'est
+pas un défaut de l'application : c'est une conséquence de la façon dont iOS cloisonne les
+applications web.
+
+Conséquence pratique : **la vérification de l'application installée ne peut pas se faire
+sur la préproduction** tant qu'elle est protégée ainsi. Décision du PO le 2026-08-04 :
+on laisse en l'état et la vérification se fera sur la production (story 1.4). Les deux
+autres options, si l'on revient dessus :
+
+- remplacer le mot de passe du serveur par une page d'entrée dans l'application, avec un
+  code retenu par un cookie — fonctionne dans l'application installée, mais déplace la
+  protection du serveur vers notre code ;
+- retirer le mot de passe, en gardant l'en-tête qui interdit l'indexation — immédiat, mais
+  la préproduction devient accessible à qui connaît l'adresse.
 
 ---
 

@@ -14,8 +14,8 @@ thème sport / moustache.
 
 Phase 5 — développement en cours. Brief, PRD, Architecture et Sprint 0 sont validés.
 
-Epic 1 (Fondations et squelette déployable) : stories 1.1, 1.2, 1.3, 1.5, 1.6, 1.7,
-1.8, 1.9 et 1.10 en revue. Restent 1.4 et 1.11.
+Epic 1 (Fondations et squelette déployable) : toutes les stories sont en revue sauf
+1.4 (déploiement en production), qui attend un feu vert.
 
 ## Démarrage rapide
 
@@ -92,8 +92,17 @@ node scripts/generate-icons.mjs
 
 ## Point de santé
 
-`GET /api/health` renvoie l'état de l'application, sa version et l'horodatage. Il est
-consommé par le contrôle de santé Docker, la chaîne de déploiement et la supervision.
+Deux modes, et la distinction compte :
+
+| Adresse | Répond à la question | Utilisé par |
+| --- | --- | --- |
+| `GET /api/health` | ce processus répond-il ? | contrôle Docker, chaîne de déploiement |
+| `GET /api/health?deep=1` | l'application fonctionne-t-elle, base comprise ? | surveillance externe |
+
+Le contrôle Docker n'interroge **pas** la base, volontairement. Supabase ne nous
+appartient pas : une panne de leur côté ferait déclarer notre conteneur en mauvaise santé,
+et le script de déploiement annulerait un code parfaitement bon au profit d'une version
+tout aussi incapable de joindre Supabase.
 
 ## Exécution conteneurisée
 
@@ -124,6 +133,7 @@ variables. Voir [`CLAUDE.md`](CLAUDE.md) §9.
 | Epics | [`docs/epics/`](docs/epics/) | ✅ validés |
 | Stories | [`docs/stories/`](docs/stories/) | Epic 1 détaillé |
 | Plan de démarrage | [`docs/plan-demarrage-dev.md`](docs/plan-demarrage-dev.md) | ✅ validé |
+| Runbook d'exploitation | [`docs/runbook.md`](docs/runbook.md) | à éprouver par le PO |
 
 Les conventions de travail (stack, branches, commits, charte graphique) sont décrites
 dans [`CLAUDE.md`](CLAUDE.md).

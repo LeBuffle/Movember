@@ -31,7 +31,10 @@ name: defi-movember
 # review (story 11.8) — doing it blind here would break hydration.
 #
 # CSP_CONNECT_SRC widens `connect-src` as integrations land:
-#   Supabase (story 1.6), Stripe (epic 2), Sentry (story 1.11).
+#   Supabase (story 1.6), Stripe (epic 2).
+#
+# Sentry is not in that list on purpose: the browser's error reports go
+# through our own domain, so they need no exception — see deploy/.env.example.
 x-security-headers: &security-headers
   traefik.http.middlewares.movember-security.headers.stsSeconds: "31536000"
   traefik.http.middlewares.movember-security.headers.stsIncludeSubdomains: "true"
@@ -41,6 +44,28 @@ x-security-headers: &security-headers
   traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
   traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
+# Log rotation.
+#
+# Docker's default `json-file` driver has NO size limit. A container that
+# logs steadily fills the disk until nothing can be written any more — and
+# the first symptom is not "the logs are large", it is the site refusing
+# requests for reasons that make no sense. On a 12 GB VPS during a month-long
+# operation, this is not a hypothetical.
+#
+# 10 MB × 3 files per container caps the whole stack at 90 MB, and still
+# holds enough history to investigate an incident from the night before.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Liveness only — see `src/app/api/health/route.ts`.
+#
+# Deliberately NOT the deep check: Supabase is not ours, and an outage on
+# their side would make this container report unhealthy. The deployment
+# script would then roll back perfectly good code to a version just as unable
+# to reach Supabase. The deep check is what the external monitor watches.
 x-healthcheck: &healthcheck
   test:
     [
@@ -71,6 +96,7 @@ services:
     environment:
       APP_ENVIRONMENT: production
     healthcheck: *healthcheck
+    logging: *logging
     # No memory limit yet, on purpose: the app has never run under real load,
     # so any ceiling set today would be a guess. A guessed limit is worse than
     # none — it can kill a healthy container without warning. It gets measured
@@ -109,6 +135,7 @@ services:
     environment:
       APP_ENVIRONMENT: staging
     healthcheck: *healthcheck
+    logging: *logging
     networks:
       - proxy
     labels:
@@ -161,6 +188,7 @@ services:
       - .env.production
     environment:
       APP_ENVIRONMENT: production
+    logging: *logging
     labels:
       traefik.enable: "false"
     # Placeholder entry point, replaced in epic 3 by the queue runner.

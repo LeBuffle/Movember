@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 
@@ -20,6 +21,30 @@ const nextConfig: NextConfig = {
    * reverse proxy is bypassed.
    */
   poweredByHeader: false,
+
+  /**
+   * Removes the parts of the error reporter we do not use.
+   *
+   * Sentry ships performance tracing and a debug logger in the same bundle
+   * as error reporting. Both are dead weight here — tracing is off
+   * (`tracesSampleRate: 0`) and the logger only speaks in development — but
+   * they are only actually dropped when these flags are defined, because
+   * they sit behind runtime checks the bundler cannot otherwise resolve.
+   *
+   * This matters on the participant side: the application is opened on a
+   * phone, often on a poor connection, sometimes mid-run. Every kilobyte
+   * here is paid by someone standing in the cold.
+   */
+  webpack: (config, { webpack }) => {
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        __SENTRY_DEBUG__: false,
+        __SENTRY_TRACING__: false,
+      }),
+    );
+
+    return config;
+  },
 };
 
 /**
@@ -53,4 +78,31 @@ const withSerwist = withSerwistInit({
   ],
 });
 
-export default withSerwist(nextConfig);
+/**
+ * Error reporting (story 1.11).
+ *
+ * Wraps the configuration last, so it sees the final result — including what
+ * Serwist adds. Nothing is sent without `NEXT_PUBLIC_SENTRY_DSN`; the
+ * wrapper is inert on its own.
+ */
+export default withSentryConfig(withSerwist(nextConfig), {
+  /* Source map upload, which is what turns a minified stack trace into a
+     line of our code. It only happens when a token is present, so a build
+     without one still succeeds — which is every local build and, until the
+     account exists, every deployment too. */
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  /* Maps are uploaded to Sentry, then deleted from the image. Leaving them
+     served publicly would hand our whole source to anyone asking for it. */
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+
+  /* Routes the browser's reports through our own domain, so an ad blocker
+     does not silently swallow them — which would leave us believing there
+     are no client-side errors. */
+  tunnelRoute: "/monitoring",
+
+  disableLogger: true,
+});
