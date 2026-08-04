@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import manifest from "@/app/manifest";
+import { appManifest } from "@/lib/pwa/manifest";
 import { BACKGROUND_COLOR, THEME_COLOR } from "@/lib/brand";
 import {
   CACHEABLE_PREFIXES,
@@ -124,7 +124,7 @@ describe("la page hors ligne", () => {
  * ====================================================================== */
 
 describe("manifeste de l’application", () => {
-  const generated = manifest();
+  const generated = appManifest;
 
   it("s’ouvre sans barre d’adresse une fois installé", () => {
     expect(generated.display).toBe("standalone");
@@ -179,6 +179,31 @@ describe("manifeste de l’application", () => {
   });
 });
 
+describe("le manifeste reste lisible derrière le mot de passe de la préproduction", () => {
+  const layout = read("src/app/layout.tsx");
+
+  it("demande le manifeste avec les identifiants", () => {
+    // Un manifeste est demandé SANS identifiants par défaut. Derrière le mot
+    // de passe de la préproduction, il répond donc 401, le navigateur n'a
+    // aucun manifeste, et il ne propose pas d'installer l'application. La
+    // préproduction devient le seul endroit où l'installation ne peut pas
+    // être testée — alors que c'est là qu'elle doit l'être.
+    expect(layout).toMatch(/crossOrigin="use-credentials"/);
+    expect(layout).toMatch(/rel="manifest"/);
+  });
+
+  it("ne laisse pas Next poser une seconde balise sans cet attribut", () => {
+    // `src/app/manifest.ts` est une convention Next : sa seule présence fait
+    // injecter un `<link rel="manifest">` dépourvu de l'attribut, et le
+    // document en contient alors deux. D'où le fichier déplacé dans `lib/`
+    // et servi par une route ordinaire.
+    expect(existsSync(path.join(root, "src/app/manifest.ts"))).toBe(false);
+    expect(
+      existsSync(path.join(root, "src/app/manifest.webmanifest/route.ts")),
+    ).toBe(true);
+  });
+});
+
 describe("icônes hors manifeste", () => {
   it("fournit l’icône Apple, que le manifeste ne couvre pas", () => {
     // iOS ignore les icônes du manifeste et lit uniquement celle-ci.
@@ -215,7 +240,7 @@ describe("les couleurs de marque ne dérivent pas de la feuille de style", () =>
 
   it("theme_color reprend --color-brand-blue", () => {
     expect(THEME_COLOR).toBe(token("brand-blue"));
-    expect(manifest().theme_color).toBe(THEME_COLOR);
+    expect(appManifest.theme_color).toBe(THEME_COLOR);
   });
 
   it("background_color reprend --color-surface", () => {

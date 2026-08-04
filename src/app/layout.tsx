@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   title: "DEFI Movember",
   description:
     "Un mois, un défi par jour, une collection à compléter. Collecte de fonds au profit de la fondation Movember.",
-  /* Next adds `<link rel="manifest">` on its own from `app/manifest.ts`.
-     What it cannot guess is the Apple side: iOS ignores the manifest icons
-     entirely and reads this one instead. */
+  /* The manifest link is written by hand below, not declared here — the
+     reason is documented at the tag itself. */
+  /* iOS ignores the manifest icons entirely and reads this one instead. */
   icons: {
     apple: "/icons/apple-touch-icon.png",
   },
@@ -49,6 +49,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
+      {/*
+        The manifest link, written by hand for one attribute Next does not
+        expose: `crossOrigin`.
+
+        A manifest is fetched WITHOUT credentials by default. Behind the
+        password that protects the preview environment, that request comes
+        back 401 — the browser then has no manifest, and offers no way to
+        install the application. Which makes the preview environment the one
+        place where installation cannot be tested, and installation is
+        precisely what has to be tested there.
+
+        Next handles this case, but only for itself: it sets the attribute
+        when `VERCEL_ENV === "preview"` (see
+        `next/dist/lib/metadata/generate/basic.js`). We are behind the same
+        kind of gate without being on Vercel, so we set it ourselves.
+
+        Harmless in production, where there is no gate: the manifest is
+        simply requested with the site's own cookies.
+      */}
+      <link
+        rel="manifest"
+        href="/manifest.webmanifest"
+        crossOrigin="use-credentials"
+      />
       <body className="antialiased">{children}</body>
     </html>
   );
