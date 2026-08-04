@@ -12,6 +12,9 @@
 
 export type EditionStatus = "draft" | "open" | "running" | "closed";
 export type ProfileRole = "participant" | "admin";
+export type RegistrationStatus =
+  "pending" | "active" | "refunded" | "cancelled";
+export type PaymentKind = "registration" | "pack" | "refund";
 
 /** Collective targets shown on the public page. */
 export type CollectiveGoals = {
@@ -69,6 +72,107 @@ export type Database = {
           deleted_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
+      };
+      registration_tiers: {
+        Row: {
+          id: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline: string;
+          price_cents: number;
+          donated_cents: number;
+          perks: string[];
+          position: number;
+          available: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline?: string;
+          price_cents: number;
+          donated_cents: number;
+          perks?: string[];
+          position?: number;
+          available?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["registration_tiers"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      registrations: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          tier_id: string;
+          status: RegistrationStatus;
+          created_at: string;
+          activated_at: string | null;
+          welcome_email_sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          tier_id: string;
+          status?: RegistrationStatus;
+          created_at?: string;
+          activated_at?: string | null;
+          welcome_email_sent_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["registrations"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          id: string;
+          registration_id: string | null;
+          profile_id: string | null;
+          edition_id: string;
+          kind: PaymentKind;
+          stripe_session_id: string | null;
+          stripe_payment_intent_id: string | null;
+          stripe_charge_id: string | null;
+          gross_cents: number;
+          /** Null means "not known yet" — never zero. See story 2.6. */
+          fee_cents: number | null;
+          net_cents: number | null;
+          donation_cents: number;
+          counterpart_cents: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          registration_id?: string | null;
+          profile_id?: string | null;
+          edition_id: string;
+          kind?: PaymentKind;
+          stripe_session_id?: string | null;
+          stripe_payment_intent_id?: string | null;
+          stripe_charge_id?: string | null;
+          gross_cents: number;
+          fee_cents?: number | null;
+          net_cents?: number | null;
+          donation_cents: number;
+          counterpart_cents?: number;
+          created_at?: string;
+        };
+        /* Only `fee_cents` and `net_cents` are ever filled in later, by the
+           service-role client in story 2.6. No policy allows anyone else to
+           update this table. */
+        Update: {
+          fee_cents?: number | null;
+          net_cents?: number | null;
+        };
         Relationships: [];
       };
       admin_audit_log: {

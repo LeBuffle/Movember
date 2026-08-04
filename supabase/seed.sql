@@ -64,3 +64,67 @@ values (
   '{"kilometres": 50000, "hours": 6000, "amount_cents": 1000000}'::jsonb
 )
 on conflict (year) do nothing;
+
+
+-- -------------------------------------------------------------------------
+-- The three registration tiers (story 2.1)
+--
+-- Provisional amounts, and knowingly so: what tiers 2 and 3 hand over
+-- depends on the medal and booster costs, which are not settled. They live
+-- here rather than in the code precisely so that changing them takes a SQL
+-- statement and not a deployment.
+--
+-- What must NOT be written anywhere, in the database or in the interface, is
+-- "100 %". On the first tier, 12 € paid leaves about 11,57 € after the
+-- payment processor's fee. "12 € reversés" states the association's
+-- commitment and stays true whoever absorbs the fee — which is decision P2,
+-- still open.
+--
+-- Safe to re-run.
+-- -------------------------------------------------------------------------
+
+insert into public.registration_tiers (
+  edition_id, slug, name, tagline, price_cents, donated_cents, perks, position
+)
+select
+  e.id, v.slug, v.name, v.tagline, v.price_cents, v.donated_cents, v.perks, v.position
+from public.editions e
+cross join (values
+  (
+    'engage',
+    'Sportif engagé',
+    'Pour jouer, tout simplement.',
+    1200, 1200,
+    array[
+      'Un défi sportif par jour pendant tout novembre',
+      'Une carte offerte chaque jour, par tirage au sort',
+      'Accès aux classements et aux équipes'
+    ],
+    1
+  ),
+  (
+    'chevronne',
+    'Sportif chevronné',
+    'Le jeu, et quelque chose à garder.',
+    3000, 1800,
+    array[
+      'Tout le niveau Sportif engagé',
+      'Une médaille premium envoyée à la fin du défi'
+    ],
+    2
+  ),
+  (
+    'legendaire',
+    'Sportif légendaire',
+    'Pour les collectionneurs.',
+    5000, 3500,
+    array[
+      'Tout le niveau Sportif chevronné',
+      '2 packs de 5 cartes moustachues',
+      'Une carte légendaire garantie'
+    ],
+    3
+  )
+) as v(slug, name, tagline, price_cents, donated_cents, perks, position)
+where e.year = 2026
+on conflict (edition_id, slug) do nothing;

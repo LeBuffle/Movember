@@ -77,6 +77,55 @@ describe("every public table enables row level security", () => {
   });
 });
 
+describe("personne ne peut écrire une inscription ni un paiement", () => {
+  // La faille la plus évidente de tout l'epic 2 : un participant capable
+  // d'insérer sa propre inscription s'inscrirait sans payer. Ces lignes sont
+  // écrites par le webhook Stripe, côté serveur, avec la clé de service — qui
+  // contourne ces règles par construction. Tout le reste ne fait que lire.
+  const writeVerbs = ["insert", "update", "delete", "all"];
+
+  it.each(["registrations", "payments"])(
+    "aucune règle d’écriture sur %s",
+    (table) => {
+      const policies = [
+        ...sql.matchAll(
+          new RegExp(
+            `create\\s+policy[\\s\\S]*?on\\s+public\\.${table}\\s+for\\s+(\\w+)`,
+            "gi",
+          ),
+        ),
+      ].map((m) => m[1].toLowerCase());
+
+      expect(policies.length).toBeGreaterThan(0);
+      for (const verb of writeVerbs) {
+        expect(
+          policies,
+          `public.${table} porte une règle "${verb}". Ces lignes ne doivent être écrites que côté serveur.`,
+        ).not.toContain(verb);
+      }
+    },
+  );
+
+  it("les niveaux d’inscription restent lisibles sans session", () => {
+    // La page d'accueil affiche les prix à des visiteurs non connectés.
+    expect(sql).toMatch(
+      /create\s+policy[\s\S]*?on\s+public\.registration_tiers\s+for\s+select[\s\S]*?using\s*\(\s*true\s*\)/i,
+    );
+  });
+
+  it("une personne ne peut s’inscrire qu’une fois par édition", () => {
+    // Garanti par la base : deux requêtes simultanées passeraient toutes les
+    // deux un `select` de vérification dans le code.
+    expect(sql).toMatch(/unique\s*\(\s*profile_id\s*,\s*edition_id\s*\)/i);
+  });
+
+  it("un webhook rejoué ne peut pas créer deux lignes comptables", () => {
+    // Stripe renvoie tout ce qui n'a pas répondu en quelques secondes.
+    expect(sql).toMatch(/unique\s*\(\s*stripe_session_id\s*\)/i);
+    expect(sql).toMatch(/unique\s*\(\s*stripe_payment_intent_id\s*\)/i);
+  });
+});
+
 describe("security definer functions pin their search path", () => {
   // A `security definer` function without `set search_path` can be hijacked:
   // a schema earlier in the path can shadow the tables it references, and the

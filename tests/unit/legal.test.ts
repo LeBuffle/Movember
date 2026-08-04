@@ -9,7 +9,7 @@ import {
   TAX_NOTICE,
   TAX_NOTICE_TITLE,
 } from "@/lib/legal/notices";
-import { formatEuros, getRegistrationTiers } from "@/lib/registration/tiers";
+import { formatEuros } from "@/lib/registration/tiers";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const read = (relative: string) =>
@@ -116,17 +116,51 @@ describe("pages légales", () => {
  * ====================================================================== */
 
 describe("niveaux d’inscription", () => {
-  it("en propose trois, dont un seul mis en avant", () => {
-    return getRegistrationTiers().then((tiers) => {
-      expect(tiers).toHaveLength(3);
-      expect(tiers.filter((tier) => tier.featured)).toHaveLength(1);
-    });
+  // Ils vivent en base depuis la story 2.1 : un prix doit pouvoir changer
+  // sans redéploiement. Ce sont donc la migration et le jeu de données qui
+  // sont inspectés ici, pas une constante du code.
+  // Commentaires SQL retirés : ils expliquent justement ce qu'il ne faut PAS
+  // faire — « ne jamais écrire 100 % », « les frais réels » — et citeraient
+  // donc les termes recherchés.
+  const withoutSqlComments = (sql: string) => sql.replace(/--.*$/gm, "");
+
+  const migrations = withoutSqlComments(
+    readFileSync(
+      path.join(
+        root,
+        "supabase/migrations/20260804100000_registrations_payments.sql",
+      ),
+      "utf8",
+    ),
+  );
+  const seed = withoutSqlComments(read("supabase/seed.sql"));
+
+  it("en propose trois", () => {
+    // Les trois `slug` du jeu de démonstration.
+    for (const slug of ["engage", "chevronne", "legendaire"]) {
+      expect(seed).toContain(`'${slug}'`);
+    }
   });
 
-  it("ne reverse jamais plus que le prix payé", async () => {
-    for (const tier of await getRegistrationTiers()) {
-      expect(tier.donatedCents).toBeLessThanOrEqual(tier.priceCents);
-      expect(tier.donatedCents).toBeGreaterThan(0);
+  it("ne peut pas reverser plus que le prix payé, garanti par la base", () => {
+    // Une contrainte plutôt qu'une vérification dans le code : les montants
+    // se modifient en SQL, sans passer par l'application.
+    expect(migrations).toMatch(
+      /check\s*\(\s*donated_cents\s*<=\s*price_cents\s*\)/i,
+    );
+  });
+
+  it("garde des montants en centimes entiers", () => {
+    // 12,10 € n'est pas représentable en binaire, et l'arrondi finirait dans
+    // la comptabilité de l'association.
+    // Chaque colonne en centimes, sans exception. Chercher « numeric » ou
+    // « real » dans tout le fichier serait plus court et faux : « real »
+    // apparaît aussi en anglais courant dans les libellés.
+    const centsColumns = migrations.match(/^\s*\w*_cents\s+\w+/gm) ?? [];
+
+    expect(centsColumns.length).toBeGreaterThanOrEqual(6);
+    for (const declaration of centsColumns) {
+      expect(declaration).toMatch(/\binteger\b/i);
     }
   });
 
@@ -141,6 +175,7 @@ describe("niveaux d’inscription", () => {
       read("src/app/page.tsx"),
       read("src/components/marketing/tier-cards.tsx"),
       read("src/lib/registration/tiers.ts"),
+      seed,
     ]
       .join("\n")
       .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -149,11 +184,14 @@ describe("niveaux d’inscription", () => {
     expect(surfaces).not.toMatch(/100\s*%/);
   });
 
-  it("garde des montants en centimes, jamais en flottant", async () => {
-    for (const tier of await getRegistrationTiers()) {
-      expect(Number.isInteger(tier.priceCents)).toBe(true);
-      expect(Number.isInteger(tier.donatedCents)).toBe(true);
-    }
+  it("n’a pas de liste de repli codée en dur", () => {
+    // Une liste de secours « au cas où la base serait indisponible »
+    // afficherait un prix pendant que le paiement en prélèverait un autre.
+    // C'est la pire panne possible pour cette page.
+    const source = read("src/lib/registration/tiers.ts");
+
+    expect(source).not.toMatch(/priceCents:\s*\d/);
+    expect(source).toMatch(/return \[\]/);
   });
 
   it("formate les montants à la française", () => {

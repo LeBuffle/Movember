@@ -1,87 +1,110 @@
+import { createClient } from "@supabase/supabase-js";
+
+import { EDITION_YEAR } from "@/lib/edition/calendar";
+import type { Database } from "@/types/database";
+
 /**
- * The three registration tiers.
+ * The registration tiers, read from the database.
  *
- * **Single access point on purpose.** Epic 2 moves these rows into the
- * `registration_tiers` table, because a price has to be changeable without a
- * deployment — the medal quote is not firm, and the amounts below may move
- * before registration opens. Everything reads `getRegistrationTiers()`, so
- * that swap touches this file and nothing else.
+ * They moved out of this file and into `registration_tiers` in story 2.1,
+ * for one reason: a price has to be changeable without a deployment. The
+ * medal quote is not firm, and these amounts may still move before
+ * registration opens (PRD D1).
  *
- * Amounts are in cents. Money never goes through a floating-point number:
- * 12.10 € is not representable in binary, and the rounding shows up in an
- * association's accounts.
+ * **There is no fallback list, and that is deliberate.** A hard-coded set of
+ * prices used "when the database is unavailable" would show one price while
+ * the payment charged another — the single worst failure this page can have.
+ * When the tiers cannot be read, the page says so and shows nothing. An
+ * absent price list is an inconvenience; a wrong one is a dispute.
  */
 
 export type RegistrationTier = {
+  id: string;
   slug: string;
   name: string;
   priceCents: number;
-  /** Part handed to the Movember Foundation by the association. */
+  /** What the association commits to handing to the Movember Foundation. */
   donatedCents: number;
   tagline: string;
   perks: string[];
-  /** Drawn as the recommended tier. Exactly one is expected. */
-  featured?: boolean;
+  /** Drawn as the recommended tier. */
+  featured: boolean;
 };
 
 /**
- * Provisional, and knowingly so.
- *
- * `donatedCents` for tiers 2 and 3 depends on the medal and booster costs,
- * which are not settled. What must NOT be written anywhere is "100 %": on the
- * first tier, 12 € paid means about 11,57 € left after the payment
- * processor's fee. Saying "12 € reversés" states the association's
- * commitment and stays true whoever absorbs the fee — which is decision P2,
- * still open.
+ * Anonymous client: the tier list is public, and reading it must not depend
+ * on a session. It is also what lets the home page stay cacheable — no
+ * cookies read means nothing personal in the response.
  */
-const TIERS: RegistrationTier[] = [
-  {
-    slug: "engage",
-    name: "Sportif engagé",
-    priceCents: 1200,
-    donatedCents: 1200,
-    tagline: "Pour jouer, tout simplement.",
-    perks: [
-      "Un défi sportif par jour pendant tout novembre",
-      "Une carte offerte chaque jour, par tirage au sort",
-      "Accès aux classements et aux équipes",
-    ],
-  },
-  {
-    slug: "chevronne",
-    name: "Sportif chevronné",
-    priceCents: 3000,
-    donatedCents: 1800,
-    tagline: "Le jeu, et quelque chose à garder.",
-    perks: [
-      "Tout le niveau Sportif engagé",
-      "Une médaille premium envoyée à la fin du défi",
-    ],
-    featured: true,
-  },
-  {
-    slug: "legendaire",
-    name: "Sportif légendaire",
-    priceCents: 5000,
-    donatedCents: 3500,
-    tagline: "Pour les collectionneurs.",
-    perks: [
-      "Tout le niveau Sportif chevronné",
-      "2 packs de 5 cartes moustachues",
-      "Une carte légendaire garantie",
-    ],
-  },
-];
+function publicClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) return null;
+
+  return createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 /**
- * Async from the start, even though it reads a constant today.
+ * The tiers on sale for the current edition, in display order.
  *
- * The signature is the one epic 2 needs once these rows come from the
- * database. Making it async later would mean touching every caller, at the
- * moment when registration is about to open — the worst possible time.
+ * Returns an empty list rather than throwing when the database cannot be
+ * reached: the home page carries the cause, the rules and the calendar as
+ * well as the prices, and losing all of it over a price list would be the
+ * wrong trade. The caller decides what to show instead.
+ *
+ * **Not to be used to price a payment.** Story 2.3 reads the amount again,
+ * from the database, at the moment it creates the Stripe session — and there
+ * it must fail loudly. What is displayed can degrade; what is charged cannot.
  */
 export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
-  return TIERS;
+  const supabase = publicClient();
+  if (!supabase) return [];
+
+  /* Two queries rather than one embedded join. The join would be one round
+     trip instead of two, and would make this function's return type depend
+     on hand-written relationship metadata that nothing checks. On a page
+     regenerated every few minutes, the second round trip costs nothing. */
+  const { data: edition } = await supabase
+    .from("editions")
+    .select("id")
+    .eq("year", EDITION_YEAR)
+    .maybeSingle();
+
+  if (!edition) {
+    console.error("[tiers] édition introuvable", { year: EDITION_YEAR });
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("registration_tiers")
+    .select(
+      "id, slug, name, tagline, price_cents, donated_cents, perks, position",
+    )
+    .eq("edition_id", edition.id)
+    .eq("available", true)
+    .order("position", { ascending: true });
+
+  if (error || !data) {
+    console.error("[tiers] lecture impossible", { code: error?.code });
+    return [];
+  }
+
+  return data.map((row, index) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    priceCents: row.price_cents,
+    donatedCents: row.donated_cents,
+    tagline: row.tagline,
+    perks: row.perks,
+    /* The middle one, by position. Which tier is highlighted is a display
+       decision, not something worth a column — it changes with the number of
+       tiers, and there are exactly three. */
+    featured: data.length === 3 && index === 1,
+  }));
 }
 
 /** French formatting: comma for decimals, and no cents on a round amount. */

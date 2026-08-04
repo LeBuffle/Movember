@@ -54,7 +54,7 @@ l'ordre qui arrange.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 2.1 | [Schéma des inscriptions et des paiements](2.1.schema-inscriptions-paiements.md) | Draft | 1.6 |
+| 2.1 | [Schéma des inscriptions et des paiements](2.1.schema-inscriptions-paiements.md) | **Review** | 1.6 |
 | 2.2 | [Parcours de choix du niveau](2.2.parcours-choix-niveau.md) | Draft | 2.1, 1.9 |
 | 2.3 | [Création de la session de paiement Stripe](2.3.session-paiement-stripe.md) | Draft | 2.2 |
 | 2.4 | [Webhook de paiement et activation du participant](2.4.webhook-activation.md) | Draft | 2.3 |

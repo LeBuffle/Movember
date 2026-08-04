@@ -21,6 +21,17 @@ export const metadata: Metadata = {
 };
 
 /**
+ * Regenerated at most every five minutes.
+ *
+ * The prices now come from the database (story 2.1), and a page that queried
+ * it on every visit would be the slowest page of the site — the one a share
+ * leads to, opened on a phone. Five minutes is short enough that a price
+ * corrected during the registration rush is live almost at once, and long
+ * enough that a thousand visitors cost one query.
+ */
+export const revalidate = 300;
+
+/**
  * Public home page.
  *
  * The one page a share leads to, and the only one most visitors will read.
@@ -95,18 +106,32 @@ export default async function Home() {
           <TaxNotice className="mt-6" />
 
           <div className="mt-8">
-            <TierCards tiers={tiers} />
+            {/* No fallback price list, on purpose: showing one price while
+                the payment charges another is the worst failure this page
+                can have. Nothing beats a wrong amount for losing someone's
+                trust in a fundraiser. */}
+            {tiers.length > 0 ? (
+              <TierCards tiers={tiers} />
+            ) : (
+              <Alert tone="warning" title="Tarifs momentanément indisponibles">
+                Les niveaux d’inscription ne peuvent pas être affichés pour le
+                moment. Réessayez dans quelques minutes — le reste du site
+                fonctionne normalement.
+              </Alert>
+            )}
           </div>
 
-          <p className="text-ink-muted mt-6 text-sm">
-            Les montants reversés sont ceux sur lesquels l’association s’engage
-            ; le reste couvre la médaille et les cartes. Les conditions
-            complètes figurent dans les{" "}
-            <Link href="/cgv" className="underline underline-offset-4">
-              conditions générales de vente
-            </Link>
-            .
-          </p>
+          {tiers.length > 0 && (
+            <p className="text-ink-muted mt-6 text-sm">
+              Les montants reversés sont ceux sur lesquels l’association
+              s’engage ; le reste couvre la médaille et les cartes. Les
+              conditions complètes figurent dans les{" "}
+              <Link href="/cgv" className="underline underline-offset-4">
+                conditions générales de vente
+              </Link>
+              .
+            </p>
+          )}
         </section>
 
         {/* --- Chiffres --------------------------------------------------- */}
