@@ -30,7 +30,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     description:
       "Le catalogue des défis : en créer, les modifier, décider lesquels tombent quel jour.",
     epic: "epic 4",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "cartes",

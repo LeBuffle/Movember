@@ -2,9 +2,11 @@ import { z } from "zod";
 
 import {
   EVALUATORS,
+  EVALUATOR_KEYS,
   isEvaluatorKey,
   type EvaluatorKey,
 } from "@/lib/challenges/evaluators/registry";
+import type { ConfigField } from "@/lib/challenges/fields";
 
 /**
  * Validation of a challenge's configuration.
@@ -27,38 +29,55 @@ export type ConfigCheck =
   | { ok: false; errors: string[] };
 
 /**
+ * Every setting the seven evaluators know, by name.
+ *
+ * Built from the registry rather than kept as a second list. A label written
+ * twice ends up saying two different things, and the copy nobody maintains
+ * is always the one that reaches the error message.
+ */
+const FIELD_LABELS: Record<string, string> = (() => {
+  const labels: Record<string, string> = {};
+
+  const record = (field: ConfigField) => {
+    labels[field.name] ??=
+      field.kind === "number"
+        ? `${field.label} (en ${field.unit})`
+        : field.label;
+  };
+
+  for (const key of EVALUATOR_KEYS) EVALUATORS[key].fields.forEach(record);
+
+  return labels;
+})();
+
+/**
  * Turns Zod's report into sentences a volunteer can act on.
  *
  * `config.min_distance_meters: Expected number, received string` helps
  * nobody. The field is named in French, and the message says what to do.
  */
-const FIELD_LABELS: Record<string, string> = {
-  min_distance_meters: "Distance minimale (en mètres)",
-  min_duration_seconds: "Durée minimale (en secondes)",
-  min_elevation_meters: "Dénivelé minimal (en mètres)",
-  min_duration_seconds_per_day: "Durée minimale par jour (en secondes)",
-  sport_types: "Sports concernés",
-  window: "Fenêtre d’évaluation",
-  window_days: "Fenêtre (en jours)",
-  days: "Nombre de jours",
-  allowed_gaps: "Jours de tolérance",
-  distinct_sports: "Nombre de sports différents",
-  metric: "Donnée cumulée",
-  target: "Objectif",
-  conditions: "Conditions",
-  mode: "Mode de combinaison",
-};
-
 function humanise(issue: z.core.$ZodIssue): string {
-  const path = issue.path.join(".");
-  const field = FIELD_LABELS[String(issue.path[0] ?? "")] ?? path;
+  const path = issue.path.map(String);
 
   // A missing field reads better as a demand than as a type error.
-  if (issue.code === "invalid_type" && issue.input === undefined) {
-    return `${field} : ce réglage est obligatoire.`;
+  const message =
+    issue.code === "invalid_type" && issue.input === undefined
+      ? "ce réglage est obligatoire."
+      : issue.message;
+
+  if (path.length === 0) return message;
+
+  const leaf = FIELD_LABELS[path[path.length - 1]];
+
+  // Inside a surprise challenge, "Distance minimale" alone would not say
+  // *which* of its two-to-four conditions is wrong.
+  if (path[0] === "conditions" && path.length > 1 && leaf) {
+    return `Condition ${Number(path[1]) + 1} — ${leaf} : ${message}`;
   }
 
-  return field ? `${field} : ${issue.message}` : issue.message;
+  const field = FIELD_LABELS[path[0]] ?? leaf ?? path.join(".");
+
+  return `${field} : ${message}`;
 }
 
 /**

@@ -16,7 +16,12 @@ import { ADMIN_SECTIONS, findAdminSection } from "@/lib/admin/sections";
  * here needs removing — only the section's `status` changes.
  */
 export function generateStaticParams() {
-  return ADMIN_SECTIONS.map((section) => ({ section: section.slug }));
+  // A section that has its screen is excluded: its own static route wins the
+  // routing anyway, and prerendering a placeholder for it would be a page
+  // that can never be reached and would confuse the next person reading this.
+  return ADMIN_SECTIONS.filter(
+    (section) => section.status === "comingSoon",
+  ).map((section) => ({ section: section.slug }));
 }
 
 export default async function AdminSectionPage({

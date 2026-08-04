@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { ADMIN_SECTIONS } from "@/lib/admin/sections";
+import { CATALOGUE_TARGET, catalogueHealth } from "@/lib/challenges/catalogue";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,16 @@ export default async function AdminHome() {
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
+
+  // Counted here as well as on the catalogue screen, because this is the page
+  // someone opens in September to see where things stand — and a thin
+  // catalogue is the main risk of the whole game (story 4.2 AC 9).
+  const { count: activeChallenges } = await supabase
+    .from("challenges")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+
+  const health = catalogueHealth(activeChallenges ?? 0);
 
   const pending = ADMIN_SECTIONS.filter(
     (section) => section.status === "comingSoon",
@@ -78,12 +89,22 @@ export default async function AdminHome() {
             </CardBody>
           </Card>
 
-          <Card>
-            <CardTitle>Défis publiés</CardTitle>
+          <Card accent={health.tone !== "success"}>
+            <CardTitle>Défis en jeu</CardTitle>
             <CardBody>
-              <Badge tone="neutral">À venir — epic 4</Badge>
-              <p className="mt-2 text-sm">
-                Le catalogue et le calendrier de diffusion.
+              <p className="text-brand-blue text-3xl font-extrabold">
+                {activeChallenges ?? 0}
+              </p>
+              <p className="mt-1 text-sm">
+                {health.tone === "success"
+                  ? "Le catalogue est assez fourni."
+                  : `Objectif ${CATALOGUE_TARGET}. `}
+                <Link
+                  href="/admin/defis"
+                  className="underline underline-offset-4"
+                >
+                  Gérer le catalogue
+                </Link>
               </p>
             </CardBody>
           </Card>

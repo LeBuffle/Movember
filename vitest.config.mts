@@ -3,6 +3,13 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  /*
+   * `tsconfig.json` sets `jsx: preserve`, because Next does the transform
+   * itself. The test runner has no such step, so a `.tsx` test would reach
+   * the parser with JSX still in it. Told here rather than in the tsconfig:
+   * changing the tsconfig would change what Next builds.
+   */
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
