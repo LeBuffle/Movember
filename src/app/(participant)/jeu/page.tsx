@@ -1,6 +1,8 @@
+import { ChallengeCard } from "@/components/game/challenge-card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
+import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { getShippingContext } from "@/lib/shipping/address";
 
 /**
@@ -12,7 +14,10 @@ import { getShippingContext } from "@/lib/shipping/address";
  * confirmed by the webhook ever reaches this page.
  */
 export default async function GameHome() {
-  const shipping = await getShippingContext();
+  const [shipping, challenges] = await Promise.all([
+    getShippingContext(),
+    getParticipantChallenges(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -28,10 +33,24 @@ export default async function GameHome() {
 
       <AddressReminder context={shipping} />
 
-      <Alert tone="info" title="Le jeu ouvre le 1ᵉʳ novembre">
-        Les défis quotidiens, les cartes et les classements arriveront ici.
-        D’ici là, il n’y a rien à faire — et rien à rater.
-      </Alert>
+      {challenges.length > 0 ? (
+        <section aria-labelledby="defis" className="space-y-3">
+          <h2 id="defis" className="text-ink text-xl font-bold">
+            Vos défis
+          </h2>
+
+          <div className="space-y-3">
+            {challenges.map((challenge) => (
+              <ChallengeCard key={challenge.id} challenge={challenge} />
+            ))}
+          </div>
+        </section>
+      ) : (
+        <Alert tone="info" title="Le jeu ouvre le 1ᵉʳ novembre">
+          Les défis quotidiens, les cartes et les classements arriveront ici.
+          D’ici là, il n’y a rien à faire — et rien à rater.
+        </Alert>
+      )}
 
       <section aria-labelledby="jalons" className="space-y-3">
         <h2 id="jalons" className="text-ink text-xl font-bold">

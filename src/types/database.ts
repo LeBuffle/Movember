@@ -282,6 +282,8 @@ export type Database = {
           completed_at: string | null;
           /** Snapshot taken at completion — the catalogue's value can move. */
           points_awarded: number | null;
+          /** What satisfied it (story 4.3). Written by the evaluation only. */
+          evidence: Record<string, unknown>;
           created_at: string;
         };
         Insert: {
@@ -294,6 +296,7 @@ export type Database = {
           status?: AssignmentStatus;
           completed_at?: string | null;
           points_awarded?: number | null;
+          evidence?: Record<string, unknown>;
           created_at?: string;
         };
         Update: Partial<
