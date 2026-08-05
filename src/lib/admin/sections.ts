@@ -76,8 +76,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Collecte",
     description:
       "Les encaissements, les remboursements, le total collecté et les frais.",
+    // The totals landed with story 2.6, because the fee rate they measure is
+    // what decision P2 was waiting on. The line-by-line export — the part
+    // that gets reconciled against the Stripe statement — is still epic 9.
     epic: "epic 9",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "arbitrage",

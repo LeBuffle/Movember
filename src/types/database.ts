@@ -177,12 +177,16 @@ export type Database = {
           counterpart_cents?: number;
           created_at?: string;
         };
-        /* Only `fee_cents` and `net_cents` are ever filled in later, by the
-           service-role client in story 2.6. No policy allows anyone else to
-           update this table. */
+        /* Deliberately narrow. Only what story 2.6 completes once Stripe has
+           produced the balance transaction: the real fee, the net, and the
+           charge identifier the statement is reconciled against. No amount
+           already recorded can be rewritten through this type, and no policy
+           allows anyone but the service-role client to update the table at
+           all. */
         Update: {
           fee_cents?: number | null;
           net_cents?: number | null;
+          stripe_charge_id?: string | null;
         };
         Relationships: [];
       };

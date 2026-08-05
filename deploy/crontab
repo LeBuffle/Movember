@@ -39,6 +39,19 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # is broken".
 7 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 30 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/ping >> /var/log/defi-movember-cron.log 2>&1
 
+# Stripe fee reconciliation (story 2.6). Every hour, at 23 past.
+#
+# The webhook fills in the fee within seconds in the normal case. This exists
+# for the cases it cannot cover: a balance transaction Stripe had not produced
+# yet, a delivery lost, the application restarting at the wrong second. Each
+# of those leaves an accounting line permanently incomplete — and a line
+# without its real fee is a line that cannot be reconciled against the Stripe
+# statement, at the moment the association has to justify what it handed over.
+#
+# Hourly rather than daily: an incomplete line found in an hour is a
+# non-event, one found in a week is an investigation.
+23 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/rapprochement >> /var/log/defi-movember-cron.log 2>&1
+
 # Business tasks arrive with their epics:
 #   - daily challenge assignment .......... epic 4
 #   - Strava catch-up ..................... epic 3

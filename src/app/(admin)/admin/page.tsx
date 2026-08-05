@@ -3,8 +3,10 @@ import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import { summarisePayments, type PaymentRow } from "@/lib/accounting/totals";
 import { ADMIN_SECTIONS } from "@/lib/admin/sections";
 import { CATALOGUE_TARGET, catalogueHealth } from "@/lib/challenges/catalogue";
+import { formatEuros } from "@/lib/registration/tiers";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +41,14 @@ export default async function AdminHome() {
     .eq("is_active", true);
 
   const health = catalogueHealth(activeChallenges ?? 0);
+
+  // Same figure as the Collecte screen, computed the same way — from one
+  // function, so the home page and the detail can never disagree.
+  const { data: payments } = await supabase
+    .from("payments")
+    .select("kind, gross_cents, fee_cents, donation_cents, counterpart_cents");
+
+  const collection = summarisePayments((payments ?? []) as PaymentRow[]);
 
   const pending = ADMIN_SECTIONS.filter(
     (section) => section.status === "comingSoon",
@@ -82,9 +92,19 @@ export default async function AdminHome() {
           <Card>
             <CardTitle>Collecte</CardTitle>
             <CardBody>
-              <Badge tone="neutral">À venir — epic 9</Badge>
-              <p className="mt-2 text-sm">
-                Total encaissé, remboursements et frais.
+              <p className="text-brand-blue text-3xl font-extrabold">
+                {formatEuros(collection.grossCents)}
+              </p>
+              <p className="mt-1 text-sm">
+                {collection.complete
+                  ? "Encaissé, frais connus. "
+                  : "Provisoire : des frais restent à connaître. "}
+                <Link
+                  href="/admin/collecte"
+                  className="underline underline-offset-4"
+                >
+                  Voir le détail
+                </Link>
               </p>
             </CardBody>
           </Card>

@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 
+import { recordFeesFromCharge } from "@/lib/accounting/fees";
 import { handleCheckoutCompleted } from "@/lib/registration/activation";
 import { verifyStripeSignature } from "@/lib/stripe/webhook";
 
@@ -58,6 +59,27 @@ export async function POST(request: Request) {
 
       if (!result.ok) {
         console.error("[webhook] traitement en échec, Stripe réessaiera", {
+          id: event.id,
+          reason: result.reason,
+        });
+        return new Response("Traitement en échec", { status: 500 });
+      }
+
+      return Response.json({ received: true, outcome: result.outcome });
+    }
+
+    // The fee, which the payment events above do not carry (story 2.6). It
+    // lives on the balance transaction, which Stripe produces a moment later.
+    case "charge.succeeded":
+    // Sent when Stripe restates a charge — including when the balance
+    // transaction it was waiting on finally exists.
+    case "charge.updated": {
+      const result = await recordFeesFromCharge(
+        event.data.object as Stripe.Charge,
+      );
+
+      if (!result.ok) {
+        console.error("[webhook] frais non enregistrés, Stripe réessaiera", {
           id: event.id,
           reason: result.reason,
         });
