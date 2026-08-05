@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Activity } from "@/lib/activities/activity";
+import { addDays, type Activity } from "@/lib/activities/activity";
 import { readChallengeConfig } from "@/lib/challenges/config";
 import { evaluate, type Verdict } from "@/lib/challenges/evaluators/evaluate";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,6 +18,26 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * policy for anyone, which is what stops a participant from awarding
  * themselves the month.
  */
+
+/**
+ * How far back an activity can reach.
+ *
+ * A challenge's window never exceeds thirty days — the database says so, and
+ * an edition lasts a month. So an activity can only ever satisfy a challenge
+ * handed out within the previous twenty-nine days, and looking further back
+ * is reading rows that cannot possibly match.
+ *
+ * The bound that matters most is the other one, and it is free: an activity
+ * cannot satisfy a challenge handed out *after* it happened.
+ *
+ * Without both, every activity would re-read every challenge since the first
+ * of November, and the thirtieth day would cost thirty times the first
+ * (story 4.5 AC 5).
+ */
+const MAX_WINDOW_DAYS = 30;
+
+/** A hard stop, well above the thirty an edition can produce. */
+const MAX_OPEN_ASSIGNMENTS = 60;
 
 export type CompletionReport = {
   examined: number;
@@ -45,9 +65,17 @@ type OpenAssignment = {
  * again by a second activity — not because the code remembers, but because
  * the query cannot see it and the write cannot land.
  *
- * "One activity may satisfy several challenges" is story 4.5. Here every open
- * assignment is offered the activity independently, which is the same thing
- * for the single-challenge case and does not have to be undone later.
+ * **Every open challenge is offered the activity, not just the day's**
+ * (story 4.5, PRD D3). Which is the point: somebody who has not run for three
+ * days can go out on Saturday and settle three challenges at once. A game
+ * that demanded one session per challenge would not be tenable for people
+ * with a life, and that is an explicit request from the PO rather than a
+ * design flourish.
+ *
+ * **A missed challenge is never closed.** Nothing in the application marks a
+ * challenge `missed` while the edition runs, and that is deliberate: it stays
+ * open, it blocks nothing, and a later activity can still complete it. The
+ * `missed` state exists for the end of the month, not for the morning after.
  */
 export async function applyActivity(
   activity: Activity,
@@ -60,7 +88,11 @@ export async function applyActivity(
       "id, assigned_for, challenges (evaluator, config, points, duration_days)",
     )
     .eq("profile_id", activity.profileId)
-    .eq("status", "open");
+    .eq("status", "open")
+    // An activity cannot satisfy a challenge handed out after it happened.
+    .lte("assigned_for", activity.localDate)
+    .gte("assigned_for", addDays(activity.localDate, -(MAX_WINDOW_DAYS - 1)))
+    .limit(MAX_OPEN_ASSIGNMENTS);
 
   if (error) {
     console.error("[défis] défis en cours illisibles", {

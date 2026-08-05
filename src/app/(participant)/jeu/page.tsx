@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { todayInParis } from "@/lib/challenges/daily-draw";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
+import { totalPoints } from "@/lib/challenges/progress";
 import { getShippingContext } from "@/lib/shipping/address";
 
 /**
@@ -39,16 +40,35 @@ export default async function GameHome() {
       challenge.status !== "open" && challenge.assignedFor !== today,
   );
 
+  const score = totalPoints(challenges);
+  const completed = challenges.filter(
+    (challenge) => challenge.status === "completed",
+  ).length;
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-ink text-3xl font-bold tracking-tight">
-          {todays.length > 0 ? "Votre défi du jour" : "Vos défis"}
-        </h1>
-        <p className="text-ink-muted mt-2">
-          Édition {EDITION_YEAR}. Rien à déclarer : vos activités valident vos
-          défis toutes seules.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-ink text-3xl font-bold tracking-tight">
+            {todays.length > 0 ? "Votre défi du jour" : "Vos défis"}
+          </h1>
+          <p className="text-ink-muted mt-2">
+            Édition {EDITION_YEAR}. Rien à déclarer : vos activités valident vos
+            défis toutes seules.
+          </p>
+        </div>
+
+        {completed > 0 && (
+          <div className="border-line bg-surface rounded-xl border px-4 py-3 text-right">
+            <p className="text-brand-orange-ink text-2xl font-extrabold">
+              {score} points
+            </p>
+            <p className="text-ink-muted text-sm">
+              {completed} défi{completed > 1 ? "s" : ""} réussi
+              {completed > 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
       </div>
 
       <AddressReminder context={shipping} />

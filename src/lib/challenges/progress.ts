@@ -119,3 +119,30 @@ function asNumber(value: unknown): number | null {
     ? value
     : null;
 }
+
+/**
+ * What a participant has earned so far.
+ *
+ * Points, not challenges completed (architecture D14). Counting challenges
+ * would favour whoever drew the easiest ones — and the challenges differ from
+ * one participant to the next, so the unfairness would be visible.
+ *
+ * Counted from what was awarded at completion, never from the catalogue's
+ * current value: a challenge repriced in mid-edition must not change a score
+ * somebody already saw.
+ */
+export function totalPoints(
+  challenges: ReadonlyArray<{
+    status: string;
+    points: number;
+    pointsAwarded: number | null;
+  }>,
+): number {
+  return challenges
+    .filter((challenge) => challenge.status === "completed")
+    .reduce(
+      (total, challenge) =>
+        total + (challenge.pointsAwarded ?? challenge.points),
+      0,
+    );
+}
