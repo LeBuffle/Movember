@@ -48,14 +48,35 @@ export async function getParticipantChallenges(
 
   if (!user) return [];
 
-  const { data, error } = await supabase
+  return readAssignments(supabase, user.id, { limit });
+}
+
+type Window = { limit: number } | { from: number; to: number };
+
+/**
+ * The rows, mapped once.
+ *
+ * Shared by the game screen and the history so that a challenge cannot read
+ * one way in one place and another way elsewhere — which is exactly what
+ * happens when two screens each map their own query.
+ */
+async function readAssignments(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profileId: string,
+  window: Window,
+): Promise<ParticipantChallenge[]> {
+  const query = supabase
     .from("challenge_assignments")
     .select(
       "id, assigned_for, status, source, completed_at, points_awarded, evidence, challenges (title, description, evaluator, config, points)",
     )
-    .eq("profile_id", user.id)
-    .order("assigned_for", { ascending: false })
-    .limit(limit);
+    .eq("profile_id", profileId)
+    .order("assigned_for", { ascending: false });
+
+  const { data, error } =
+    "limit" in window
+      ? await query.limit(window.limit)
+      : await query.range(window.from, window.to);
 
   if (error) {
     console.error("[défis] défis du participant illisibles", {
@@ -108,4 +129,98 @@ export async function getParticipantChallenges(
             : null,
       };
     });
+}
+
+/* -------------------------------------------------------------------------
+ * The history
+ *
+ * A screen of motivation as much as of consultation: the cumulative total is
+ * what people look at, and the detail is what they reach for when they think
+ * a challenge was wrongly marked missed.
+ * ---------------------------------------------------------------------- */
+
+export type HistoryPage = {
+  items: ParticipantChallenge[];
+  page: number;
+  pageCount: number;
+  total: number;
+  /** Over the whole edition, not over the page. */
+  stats: { completed: number; missed: number; open: number; points: number };
+};
+
+export const HISTORY_PAGE_SIZE = 20;
+
+/**
+ * @param page 1-based. Out-of-range pages are clamped rather than refused —
+ *   a stale link in a browser's history should show the last page, not an
+ *   error.
+ *
+ * Paginated because a thirty-day edition with a common challenge on top can
+ * reach sixty rows, and because the same screen will be reused for an edition
+ * that ran longer. The totals are computed over everything, never over the
+ * page: a total that changed when you turned the page would be worse than no
+ * total at all.
+ */
+export async function getChallengeHistory(page = 1): Promise<HistoryPage> {
+  const empty: HistoryPage = {
+    items: [],
+    page: 1,
+    pageCount: 1,
+    total: 0,
+    stats: { completed: 0, missed: 0, open: 0, points: 0 },
+  };
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return empty;
+
+  // Everything, but only three columns: the totals must cover the whole
+  // edition, and this is cheap enough not to deserve a stored counter that
+  // could drift.
+  const { data: all, error: statsError } = await supabase
+    .from("challenge_assignments")
+    .select("status, points_awarded, challenges (points)")
+    .eq("profile_id", user.id);
+
+  if (statsError) {
+    console.error("[défis] historique illisible", { code: statsError.code });
+    return empty;
+  }
+
+  type StatRow = {
+    status: ParticipantChallenge["status"];
+    points_awarded: number | null;
+    challenges: { points: number } | null;
+  };
+
+  const rows = (all ?? []) as unknown as StatRow[];
+
+  const stats = {
+    completed: rows.filter((row) => row.status === "completed").length,
+    missed: rows.filter((row) => row.status === "missed").length,
+    open: rows.filter((row) => row.status === "open").length,
+    points: rows
+      .filter((row) => row.status === "completed")
+      .reduce(
+        (total, row) =>
+          total + (row.points_awarded ?? row.challenges?.points ?? 0),
+        0,
+      ),
+  };
+
+  const total = rows.length;
+  const pageCount = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE));
+  const current = Math.min(Math.max(1, Math.trunc(page) || 1), pageCount);
+  const from = (current - 1) * HISTORY_PAGE_SIZE;
+
+  const items = await readAssignments(supabase, user.id, {
+    from,
+    to: from + HISTORY_PAGE_SIZE - 1,
+  });
+
+  return { items, page: current, pageCount, total, stats };
 }

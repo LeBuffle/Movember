@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ChallengeCard } from "@/components/game/challenge-card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
@@ -59,15 +61,18 @@ export default async function GameHome() {
         </div>
 
         {completed > 0 && (
-          <div className="border-line bg-surface rounded-xl border px-4 py-3 text-right">
-            <p className="text-brand-orange-ink text-2xl font-extrabold">
+          <Link
+            href="/jeu/historique"
+            className="border-line bg-surface hover:border-brand-blue block rounded-xl border px-4 py-3 text-right transition-colors"
+          >
+            <span className="text-brand-orange-ink block text-2xl font-extrabold">
               {score} points
-            </p>
-            <p className="text-ink-muted text-sm">
+            </span>
+            <span className="text-ink-muted block text-sm">
               {completed} défi{completed > 1 ? "s" : ""} réussi
-              {completed > 1 ? "s" : ""}
-            </p>
-          </div>
+              {completed > 1 ? "s" : ""} — voir l’historique
+            </span>
+          </Link>
         )}
       </div>
 
