@@ -126,12 +126,17 @@ export default async function AdminChallengesPage({
           </p>
         </div>
 
-        <Link
-          href="/admin/defis/nouveau"
-          className={buttonClasses({ className: "w-full sm:w-auto" })}
-        >
-          Créer un défi
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/admin/defis/attribution"
+            className={buttonClasses({ variant: "secondary" })}
+          >
+            Attribution du jour
+          </Link>
+          <Link href="/admin/defis/nouveau" className={buttonClasses()}>
+            Créer un défi
+          </Link>
+        </div>
       </div>
 
       <Alert tone={health.tone} title={health.title}>

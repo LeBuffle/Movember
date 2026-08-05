@@ -15,7 +15,12 @@ export type ProfileRole = "participant" | "admin";
 export type RegistrationStatus =
   "pending" | "active" | "refunded" | "cancelled";
 export type PaymentKind = "registration" | "pack" | "refund";
-export type AssignmentSource = "draw" | "common" | "manual";
+export type AssignmentSource =
+  | "draw"
+  /** A repeat, handed out because the catalogue ran out (story 4.4). */
+  | "catchup"
+  | "common"
+  | "manual";
 export type AssignmentStatus = "open" | "completed" | "missed";
 
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";

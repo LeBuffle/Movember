@@ -52,8 +52,23 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # non-event, one found in a week is an investigation.
 23 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/rapprochement >> /var/log/defi-movember-cron.log 2>&1
 
+# The day's challenges (story 4.4). Every morning at 5:04, Paris time.
+#
+# Before anyone is awake, and not on the hour: everything on the internet
+# fires at a round o'clock, and a task sharing its minute with thousands of
+# others is a task that times out for reasons of its own.
+#
+# ⚠️ The application computes the date in Europe/Paris, not from the server's
+# clock. A VPS on UTC would otherwise turn "the challenge of 1 November" into
+# something handed out at one in the morning on 31 October — and nobody would
+# notice until a participant said their challenge had changed overnight.
+#
+# Re-running it is harmless, at any hour: participants who already have a
+# challenge are skipped, the draw is deterministic, and the database refuses a
+# second one. If a morning goes wrong, run this line by hand and move on.
+4 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/defis-du-jour >> /var/log/defi-movember-cron.log 2>&1
+
 # Business tasks arrive with their epics:
-#   - daily challenge assignment .......... epic 4
 #   - Strava catch-up ..................... epic 3
 #   - leaderboard refresh ................. epic 7
 #   - backups ............................. epic 11

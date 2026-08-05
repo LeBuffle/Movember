@@ -48,6 +48,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260805100000_shipping_addresses.sql` | `shipping_addresses` — où envoyer les contreparties |
 | `20260805110000_refunds.sql` | l'identifiant de remboursement, qui le rend non rejouable |
 | `20260805120000_challenge_evidence.sql` | ce qui a validé un défi, pour pouvoir le montrer |
+| `20260805130000_catchup_assignments.sql` | le défi de rattrapage, quand le catalogue est épuisé |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

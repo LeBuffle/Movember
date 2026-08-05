@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { logAdminAction } from "@/lib/admin/audit";
 import { requireAdmin } from "@/lib/admin/guard";
 import { parseChallengeConfig } from "@/lib/challenges/config";
+import {
+  assignDailyChallenges,
+  type DrawReport,
+} from "@/lib/challenges/daily-draw";
 import { parseNumberInput } from "@/lib/challenges/fields";
 import {
   buildConfig,
@@ -35,6 +39,11 @@ export type ChallengeFormState = {
   fieldErrors?: Record<string, string>;
   /** Errors on the evaluator's settings, as sentences. */
   configErrors?: string[];
+  message?: string;
+};
+
+export type DrawActionState = {
+  report?: DrawReport;
   message?: string;
 };
 
@@ -209,4 +218,41 @@ export async function setChallengeActive(
 
   revalidatePath("/admin/defis");
   return {};
+}
+
+/**
+ * Running the day's draw by hand.
+ *
+ * The answer to "the challenges did not go out this morning" — at six in the
+ * morning, from a phone, without a terminal. It calls exactly what the
+ * scheduled task calls: a second, hand-rolled version of the draw would
+ * eventually disagree with the real one, and it would disagree on the morning
+ * it was needed.
+ *
+ * Safe to press twice, and safe to press when the task already ran: everyone
+ * who has a challenge is skipped.
+ */
+export async function runDailyDraw(
+  _previous: DrawActionState,
+  _formData: FormData,
+): Promise<DrawActionState> {
+  const admin = await requireAdmin();
+  if (!admin) return { message: "Cette page n’est plus accessible." };
+
+  const report = await assignDailyChallenges();
+
+  await logAdminAction({
+    action: "challenges.drawn_manually",
+    payload: {
+      date: report.date,
+      assigned: report.assigned,
+      already_had: report.alreadyHad,
+      failures: report.failures,
+    },
+  });
+
+  revalidatePath("/admin/defis/attribution");
+  revalidatePath("/jeu");
+
+  return { report };
 }
