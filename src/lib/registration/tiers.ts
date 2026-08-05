@@ -29,6 +29,8 @@ export type RegistrationTier = {
   perks: string[];
   /** Drawn as the recommended tier. */
   featured: boolean;
+  /** Whether something physical has to be posted, so an address is needed. */
+  requiresShipping: boolean;
 };
 
 /**
@@ -81,7 +83,7 @@ export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
   const { data, error } = await supabase
     .from("registration_tiers")
     .select(
-      "id, slug, name, tagline, price_cents, donated_cents, perks, position",
+      "id, slug, name, tagline, price_cents, donated_cents, perks, position, requires_shipping",
     )
     .eq("edition_id", edition.id)
     .eq("available", true)
@@ -99,6 +101,7 @@ export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
     priceCents: row.price_cents,
     donatedCents: row.donated_cents,
     tagline: row.tagline,
+    requiresShipping: row.requires_shipping,
     perks: row.perks,
     /* The middle one, by position. Which tier is highlighted is a display
        decision, not something worth a column — it changes with the number of

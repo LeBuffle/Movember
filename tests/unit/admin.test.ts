@@ -148,7 +148,10 @@ describe("l’utilitaire de journalisation", () => {
  * ====================================================================== */
 
 describe("les sections du back-office", () => {
-  it("couvrent les huit domaines prévus", () => {
+  it("couvrent les domaines prévus", () => {
+    // La liste s'allonge quand un lot livre un écran qui n'avait pas été
+    // anticipé — « livraisons » est arrivé avec la story 2.7. Le test est là
+    // pour que cet ajout soit un geste délibéré, pas une dérive.
     expect(ADMIN_SECTIONS.map((s) => s.slug).sort()).toEqual([
       "actualites",
       "arbitrage",
@@ -156,6 +159,7 @@ describe("les sections du back-office", () => {
       "collecte",
       "defis",
       "equipes",
+      "livraisons",
       "notifications",
       "participants",
     ]);

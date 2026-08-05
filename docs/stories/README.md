@@ -60,8 +60,8 @@ l'ordre qui arrange.
 | 2.4 | [Webhook de paiement et activation du participant](2.4.webhook-activation.md) | **Review** | 2.3 |
 | 2.5 | [Page de confirmation et e-mail de bienvenue](2.5.confirmation-et-bienvenue.md) | Draft | 2.4 |
 | 2.6 | [Ligne comptable avec les frais réels](2.6.ligne-comptable-frais-reels.md) | **Review** | 2.4 |
-| 2.7 | [Adresse de livraison des contreparties](2.7.adresse-de-livraison.md) | Draft | 2.4 |
-| 2.8 | [Remboursement depuis le back-office](2.8.remboursement.md) | Draft | 2.6, 1.10 |
+| 2.7 | [Adresse de livraison des contreparties](2.7.adresse-de-livraison.md) | **Review** | 2.4 |
+| 2.8 | [Remboursement depuis le back-office](2.8.remboursement.md) | **Review** | 2.6, 1.10 |
 
 ### Ordre d'exécution
 

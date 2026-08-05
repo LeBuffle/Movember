@@ -41,6 +41,14 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     status: "comingSoon",
   },
   {
+    slug: "livraisons",
+    label: "Livraisons",
+    description:
+      "Où envoyer les médailles, et qui n’a pas encore donné son adresse.",
+    epic: "epic 2",
+    status: "available",
+  },
+  {
     slug: "participants",
     label: "Participants",
     description:

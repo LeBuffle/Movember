@@ -45,6 +45,8 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260804100000_registrations_payments.sql` | `registration_tiers`, `registrations`, `payments` |
 | `20260804110000_terms_acceptance.sql` | acceptation des CGV, avec sa version |
 | `20260804120000_challenges.sql` | `challenges`, `challenge_assignments` — le catalogue de défis |
+| `20260805100000_shipping_addresses.sql` | `shipping_addresses` — où envoyer les contreparties |
+| `20260805110000_refunds.sql` | l'identifiant de remboursement, qui le rend non rejouable |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

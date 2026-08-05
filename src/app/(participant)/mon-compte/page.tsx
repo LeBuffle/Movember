@@ -6,7 +6,9 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { InstallState } from "@/components/pwa/install-state";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import { AddressReminder } from "@/components/shipping/address-reminder";
 import { ROUTES } from "@/lib/auth/routes";
+import { getShippingContext } from "@/lib/shipping/address";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Mon compte — DEFI Movember" };
@@ -30,6 +32,9 @@ export default async function AccountPage() {
     .eq("id", user.id)
     .single();
 
+  // Only asks of those who actually have something coming (story 2.7).
+  const shipping = await getShippingContext();
+
   return (
     <>
       <SiteHeader />
@@ -38,6 +43,8 @@ export default async function AccountPage() {
         <h1 className="text-ink text-3xl font-bold tracking-tight">
           Mon compte
         </h1>
+
+        <AddressReminder context={shipping} />
 
         <Card>
           <CardTitle>Pseudonyme</CardTitle>

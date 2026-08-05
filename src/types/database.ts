@@ -91,6 +91,8 @@ export type Database = {
           perks: string[];
           position: number;
           available: boolean;
+          /** Whether this tier has something physical to post (story 2.7). */
+          requires_shipping: boolean;
           created_at: string;
         };
         Insert: {
@@ -104,6 +106,7 @@ export type Database = {
           perks?: string[];
           position?: number;
           available?: boolean;
+          requires_shipping?: boolean;
           created_at?: string;
         };
         Update: Partial<
@@ -153,6 +156,8 @@ export type Database = {
           stripe_session_id: string | null;
           stripe_payment_intent_id: string | null;
           stripe_charge_id: string | null;
+          /** Set on rows of kind `refund` only, and unique (story 2.8). */
+          stripe_refund_id: string | null;
           gross_cents: number;
           /** Null means "not known yet" — never zero. See story 2.6. */
           fee_cents: number | null;
@@ -170,6 +175,7 @@ export type Database = {
           stripe_session_id?: string | null;
           stripe_payment_intent_id?: string | null;
           stripe_charge_id?: string | null;
+          stripe_refund_id?: string | null;
           gross_cents: number;
           fee_cents?: number | null;
           net_cents?: number | null;
@@ -188,6 +194,39 @@ export type Database = {
           net_cents?: number | null;
           stripe_charge_id?: string | null;
         };
+        Relationships: [];
+      };
+      shipping_addresses: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          recipient_name: string;
+          line1: string;
+          line2: string | null;
+          postal_code: string;
+          city: string;
+          /** ISO 3166-1 alpha-2. */
+          country: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          recipient_name: string;
+          line1: string;
+          line2?: string | null;
+          postal_code: string;
+          city: string;
+          country?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["shipping_addresses"]["Insert"]
+        >;
         Relationships: [];
       };
       challenges: {

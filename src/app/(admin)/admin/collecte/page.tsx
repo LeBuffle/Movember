@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -6,6 +8,7 @@ import {
   summarisePayments,
   type PaymentRow,
 } from "@/lib/accounting/totals";
+import { listPayments } from "@/lib/accounting/payments";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { formatEuros } from "@/lib/registration/tiers";
 import { createClient } from "@/lib/supabase/server";
@@ -32,7 +35,12 @@ export const dynamic = "force-dynamic";
  *
  * Read through the administrator's session, so row level security answers.
  */
-export default async function CollectionPage() {
+export default async function CollectionPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
   const supabase = await createClient();
 
   const { data: edition } = await supabase
@@ -60,6 +68,7 @@ export default async function CollectionPage() {
   }
 
   const totals = summarisePayments((data ?? []) as PaymentRow[]);
+  const payments = await listPayments();
 
   return (
     <div className="space-y-6">
@@ -70,6 +79,13 @@ export default async function CollectionPage() {
           réellement prélevés par Stripe — jamais estimés.
         </p>
       </div>
+
+      {query.rembourse && (
+        <Alert tone="success" title="Remboursement effectué">
+          L’argent est reparti chez le participant, son accès au jeu est retiré,
+          et l’opération est inscrite au journal du back-office.
+        </Alert>
+      )}
 
       {totals.incomeCount === 0 ? (
         <Alert tone="info" title="Aucun encaissement pour l’instant">
@@ -191,10 +207,7 @@ export default async function CollectionPage() {
             </h2>
 
             {totals.refundCount === 0 ? (
-              <p className="text-ink-muted">
-                Aucun remboursement.{" "}
-                <Badge tone="neutral">Écran de remboursement — story 2.8</Badge>
-              </p>
+              <p className="text-ink-muted">Aucun remboursement.</p>
             ) : (
               <p className="text-ink">
                 {totals.refundCount} remboursement
@@ -203,6 +216,69 @@ export default async function CollectionPage() {
                 ci-dessus.
               </p>
             )}
+          </section>
+
+          <section aria-labelledby="encaissements" className="space-y-3">
+            <h2 id="encaissements" className="text-ink text-xl font-bold">
+              Les encaissements
+            </h2>
+            <p className="text-ink-muted text-sm">
+              Les cent derniers. Rembourser rend l’argent au participant et lui
+              retire l’accès au jeu — l’encaissement d’origine reste inscrit tel
+              quel dans la comptabilité.
+            </p>
+
+            <div className="border-line overflow-x-auto rounded-xl border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-sunken text-ink-muted">
+                  <tr>
+                    <th scope="col" className="p-3 font-semibold">
+                      Participant
+                    </th>
+                    <th scope="col" className="p-3 font-semibold">
+                      Montant
+                    </th>
+                    <th scope="col" className="p-3 font-semibold">
+                      Frais
+                    </th>
+                    <th scope="col" className="p-3 font-semibold">
+                      <span className="sr-only">Action</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-line divide-y">
+                  {payments.map((payment) => (
+                    <tr key={payment.id}>
+                      <td className="text-ink p-3">{payment.displayName}</td>
+                      <td className="text-ink p-3 whitespace-nowrap">
+                        {formatEuros(payment.grossCents)}
+                      </td>
+                      <td className="text-ink-muted p-3 whitespace-nowrap">
+                        {payment.feeCents === null ? (
+                          <Badge tone="neutral">en attente</Badge>
+                        ) : (
+                          formatEuros(payment.feeCents)
+                        )}
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        {payment.refunded ? (
+                          <Badge tone="neutral">remboursé</Badge>
+                        ) : payment.refundable ? (
+                          <Link
+                            href={`/admin/collecte/${payment.id}/rembourser`}
+                            className="text-brand-blue underline underline-offset-4"
+                          >
+                            Rembourser
+                          </Link>
+                        ) : (
+                          <span className="text-ink-muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <Alert tone="info" title="Export comptable — lot 9">

@@ -27,6 +27,7 @@ const TIER: RegistrationTier = {
   tagline: "Le niveau conseillé",
   perks: ["Une médaille"],
   featured: true,
+  requiresShipping: true,
 };
 
 const REQUEST = {

@@ -1,5 +1,7 @@
+import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
+import { getShippingContext } from "@/lib/shipping/address";
 
 /**
  * The participant's home inside the game.
@@ -9,7 +11,9 @@ import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
  * story — is everything around it: only a participant whose payment has been
  * confirmed by the webhook ever reaches this page.
  */
-export default function GameHome() {
+export default async function GameHome() {
+  const shipping = await getShippingContext();
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,6 +25,8 @@ export default function GameHome() {
           l’édition {EDITION_YEAR} est réservée.
         </p>
       </div>
+
+      <AddressReminder context={shipping} />
 
       <Alert tone="info" title="Le jeu ouvre le 1ᵉʳ novembre">
         Les défis quotidiens, les cartes et les classements arriveront ici.

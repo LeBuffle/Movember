@@ -84,10 +84,12 @@ on conflict (year) do nothing;
 -- -------------------------------------------------------------------------
 
 insert into public.registration_tiers (
-  edition_id, slug, name, tagline, price_cents, donated_cents, perks, position
+  edition_id, slug, name, tagline, price_cents, donated_cents, perks, position,
+  requires_shipping
 )
 select
-  e.id, v.slug, v.name, v.tagline, v.price_cents, v.donated_cents, v.perks, v.position
+  e.id, v.slug, v.name, v.tagline, v.price_cents, v.donated_cents, v.perks,
+  v.position, v.requires_shipping
 from public.editions e
 cross join (values
   (
@@ -100,7 +102,9 @@ cross join (values
       'Une carte offerte chaque jour, par tirage au sort',
       'Accès aux classements et aux équipes'
     ],
-    1
+    1,
+    -- Rien à poster : ce niveau se joue entièrement dans l'application.
+    false
   ),
   (
     'chevronne',
@@ -111,7 +115,8 @@ cross join (values
       'Tout le niveau Sportif engagé',
       'Une médaille premium envoyée à la fin du défi'
     ],
-    2
+    2,
+    true
   ),
   (
     'legendaire',
@@ -123,8 +128,10 @@ cross join (values
       '2 packs de 5 cartes moustachues',
       'Une carte légendaire garantie'
     ],
-    3
+    3,
+    true
   )
-) as v(slug, name, tagline, price_cents, donated_cents, perks, position)
+) as v(slug, name, tagline, price_cents, donated_cents, perks, position,
+       requires_shipping)
 where e.year = 2026
 on conflict (edition_id, slug) do nothing;

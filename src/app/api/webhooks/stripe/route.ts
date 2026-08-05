@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 
 import { recordFeesFromCharge } from "@/lib/accounting/fees";
+import { recordRefund } from "@/lib/accounting/refund";
 import { handleCheckoutCompleted } from "@/lib/registration/activation";
 import { verifyStripeSignature } from "@/lib/stripe/webhook";
 
@@ -87,6 +88,36 @@ export async function POST(request: Request) {
       }
 
       return Response.json({ received: true, outcome: result.outcome });
+    }
+
+    // A refund. Ours land here too, a moment after the back-office made them
+    // — harmlessly, since the refund identifier is unique in the database.
+    // What this really covers is a refund issued straight from the Stripe
+    // dashboard, which is what someone in a hurry will do (story 2.8).
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+
+      for (const refund of charge.refunds?.data ?? []) {
+        const result = await recordRefund({
+          refundId: refund.id,
+          chargeId: charge.id,
+          paymentIntentId:
+            typeof charge.payment_intent === "string"
+              ? charge.payment_intent
+              : (charge.payment_intent?.id ?? null),
+          amountCents: refund.amount,
+        });
+
+        if (!result.ok) {
+          console.error("[webhook] remboursement non enregistré", {
+            id: event.id,
+            reason: result.reason,
+          });
+          return new Response("Traitement en échec", { status: 500 });
+        }
+      }
+
+      return Response.json({ received: true, outcome: "refunds-recorded" });
     }
 
     default:
