@@ -94,6 +94,16 @@ export function ChallengeCard({
         {done && challenge.measured !== null && progress && (
           <span>Validé avec {progress.measured}.</span>
         )}
+
+        {challenge.arbitratedAt !== null && (
+          /* Said to the participant too, not only in the back-office. A
+             challenge decided by hand is a challenge whose points appeared
+             or vanished without an activity to explain them — and a
+             leaderboard that moves silently is one people stop trusting. */
+          <span className="text-brand-orange-ink">
+            Décidé par l’organisation.
+          </span>
+        )}
       </div>
     </Card>
   );

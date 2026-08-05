@@ -133,6 +133,12 @@ export default async function AdminChallengesPage({
           >
             Attribution du jour
           </Link>
+          <Link
+            href="/admin/defis/arbitrage"
+            className={buttonClasses({ variant: "ghost" })}
+          >
+            Arbitrage
+          </Link>
           <Link href="/admin/defis/nouveau" className={buttonClasses()}>
             Créer un défi
           </Link>

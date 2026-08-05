@@ -40,6 +40,7 @@ const CHALLENGE: ParticipantChallenge = {
   measured: null,
   evaluator: "distance",
   config: { min_distance_meters: 5000, sport_types: ["run"], window: "day" },
+  arbitratedAt: null,
 };
 
 const render = (

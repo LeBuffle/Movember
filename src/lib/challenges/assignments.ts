@@ -35,6 +35,12 @@ export type ParticipantChallenge = {
   /** Kept so the screen can show a goal, and one day a progress bar. */
   evaluator: string;
   config: Record<string, unknown> | null;
+  /**
+   * Set when an administrator decided this challenge by hand (story 4.10).
+   * Shown to the participant: points that moved without explanation are
+   * points the leaderboard gets contested over.
+   */
+  arbitratedAt: string | null;
 };
 
 export async function getParticipantChallenges(
@@ -68,7 +74,7 @@ async function readAssignments(
   const query = supabase
     .from("challenge_assignments")
     .select(
-      "id, assigned_for, status, source, completed_at, points_awarded, evidence, challenges (title, description, evaluator, config, points)",
+      "id, assigned_for, status, source, completed_at, points_awarded, arbitrated_at, evidence, challenges (title, description, evaluator, config, points)",
     )
     .eq("profile_id", profileId)
     .order("assigned_for", { ascending: false });
@@ -92,6 +98,7 @@ async function readAssignments(
     source: ParticipantChallenge["source"];
     completed_at: string | null;
     points_awarded: number | null;
+    arbitrated_at: string | null;
     evidence: Record<string, unknown> | null;
     challenges: {
       title: string;
@@ -123,6 +130,7 @@ async function readAssignments(
         completedAt: row.completed_at,
         evaluator: challenge.evaluator,
         config,
+        arbitratedAt: row.arbitrated_at,
         measured:
           typeof row.evidence?.measured === "number"
             ? row.evidence.measured

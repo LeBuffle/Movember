@@ -316,6 +316,9 @@ export type Database = {
           points_awarded: number | null;
           /** What satisfied it (story 4.3). Written by the evaluation only. */
           evidence: Record<string, unknown>;
+          /** Decided by hand (story 4.10). The reason is in the audit log. */
+          arbitrated_at: string | null;
+          arbitrated_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -329,6 +332,8 @@ export type Database = {
           completed_at?: string | null;
           points_awarded?: number | null;
           evidence?: Record<string, unknown>;
+          arbitrated_at?: string | null;
+          arbitrated_by?: string | null;
           created_at?: string;
         };
         Update: Partial<

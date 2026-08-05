@@ -50,6 +50,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260805120000_challenge_evidence.sql` | ce qui a validé un défi, pour pouvoir le montrer |
 | `20260805130000_catchup_assignments.sql` | le défi de rattrapage, quand le catalogue est épuisé |
 | `20260805140000_common_challenges.sql` | `common_challenges` — le défi imposé à tous un jour donné |
+| `20260805150000_challenge_arbitration.sql` | la marque d'un défi tranché à la main par l'organisation |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 
