@@ -21,6 +21,8 @@ export type ParticipantChallenge = {
   id: string;
   assignedFor: string;
   status: "open" | "completed" | "missed";
+  /** `common` is the challenge everybody got that day (story 4.8). */
+  source: "draw" | "catchup" | "common" | "manual";
   title: string;
   description: string;
   /** The same sentences the author validated in the back-office. */
@@ -49,7 +51,7 @@ export async function getParticipantChallenges(
   const { data, error } = await supabase
     .from("challenge_assignments")
     .select(
-      "id, assigned_for, status, completed_at, points_awarded, evidence, challenges (title, description, evaluator, config, points)",
+      "id, assigned_for, status, source, completed_at, points_awarded, evidence, challenges (title, description, evaluator, config, points)",
     )
     .eq("profile_id", user.id)
     .order("assigned_for", { ascending: false })
@@ -66,6 +68,7 @@ export async function getParticipantChallenges(
     id: string;
     assigned_for: string;
     status: ParticipantChallenge["status"];
+    source: ParticipantChallenge["source"];
     completed_at: string | null;
     points_awarded: number | null;
     evidence: Record<string, unknown> | null;
@@ -88,6 +91,7 @@ export async function getParticipantChallenges(
         id: row.id,
         assignedFor: row.assigned_for,
         status: row.status,
+        source: row.source,
         title: challenge.title,
         description: challenge.description,
         // A challenge whose settings no longer parse is shown as a title with

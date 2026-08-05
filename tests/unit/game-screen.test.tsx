@@ -27,6 +27,7 @@ const CHALLENGE: ParticipantChallenge = {
   id: "a-1",
   assignedFor: "2026-11-15",
   status: "open",
+  source: "draw",
   title: "Cinq bornes avant le café",
   description: "Une mise en jambes.",
   lines: [
@@ -119,6 +120,13 @@ describe("la carte d’un défi", () => {
 
     expect(html).toContain("Cinq bornes avant le café");
     expect(html).not.toContain("progressbar");
+  });
+
+  it("nomme un défi commun pour ce qu’il est", () => {
+    // Ça change ce que le défi veut dire : tout le monde l'a aujourd'hui, et
+    // c'est tout l'intérêt.
+    expect(render({ source: "common" })).toMatch(/Défi commun/);
+    expect(render()).not.toMatch(/Défi commun/);
   });
 
   it("met en avant le défi du jour", () => {

@@ -1,9 +1,21 @@
 import Link from "next/link";
 
+import {
+  CancelCommonChallenge,
+  CommonChallengeForm,
+} from "@/components/admin/common-challenge-form";
 import { DrawRunner } from "@/components/admin/draw-runner";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
-import { runDailyDraw } from "@/lib/challenges/admin-actions";
+import {
+  cancelCommonChallenge,
+  runDailyDraw,
+  scheduleCommonChallenge,
+} from "@/lib/challenges/admin-actions";
+import {
+  listChallengeOptions,
+  listCommonChallenges,
+} from "@/lib/challenges/common";
 import { todayInParis } from "@/lib/challenges/daily-draw";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
@@ -48,6 +60,11 @@ export default async function DailyDrawPage() {
           .in("source", ["draw", "catchup"]),
       ])
     : null;
+
+  const [commons, options] = await Promise.all([
+    listCommonChallenges(),
+    listChallengeOptions(),
+  ]);
 
   const participants = counts?.[0]?.count ?? 0;
   const assigned = counts?.[1]?.count ?? 0;
@@ -102,6 +119,54 @@ export default async function DailyDrawPage() {
       </Alert>
 
       <DrawRunner action={runDailyDraw} />
+
+      <section aria-labelledby="commun" className="space-y-4">
+        <div>
+          <h2 id="commun" className="text-ink text-xl font-bold">
+            Défi commun
+          </h2>
+          <p className="text-ink-muted mt-1 text-sm">
+            Le même défi pour tout le monde un jour donné — le 11 novembre, un
+            week-end. C’est ce qui donne au mois ses moments partagés : sans
+            lui, chacun avance seul avec ses propres défis.
+          </p>
+        </div>
+
+        {commons.length > 0 && (
+          <ul className="border-line divide-line divide-y rounded-xl border">
+            {commons.map((common) => (
+              <li
+                key={common.id}
+                className="flex flex-wrap items-center justify-between gap-3 p-3"
+              >
+                <div>
+                  <p className="text-ink font-medium">
+                    {common.scheduledFor} — {common.challengeTitle}
+                  </p>
+                  <p className="text-ink-muted text-sm">
+                    {common.mode === "replace"
+                      ? "À la place du défi du jour"
+                      : "En plus du défi du jour"}
+                    {common.cancelled && " — annulé"}
+                  </p>
+                </div>
+
+                {common.cancellable && (
+                  <CancelCommonChallenge
+                    action={cancelCommonChallenge}
+                    id={common.id}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <CommonChallengeForm
+          action={scheduleCommonChallenge}
+          challenges={options}
+        />
+      </section>
     </div>
   );
 }

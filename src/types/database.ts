@@ -275,6 +275,33 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["challenges"]["Insert"]>;
         Relationships: [];
       };
+      common_challenges: {
+        Row: {
+          id: string;
+          edition_id: string;
+          challenge_id: string;
+          scheduled_for: string;
+          /** Explicit: replaces the day's draw, or adds to it (story 4.8). */
+          mode: "replace" | "additional";
+          cancelled_at: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          challenge_id: string;
+          scheduled_for: string;
+          mode: "replace" | "additional";
+          cancelled_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["common_challenges"]["Insert"]
+        >;
+        Relationships: [];
+      };
       challenge_assignments: {
         Row: {
           id: string;

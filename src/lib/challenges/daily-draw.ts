@@ -36,6 +36,8 @@ export type DrawReport = {
   assigned: number;
   alreadyHad: number;
   catchUps: number;
+  /** Assignments of the day's common challenge, if there is one. */
+  commonAssigned: number;
   failures: number;
   /** Set when the catalogue cannot cover the month any more. */
   warning: string | null;
@@ -81,6 +83,7 @@ export async function assignDailyChallenges(
     assigned: 0,
     alreadyHad: 0,
     catchUps: 0,
+    commonAssigned: 0,
     failures: 0,
     warning: null,
   };
@@ -97,27 +100,41 @@ export async function assignDailyChallenges(
     return report;
   }
 
-  const [{ data: challenges }, { data: registrations }, { data: assignments }] =
-    await Promise.all([
-      admin
-        .from("challenges")
-        .select("id, sport_family")
-        .eq("edition_id", edition.id)
-        .eq("is_active", true),
-      admin
-        .from("registrations")
-        .select("profile_id")
-        .eq("edition_id", edition.id)
-        .eq("status", "active"),
-      // Every assignment of the edition, once. One query rather than one per
-      // participant: at four hundred people over thirty days this is a few
-      // thousand rows, and four hundred round trips would be four hundred
-      // chances to time out halfway.
-      admin
-        .from("challenge_assignments")
-        .select("profile_id, challenge_id, assigned_for, source")
-        .eq("edition_id", edition.id),
-    ]);
+  const [
+    { data: challenges },
+    { data: registrations },
+    { data: assignments },
+    { data: common },
+  ] = await Promise.all([
+    admin
+      .from("challenges")
+      .select("id, sport_family")
+      .eq("edition_id", edition.id)
+      .eq("is_active", true),
+    admin
+      .from("registrations")
+      .select("profile_id")
+      .eq("edition_id", edition.id)
+      .eq("status", "active"),
+    // Every assignment of the edition, once. One query rather than one per
+    // participant: at four hundred people over thirty days this is a few
+    // thousand rows, and four hundred round trips would be four hundred
+    // chances to time out halfway.
+    admin
+      .from("challenge_assignments")
+      .select("profile_id, challenge_id, assigned_for, source")
+      .eq("edition_id", edition.id),
+    // The day's shared challenge, if the animation scheduled one. Cancelled
+    // ones are ignored rather than deleted, so "there was one and it was
+    // called off" stays readable.
+    admin
+      .from("common_challenges")
+      .select("challenge_id, mode")
+      .eq("edition_id", edition.id)
+      .eq("scheduled_for", date)
+      .is("cancelled_at", null)
+      .maybeSingle(),
+  ]);
 
   const candidates: DrawCandidate[] = (challenges ?? []).map((challenge) => ({
     id: challenge.id,
@@ -151,6 +168,7 @@ export async function assignDailyChallenges(
 
   const received = new Map<string, string[]>();
   const hasToday = new Set<string>();
+  const hasCommonToday = new Set<string>();
 
   for (const assignment of assignments ?? []) {
     if (assignment.source === "draw") {
@@ -160,11 +178,14 @@ export async function assignDailyChallenges(
       ]);
     }
 
-    if (
-      assignment.assigned_for === date &&
-      (assignment.source === "draw" || assignment.source === "catchup")
-    ) {
+    if (assignment.assigned_for !== date) continue;
+
+    if (assignment.source === "draw" || assignment.source === "catchup") {
       hasToday.add(assignment.profile_id);
+    }
+
+    if (assignment.source === "common") {
+      hasCommonToday.add(assignment.profile_id);
     }
   }
 
@@ -172,6 +193,31 @@ export async function assignDailyChallenges(
 
   for (const registration of registrations ?? []) {
     const profileId = registration.profile_id;
+
+    if (common && !hasCommonToday.has(profileId)) {
+      const { error } = await admin.from("challenge_assignments").insert({
+        profile_id: profileId,
+        edition_id: edition.id,
+        challenge_id: common.challenge_id,
+        assigned_for: date,
+        source: "common",
+        status: "open",
+      });
+
+      if (!error) report.commonAssigned += 1;
+      else if (error.code !== "23505") {
+        console.error("[tirage] défi commun non attribué", {
+          profile: profileId,
+          code: error.code,
+        });
+        report.failures += 1;
+      }
+    }
+
+    // `replace` means the shared challenge *is* the day's challenge. Deciding
+    // this in code rather than asking would produce the wrong surprise one day
+    // in two — so the mode was chosen when the animation was scheduled.
+    if (common?.mode === "replace") continue;
 
     if (hasToday.has(profileId)) {
       report.alreadyHad += 1;

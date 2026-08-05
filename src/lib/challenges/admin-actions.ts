@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/admin/guard";
 import { parseChallengeConfig } from "@/lib/challenges/config";
 import {
   assignDailyChallenges,
+  todayInParis,
   type DrawReport,
 } from "@/lib/challenges/daily-draw";
 import { parseNumberInput } from "@/lib/challenges/fields";
@@ -40,6 +41,13 @@ export type ChallengeFormState = {
   /** Errors on the evaluator's settings, as sentences. */
   configErrors?: string[];
   message?: string;
+};
+
+export type CommonFormState = {
+  errors?: Record<string, string>;
+  message?: string;
+  scheduled?: boolean;
+  cancelled?: boolean;
 };
 
 export type DrawActionState = {
@@ -255,4 +263,134 @@ export async function runDailyDraw(
   revalidatePath("/jeu");
 
   return { report };
+}
+
+/**
+ * Scheduling the challenge everybody gets that day.
+ *
+ * The mode is asked for, never inferred. "In addition" and "instead" both
+ * make sense — one loads the day, the other lightens it — and a code that
+ * chose for the animation team would be wrong one day in two.
+ */
+export async function scheduleCommonChallenge(
+  _previous: CommonFormState,
+  formData: FormData,
+): Promise<CommonFormState> {
+  const admin = await requireAdmin();
+  if (!admin) return { message: "Cette page n’est plus accessible." };
+
+  const challengeId = String(formData.get("challengeId") ?? "").trim();
+  const scheduledFor = String(formData.get("scheduledFor") ?? "").trim();
+  const mode = String(formData.get("mode") ?? "");
+
+  const errors: Record<string, string> = {};
+
+  if (!challengeId) errors.challengeId = "Choisissez un défi.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledFor)) {
+    errors.scheduledFor = "Indiquez une date.";
+  } else if (scheduledFor < todayInParis()) {
+    // A day already gone has already had its challenges handed out.
+    errors.scheduledFor = "Cette date est passée.";
+  }
+  if (mode !== "replace" && mode !== "additional") {
+    errors.mode = "Précisez si ce défi remplace celui du jour ou s’y ajoute.";
+  }
+
+  if (Object.keys(errors).length > 0) return { errors };
+
+  const supabase = await createClient();
+
+  const { data: edition } = await supabase
+    .from("editions")
+    .select("id")
+    .eq("year", EDITION_YEAR)
+    .maybeSingle();
+
+  if (!edition) return { message: "L’édition n’a pas été trouvée." };
+
+  const { error } = await supabase.from("common_challenges").insert({
+    edition_id: edition.id,
+    challenge_id: challengeId,
+    scheduled_for: scheduledFor,
+    mode: mode as "replace" | "additional",
+    created_by: admin.id,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        errors: {
+          scheduledFor: "Un défi commun est déjà prévu ce jour-là.",
+        },
+      };
+    }
+
+    console.error("[défi commun] programmation impossible", {
+      code: error.code,
+    });
+    return { message: "Le défi commun n’a pas pu être programmé." };
+  }
+
+  await logAdminAction({
+    action: "common_challenge.scheduled",
+    targetTable: "common_challenges",
+    targetId: challengeId,
+    payload: { scheduled_for: scheduledFor, mode },
+  });
+
+  revalidatePath("/admin/defis/attribution");
+  return { scheduled: true };
+}
+
+/**
+ * Calling one off, while the day is still ahead.
+ *
+ * Cancelled rather than deleted: "there was a common challenge that day and
+ * it was called off" is a fact worth being able to read in December. And only
+ * before the day arrives — cancelling afterwards would take a challenge away
+ * from people already looking at it.
+ */
+export async function cancelCommonChallenge(
+  _previous: CommonFormState,
+  formData: FormData,
+): Promise<CommonFormState> {
+  const admin = await requireAdmin();
+  if (!admin) return { message: "Cette page n’est plus accessible." };
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return { message: "Défi commun introuvable." };
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("common_challenges")
+    .update({ cancelled_at: new Date().toISOString() })
+    .eq("id", id)
+    .is("cancelled_at", null)
+    // The guard carried by the write itself, not by a check made a moment
+    // earlier: the day can turn over between the two.
+    .gt("scheduled_for", todayInParis())
+    .select("id, scheduled_for");
+
+  if (error) {
+    console.error("[défi commun] annulation impossible", { code: error.code });
+    return { message: "L’annulation n’a pas pu être enregistrée." };
+  }
+
+  if ((data ?? []).length === 0) {
+    return {
+      message:
+        "Ce défi commun ne peut plus être annulé : sa date est arrivée, ou il l’était déjà.",
+    };
+  }
+
+  await logAdminAction({
+    action: "common_challenge.cancelled",
+    targetTable: "common_challenges",
+    targetId: id,
+    payload: { scheduled_for: data![0]!.scheduled_for },
+  });
+
+  revalidatePath("/admin/defis/attribution");
+  return { cancelled: true };
 }

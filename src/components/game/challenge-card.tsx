@@ -56,7 +56,16 @@ export function ChallengeCard({
   return (
     <Card accent={challenge.assignedFor === today && !done}>
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <h3 className="text-ink text-lg font-semibold">{challenge.title}</h3>
+        <div>
+          {challenge.source === "common" && (
+            /* Named, because it changes what the challenge means: everybody
+               has this one today, and that is the whole point of it. */
+            <p className="text-brand-blue text-xs font-semibold tracking-wide uppercase">
+              Défi commun — tout le monde l’a aujourd’hui
+            </p>
+          )}
+          <h3 className="text-ink text-lg font-semibold">{challenge.title}</h3>
+        </div>
         <ChallengeStatus status={STATUS[challenge.status]} />
       </div>
 
