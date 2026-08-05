@@ -98,7 +98,7 @@ les trois branches sont indépendantes.
 | 4.3 | [**Premier évaluateur de bout en bout : distance**](4.3.premier-evaluateur-distance.md) | **Review** | 4.1 |
 | 4.4 | [Attribution quotidienne individuelle](4.4.attribution-quotidienne.md) | **Review** | 4.1, 1.4 |
 | 4.5 | [Défis cumulables](4.5.defis-cumulables.md) | Draft | 4.3, 4.4 |
-| 4.6 | [Défis en cours et progression côté participant](4.6.affichage-defis-en-cours.md) | Draft | 4.4 |
+| 4.6 | [Défis en cours et progression côté participant](4.6.affichage-defis-en-cours.md) | **Review** | 4.4 |
 | 4.7 | [Les six évaluateurs restants](4.7.evaluateurs-restants.md) | **Review** | 4.3 |
 | 4.8 | [Défi commun imposé à tous](4.8.defi-commun.md) | Draft | 4.4 |
 | 4.9 | [Historique des défis](4.9.historique-defis.md) | Draft | 4.5 |

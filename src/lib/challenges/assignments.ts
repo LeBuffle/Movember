@@ -30,6 +30,9 @@ export type ParticipantChallenge = {
   completedAt: string | null;
   /** What satisfied it, if anything did. */
   measured: number | null;
+  /** Kept so the screen can show a goal, and one day a progress bar. */
+  evaluator: string;
+  config: Record<string, unknown> | null;
 };
 
 export async function getParticipantChallenges(
@@ -93,6 +96,8 @@ export async function getParticipantChallenges(
         points: challenge.points,
         pointsAwarded: row.points_awarded,
         completedAt: row.completed_at,
+        evaluator: challenge.evaluator,
+        config,
         measured:
           typeof row.evidence?.measured === "number"
             ? row.evidence.measured

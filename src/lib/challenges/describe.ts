@@ -25,8 +25,20 @@ function group(value: number): string {
 export function formatDistance(meters: number): string {
   if (meters < 1000) return `${group(meters)} m`;
 
-  const km = meters / 1000;
-  return `${group(Number(km.toFixed(2)))} km`;
+  const km = Number((meters / 1000).toFixed(2));
+
+  // Comma, not point. "5.5 km" is how a machine writes it; a French reader
+  // sees a thousands separator and reads five thousand five hundred.
+  return `${group(Math.trunc(km))}${decimals(km)} km`;
+}
+
+/** The fractional part, French-style, or nothing at all. */
+function decimals(value: number): string {
+  const fraction = Math.abs(value) % 1;
+
+  return fraction === 0
+    ? ""
+    : `,${String(Number(fraction.toFixed(2))).slice(2)}`;
 }
 
 export function formatDuration(seconds: number): string {
