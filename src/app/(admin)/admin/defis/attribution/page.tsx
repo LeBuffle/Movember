@@ -5,8 +5,11 @@ import {
   CommonChallengeForm,
 } from "@/components/admin/common-challenge-form";
 import { DrawRunner } from "@/components/admin/draw-runner";
+import { SimulatedActivities } from "@/components/admin/simulated-activities";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import { injectSimulatedActivities } from "@/lib/activities/actions";
+import { SIMULATION_ALLOWED } from "@/lib/activities/simulation";
 import {
   cancelCommonChallenge,
   runDailyDraw,
@@ -167,6 +170,32 @@ export default async function DailyDrawPage() {
           challenges={options}
         />
       </section>
+
+      {SIMULATION_ALLOWED && (
+        <section aria-labelledby="simulees" className="space-y-4">
+          <div>
+            <h2 id="simulees" className="text-ink text-xl font-bold">
+              Activités simulées
+            </h2>
+            <p className="text-ink-muted mt-1 text-sm">
+              Une dizaine de sorties inventées — course, vélo, natation, marche,
+              renforcement — injectées sur votre propre compte. Elles font
+              tourner le moteur de bout en bout sans aucun compte Strava : le
+              défi se valide, les points tombent, l’historique se remplit.
+            </p>
+          </div>
+
+          {/* Absent from production, not merely disabled: made-up activities
+              on the real edition would put points on a real leaderboard, and
+              there is no undoing that quietly. */}
+          <Alert tone="warning" title="Préproduction uniquement">
+            Cette section n’existe pas en production. Ces activités sont
+            fabriquées : elles ne viennent d’aucune montre et ne prouvent rien.
+          </Alert>
+
+          <SimulatedActivities action={injectSimulatedActivities} day={date} />
+        </section>
+      )}
     </div>
   );
 }

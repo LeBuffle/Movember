@@ -22,6 +22,8 @@ export type AssignmentSource =
   | "common"
   | "manual";
 export type AssignmentStatus = "open" | "completed" | "missed";
+/** Where an activity came from (architecture D3). Garmin joins this list. */
+export type ActivityProviderKey = "strava" | "manual" | "simulated";
 
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
 import type { Difficulty, SportFamily } from "@/lib/challenges/sports";
@@ -339,6 +341,48 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["challenge_assignments"]["Insert"]
         >;
+        Relationships: [];
+      };
+      /**
+       * The single internal activity format (architecture D3).
+       *
+       * No GPS track, no heart rate, no power, no cadence — and this type is
+       * one of the places that has to stay true to that (D9, story 3.4).
+       */
+      activities: {
+        Row: {
+          id: string;
+          profile_id: string;
+          provider: ActivityProviderKey;
+          /** The identifier at the provider. Unique per provider, not globally. */
+          provider_activity_id: string;
+          name: string;
+          sport_family: SportFamily;
+          started_at: string;
+          /** Calendar day in Europe/Paris, computed at the border. */
+          local_date: string;
+          distance_meters: number;
+          duration_seconds: number;
+          elevation_meters: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          provider: ActivityProviderKey;
+          provider_activity_id: string;
+          name?: string;
+          sport_family: SportFamily;
+          started_at: string;
+          local_date: string;
+          distance_meters?: number;
+          duration_seconds?: number;
+          elevation_meters?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["activities"]["Insert"]>;
         Relationships: [];
       };
       admin_audit_log: {

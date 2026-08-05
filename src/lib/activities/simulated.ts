@@ -1,5 +1,11 @@
 import type { Activity } from "@/lib/activities/activity";
 import { addDays } from "@/lib/activities/activity";
+import {
+  sourceFailure,
+  type ActivitySource,
+  type SourceCredentials,
+  type SourceResult,
+} from "@/lib/activities/source";
 
 /**
  * Made-up activities, so the engine can be built before Strava exists.
@@ -173,3 +179,57 @@ export function simulatedActivitiesForDay(
     (activity) => activity.localDate === referenceDate,
   );
 }
+
+/* -------------------------------------------------------------------------
+ * The same fixtures, as a source (architecture D3)
+ *
+ * It authorises nothing, exchanges nothing and refreshes nothing — and says
+ * so, rather than throwing. "This source has no authorisation" is a
+ * legitimate answer to the contract, not a hole in it: the interface stays
+ * total, and the caller handles one shape of failure whichever source it is
+ * talking to.
+ * ---------------------------------------------------------------------- */
+
+const noAuthorisation = <T>(): SourceResult<T> => sourceFailure("unsupported");
+
+export const simulatedSource: ActivitySource = {
+  key: "simulated",
+  label: "Activités simulées",
+
+  authorizationUrl: () => noAuthorisation<string>(),
+  exchangeCode: async () => noAuthorisation<SourceCredentials>(),
+  refresh: async () => noAuthorisation<SourceCredentials>(),
+
+  /**
+   * The fixtures already have the internal shape, so normalising one is
+   * checking that it really is one — which is the useful half of the job,
+   * and the half a made-up payload would otherwise skip.
+   */
+  normalise(raw: unknown, profileId: string): Activity | null {
+    if (typeof raw !== "object" || raw === null) return null;
+
+    const sample = raw as Partial<Activity>;
+
+    if (
+      typeof sample.id !== "string" ||
+      typeof sample.localDate !== "string" ||
+      typeof sample.startedAt !== "string" ||
+      typeof sample.sportFamily !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      id: sample.id,
+      provider: "simulated",
+      profileId,
+      name: sample.name ?? "",
+      sportFamily: sample.sportFamily,
+      startedAt: sample.startedAt,
+      localDate: sample.localDate,
+      distanceMeters: sample.distanceMeters ?? 0,
+      durationSeconds: sample.durationSeconds ?? 0,
+      elevationMeters: sample.elevationMeters ?? 0,
+    };
+  },
+};
