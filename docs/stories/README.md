@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epics 1, 2 et 4 détaillés · epics 3 et 5 à 11 à détailler au fil de l'avancement |
+| **Statut** | Epics 1, 2, 3 et 4 détaillés · epics 5 à 11 à détailler au fil de l'avancement |
 
 ---
 
@@ -89,6 +89,48 @@ les trois branches sont indépendantes.
 
 ---
 
+## Epic 3 : Connexion Strava et synchronisation
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 3.1 | [Couche « source d'activité » et activités simulées](3.1.source-activite-simulee.md) | Draft | 1.6 |
+| 3.2 | [Consentement au traitement des données d'activité](3.2.consentement-donnees-activite.md) | Draft | 1.7 |
+| 3.3 | [Connexion OAuth du compte Strava](3.3.connexion-oauth-strava.md) | Draft | 3.1, 3.2 |
+| 3.4 | [Normalisation et minimisation des activités](3.4.normalisation-minimisation.md) | Draft | 3.1 |
+| 3.5 | [Réception des activités par webhook](3.5.webhook-strava.md) | Draft | 3.3, 3.4 |
+| 3.6 | [Rattrapage périodique et import initial](3.6.rattrapage-import-initial.md) | Draft | 3.3, 3.4 |
+| 3.7 | [Rafraîchissement des jetons et connexions expirées](3.7.rafraichissement-jetons.md) | Draft | 3.3 |
+| 3.8 | [État de la connexion et resynchronisation](3.8.etat-connexion-resync.md) | Draft | 3.6, 3.7 |
+| 3.9 | [Comportement dégradé si Strava est indisponible](3.9.mode-degrade-strava.md) | Draft | 3.5, 3.6 |
+
+### Ordre d'exécution
+
+```
+3.1 ──┬──► 3.4 ──┬──► 3.5 ──┬──► 3.9
+      │          │          │
+      └──► 3.2 ──┴► 3.3 ──┬─┴──► 3.6 ──┬──► 3.8
+                          └──► 3.7 ─────┘
+```
+
+**3.1 en premier, avant même l'authentification Strava, et c'est délibéré.** Elle livre la
+couche d'abstraction et un jeu d'activités simulées : c'est la seule réponse possible au
+risque externe de l'epic, et c'est ce qui a permis de construire tout l'epic 4 sans Strava.
+
+### Ce qui bloque quoi
+
+| Prérequis externe | Bloque | Contournement |
+| --- | --- | --- |
+| **Application déclarée chez Strava** (identifiant + secret) | 3.3 et suivantes | **3.1, 3.2 et 3.4 se mènent sans**. La création prend quelques minutes |
+| **Quota d'athlètes relevé par Strava** | 3.3 en production | Le quota d'origine suffit pour développer et tester à quelques comptes. ⚠️ **Délai non maîtrisé : à demander le plus tôt possible** |
+| **Conformité de l'usage au contrat développeur Strava** | rien techniquement | ⚠️ **Vérification à mener par le PO sans délai.** Si l'usage prévu — classements entre participants à partir de données Strava — n'était pas conforme, c'est le concept du jeu qui serait à revoir, pas le code |
+| Un seul abonnement webhook par application Strava | 3.5 | Préproduction ou production, pas les deux. L'environnement non abonné vit sur le rattrapage de la story 3.6 |
+
+> **C'est l'epic le plus risqué du projet, et le risque n'est pas technique.** Les deux
+> points d'interrogation — le quota et la conformité — se règlent auprès de Strava, avec des
+> délais que personne ici ne maîtrise. Le découpage les contient ; il ne les supprime pas.
+
+---
+
 ## Epic 4 : Moteur de défis
 
 | # | Story | Statut | Dépend de |
@@ -158,13 +200,13 @@ Une pull request par branche, squash merge dans `main` après validation du PO.
 
 ---
 
-## Stories des epics 2 à 11
+## Stories des epics 5 à 11
 
 Elles seront rédigées **au fil de l'avancement**, epic par epic, plutôt que toutes
 d'avance. Deux raisons :
 
-1. Le découpage de l'epic 4 (moteur de défis) bénéficiera de ce qu'on aura appris en
-   construisant le socle.
+1. Le découpage d'un epic bénéficie de ce qu'on a appris en construisant les précédents —
+   l'epic 4 en a été la démonstration.
 2. Plusieurs points restent à trancher avec le PO (barème de points, prix des packs,
    probabilités de tirage) et figeraient prématurément des critères d'acceptation.
 
