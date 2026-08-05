@@ -193,13 +193,14 @@ describe("le défi de distance", () => {
   });
 });
 
-describe("les types pas encore évalués", () => {
-  it("refusent explicitement plutôt que de dire « manqué »", () => {
+describe("ce qui ne peut pas être jugé", () => {
+  it("refuse explicitement plutôt que de dire « manqué »", () => {
     // « Pas encore jugé » et « jugé et raté » sont deux réponses différentes.
-    // Les confondre distribuerait des défis manqués incontestables.
+    // Les confondre distribuerait des défis manqués incontestables. Ici, une
+    // régularité sans historique (story 4.7).
     const verdict = evaluate("streak", {
       activity: activity(),
-      config: {},
+      config: { days: 5, sport_types: ["run"] },
       context: CONTEXT,
     });
 
@@ -207,9 +208,9 @@ describe("les types pas encore évalués", () => {
     expect("unsupported" in verdict).toBe(true);
   });
 
-  it("se déclarent", () => {
+  it("distingue un type connu d’un type inventé", () => {
     expect(isEvaluable("distance")).toBe(true);
-    expect(isEvaluable("streak")).toBe(false);
+    expect(isEvaluable("streak")).toBe(true);
     expect(isEvaluable("téléportation")).toBe(false);
   });
 });

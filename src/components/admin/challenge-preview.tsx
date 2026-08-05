@@ -135,8 +135,9 @@ function Rehearsal({
     return (
       <div className="border-line mt-4 border-t pt-4">
         <p className="text-ink-muted text-sm">
-          Ce type de défi n’est pas encore évalué automatiquement — l’essai
-          arrivera avec le reste des évaluateurs.
+          Ce type de défi se juge sur plusieurs jours, ou sur ce que font tous
+          les participants : il ne peut pas être mis à l’essai sur une seule
+          journée. Ses réglages, eux, sont valides.
         </p>
       </div>
     );
