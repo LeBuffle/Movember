@@ -385,6 +385,29 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["activities"]["Insert"]>;
         Relationships: [];
       };
+      /**
+       * Append-only log of consent to activity data processing (story 3.2).
+       * No Update type, deliberately: withdrawing adds a row, never edits one.
+       */
+      activity_consents: {
+        Row: {
+          id: string;
+          profile_id: string;
+          action: "granted" | "withdrawn";
+          /** Which text was agreed to. Null on a withdrawal. */
+          version: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          action: "granted" | "withdrawn";
+          version?: string | null;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;

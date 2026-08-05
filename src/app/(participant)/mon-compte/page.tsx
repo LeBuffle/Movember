@@ -68,6 +68,24 @@ export default async function AccountPage() {
         </Card>
 
         <Card>
+          <CardTitle>Mes activités sportives</CardTitle>
+          <CardBody>
+            <p>
+              Ce que le jeu récupère de vos sorties, ce qu’il ne récupère
+              jamais, et votre autorisation.
+            </p>
+            <p className="mt-3">
+              <Link
+                href="/mon-compte/activites"
+                className="text-brand-blue underline underline-offset-4"
+              >
+                Voir et gérer mon autorisation
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+
+        <Card>
           <CardTitle>Application installée</CardTitle>
           <CardBody>
             <p>

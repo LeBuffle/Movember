@@ -94,7 +94,7 @@ les trois branches sont indépendantes.
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
 | 3.1 | [Couche « source d'activité » et activités simulées](3.1.source-activite-simulee.md) | **Review** | 1.6 |
-| 3.2 | [Consentement au traitement des données d'activité](3.2.consentement-donnees-activite.md) | Draft | 1.7 |
+| 3.2 | [Consentement au traitement des données d'activité](3.2.consentement-donnees-activite.md) | **Review** | 1.7 |
 | 3.3 | [Connexion OAuth du compte Strava](3.3.connexion-oauth-strava.md) | Draft | 3.1, 3.2 |
 | 3.4 | [Normalisation et minimisation des activités](3.4.normalisation-minimisation.md) | Draft | 3.1 |
 | 3.5 | [Réception des activités par webhook](3.5.webhook-strava.md) | Draft | 3.3, 3.4 |
