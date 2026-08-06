@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { TeamFormState } from "@/lib/teams/actions";
-import { TEAM_KINDS } from "@/lib/teams/membership";
+import { TEAM_KINDS } from "@/lib/teams/kinds";
 
 /**
  * Joining a team, or starting one.

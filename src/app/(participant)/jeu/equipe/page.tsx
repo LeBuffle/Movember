@@ -5,7 +5,8 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { formatJoinCode } from "@/lib/teams/code";
 import { createTeamAction, joinTeamAction } from "@/lib/teams/actions";
-import { ownTeam, TEAM_KINDS } from "@/lib/teams/membership";
+import { TEAM_KINDS } from "@/lib/teams/kinds";
+import { ownTeam } from "@/lib/teams/membership";
 import { absoluteUrl } from "@/lib/site-url";
 
 export const metadata = {

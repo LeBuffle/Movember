@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { isTeamKind, createTeam, joinTeam } from "@/lib/teams/membership";
+import { isTeamKind } from "@/lib/teams/kinds";
+import { createTeam, joinTeam } from "@/lib/teams/membership";
 
 /**
  * The two gestures a participant makes about teams.

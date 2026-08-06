@@ -1,6 +1,7 @@
 import "server-only";
 
 import { generateJoinCode, normaliseJoinCode, slugify } from "@/lib/teams/code";
+import type { TeamKind } from "@/lib/teams/kinds";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -19,18 +20,6 @@ import { createClient } from "@/lib/supabase/server";
  * So the code is verified here, and the identity is taken from the session
  * and never from a parameter.
  */
-
-export type TeamKind = "libre" | "entreprise" | "association";
-
-export const TEAM_KINDS: Array<{ value: TeamKind; label: string }> = [
-  { value: "libre", label: "Équipe libre" },
-  { value: "entreprise", label: "Entreprise" },
-  { value: "association", label: "Association ou club" },
-];
-
-export function isTeamKind(value: string): value is TeamKind {
-  return TEAM_KINDS.some((entry) => entry.value === value);
-}
 
 export type OwnTeam = {
   id: string;
