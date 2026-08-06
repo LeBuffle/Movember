@@ -31,9 +31,14 @@ const MESSAGES: Array<{ match: RegExp; message: string }> = [
     message: "Le mot de passe doit contenir au moins 8 caractères.",
   },
   {
+    // **The window is an hour, not a few minutes**, and saying otherwise is
+    // worse than saying nothing: somebody retries three times, gets the same
+    // refusal, and concludes the site is broken. The limit belongs to the
+    // e-mail sender, not to us — and it disappears once a real sending
+    // service is wired in (see supabase/EMAILS.md).
     match: /email rate limit exceeded|over_email_send_rate_limit/i,
     message:
-      "Trop d’e-mails demandés en peu de temps. Patientez quelques minutes avant de réessayer.",
+      "L’envoi d’e-mails est momentanément saturé. Réessayez dans une heure, ou écrivez à l’organisation — votre compte n’a pas été créé.",
   },
   {
     match: /request rate limit reached|too many requests/i,

@@ -148,7 +148,16 @@ Ajouter les adresses de retour aux **Redirect URLs** : celle de la préproductio
 ### En septembre — Resend
 
 ⚠️ **Créer le compte et authentifier le domaine d'expédition (SPF, DKIM) en septembre, pas
-en octobre.** Un domaine neuf qui envoie huit cents e-mails d'un coup part en indésirable,
+en octobre.**
+
+> **Ce point bloque les inscriptions elles-mêmes, pas seulement les notifications.**
+> Le service d'e-mail intégré de Supabase est limité à quelques envois par heure — la
+> limite a été atteinte en préproduction le 6 août avec moins de dix essais. Sans un
+> service d'envoi réel branché dans **Authentication → Emails → SMTP Settings**, la
+> dixième personne à s'inscrire un jour d'ouverture ne peut pas créer de compte.
+>
+> Le même compte Resend sert aux deux usages : la confirmation d'inscription et le repli
+> e-mail des notifications (story 6.4). Un domaine neuf qui envoie huit cents e-mails d'un coup part en indésirable,
 et la réputation d'un domaine se construit lentement. C'est aussi ce qui débloque la story
 2.5 (e-mail de bienvenue), la seule story développée qui attend encore quelque chose.
 *(story 6.4)*

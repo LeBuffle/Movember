@@ -99,6 +99,17 @@ Non utilisés par l'application à ce stade. À traduire si le parcours évolue.
 Supabase limite fortement le nombre d'e-mails envoyés par son service intégré : il est
 prévu pour du développement, **pas pour 600 inscriptions en quelques jours**.
 
+> ⚠️ **C'est un bloquant d'ouverture, pas un confort.** Aucun compte ne peut être créé
+> sans son e-mail de confirmation. La limite est atteinte après quelques envois **par
+> heure** — constatée en préproduction le 6 août avec moins de dix essais. Le jour où les
+> inscriptions ouvrent, la dixième personne de la journée ne peut plus créer de compte, et
+> le symptôme qu'elle voit est « le site ne marche pas ».
+>
+> Pour continuer à tester en attendant, sur la **préproduction uniquement** :
+> **Authentication → Providers → Email → Confirm email → désactiver**. Les comptes se
+> créent alors sans e-mail. **À réactiver avant la production** — sans confirmation,
+> n'importe qui peut créer un compte avec l'adresse de quelqu'un d'autre.
+
 Il faudra donc, **avant l'ouverture des inscriptions**, brancher Supabase sur un service
 d'envoi réel — Resend est prévu par l'architecture — dans
 **Authentication → Emails → SMTP Settings**.
