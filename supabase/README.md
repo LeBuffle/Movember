@@ -53,6 +53,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260805150000_challenge_arbitration.sql` | la marque d'un défi tranché à la main par l'organisation |
 | `20260805160000_activities.sql` | `activities` — le format interne unique des activités sportives |
 | `20260805170000_activity_consent.sql` | `activity_consents` — le registre inaltérable des autorisations |
+| `20260806100000_activity_connections.sql` | `activity_connections` — les comptes sportifs reliés |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

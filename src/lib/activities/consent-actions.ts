@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { unlinkAccount } from "@/lib/activities/connection";
 import { CONSENT_VERSION } from "@/lib/activities/consent";
 import { createClient } from "@/lib/supabase/server";
 
@@ -76,9 +77,13 @@ async function record(action: "granted" | "withdrawn") {
     };
   }
 
-  // Withdrawing consent unlinks the sporting account (AC 7). The unlinking
-  // itself arrives with story 3.3, which is what creates the link — there is
-  // nothing to undo before it exists.
+  // Withdrawing consent unlinks the sporting account (story 3.2 AC 7).
+  // Keeping the link alive without a consent would mean holding a token we
+  // have no basis to use — and it would keep collecting activities from
+  // somebody who just said stop.
+  if (action === "withdrawn") {
+    await unlinkAccount(user.id);
+  }
 
   revalidatePath("/mon-compte");
   revalidatePath("/mon-compte/activites");

@@ -408,6 +408,51 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      /**
+       * A linked activity account (story 3.3).
+       *
+       * Tokens are encrypted by the application before they get here, and the
+       * table carries no read policy for anyone — not even the owner. Row
+       * level security filters rows, not columns, so a read policy would hand
+       * a participant their own access token.
+       */
+      activity_connections: {
+        Row: {
+          id: string;
+          profile_id: string;
+          provider: ActivityProviderKey;
+          /** The athlete's identifier at the provider. */
+          provider_account_id: string;
+          /** Ciphertext. Never a token in clear. */
+          access_token: string;
+          refresh_token: string;
+          expires_at: string;
+          /** What was actually granted, which can be narrower than asked. */
+          scopes: string[];
+          status: "active" | "broken";
+          connected_at: string;
+          last_synced_at: string | null;
+          disconnected_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          provider: ActivityProviderKey;
+          provider_account_id: string;
+          access_token: string;
+          refresh_token: string;
+          expires_at: string;
+          scopes?: string[];
+          status?: "active" | "broken";
+          connected_at?: string;
+          last_synced_at?: string | null;
+          disconnected_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["activity_connections"]["Insert"]
+        >;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;

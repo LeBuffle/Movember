@@ -7,7 +7,9 @@ import {
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import { getOwnConnection } from "@/lib/activities/connection";
 import {
   CONSENT_COLLECTED,
   CONSENT_NEVER_COLLECTED,
@@ -42,8 +44,19 @@ export const dynamic = "force-dynamic";
  * Story 3.3 adds the connection button below, and it only exists once this
  * has been given.
  */
-export default async function ActivityConsentPage() {
-  const consent = await getConsent();
+export default async function ActivityConsentPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const raw = query.erreur;
+  const failure = Array.isArray(raw) ? raw[0] : raw;
+
+  const [consent, connection] = await Promise.all([
+    getConsent(),
+    getOwnConnection(),
+  ]);
 
   return (
     <>
@@ -118,6 +131,22 @@ export default async function ActivityConsentPage() {
           </Card>
         </div>
 
+        {failure && (
+          <div className="mt-8">
+            <Alert tone="danger" title="La connexion n’a pas abouti">
+              {FAILURES[failure] ?? FAILURES.echange}
+            </Alert>
+          </div>
+        )}
+
+        {query.connecte === "1" && (
+          <div className="mt-8">
+            <Alert tone="success" title="Compte Strava connecté">
+              Vos prochaines sorties seront prises en compte automatiquement.
+            </Alert>
+          </div>
+        )}
+
         <div className="mt-10">
           {consent.granted ? (
             <div className="space-y-4">
@@ -125,6 +154,42 @@ export default async function ActivityConsentPage() {
                 Le {formatDate(consent.grantedAt)}. Vos sorties peuvent être
                 récupérées pendant l’édition.
               </Alert>
+
+              {connection ? (
+                <Card>
+                  <CardTitle>Compte Strava</CardTitle>
+                  <CardBody>
+                    <p className="text-ink text-sm">
+                      Connecté depuis le {formatDate(connection.connectedAt)} —
+                      athlète {connection.providerAccountId}.
+                    </p>
+                    {connection.status === "broken" && (
+                      <p className="text-danger mt-2 text-sm">
+                        La liaison est rompue : reconnectez votre compte pour
+                        que vos sorties recomptent.
+                      </p>
+                    )}
+                  </CardBody>
+                </Card>
+              ) : (
+                <div>
+                  {/* A link, not a button: it is a navigation to a route that
+                      redirects, and it works before any JavaScript has loaded.
+                      The route re-checks the consent — hiding this link is a
+                      courtesy, not a control. */}
+                  <Link
+                    href="/api/activites/connexion/strava"
+                    prefetch={false}
+                    className={buttonClasses({ size: "lg" })}
+                  >
+                    Connecter mon compte Strava
+                  </Link>
+                  <p className="text-ink-muted mt-2 text-sm">
+                    Vous serez renvoyé vers Strava, qui vous demandera votre
+                    accord, puis ramené ici.
+                  </p>
+                </div>
+              )}
 
               {/* On the same screen as granting, not buried three levels
                   down: a consent that is easy to give and hard to take back
@@ -148,6 +213,33 @@ export default async function ActivityConsentPage() {
     </>
   );
 }
+
+/**
+ * Why a connection did not happen, said without jargon.
+ *
+ * Each one names something the participant can act on. "Une erreur est
+ * survenue" would be true for all of them and useful for none — and the two
+ * that are nobody's fault say so, rather than leaving somebody hunting for
+ * what they did wrong.
+ */
+const FAILURES: Record<string, string> = {
+  refus:
+    "Vous n’avez pas autorisé Strava à partager vos activités. Vous pouvez réessayer quand vous voulez.",
+  "deja-lie":
+    "Ce compte Strava est déjà relié à un autre compte de jeu. Un compte Strava ne peut servir qu’à un seul participant.",
+  etat: "La connexion a expiré ou a été interrompue. Relancez-la depuis cette page.",
+  consentement:
+    "Votre autorisation manque. Donnez-la ci-dessous, puis reconnectez votre compte.",
+  session: "Votre session a expiré. Reconnectez-vous, puis réessayez.",
+  injoignable:
+    "Strava n’a pas répondu. Ce n’est pas de votre fait : réessayez dans quelques minutes.",
+  configuration:
+    "La connexion n’est pas encore configurée de notre côté. Prévenez l’organisation.",
+  echange: "L’échange avec Strava a échoué. Relancez la connexion.",
+  enregistrement:
+    "Votre compte Strava a bien répondu, mais la liaison n’a pas pu être enregistrée. Réessayez.",
+  inconnu: "Ce service sportif n’est pas reconnu.",
+};
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
