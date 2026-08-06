@@ -33,6 +33,14 @@ export function AdminNav() {
             Accueil
           </NavPill>
         </li>
+        <li>
+          {/* Not in `ADMIN_SECTIONS`: that list is the map of the game's
+              sections, delivered epic by epic. This one is a diagnostic
+              screen, and it belongs beside them rather than among them. */}
+          <NavPill href="/admin/etat" active={pathname === "/admin/etat"}>
+            État
+          </NavPill>
+        </li>
         {ADMIN_SECTIONS.map((section) => (
           <li key={section.slug}>
             <NavPill

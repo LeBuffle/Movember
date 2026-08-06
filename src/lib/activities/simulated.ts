@@ -220,6 +220,36 @@ export const simulatedSource: ActivitySource = {
   authorizationUrl: () => noAuthorisation<string>(),
   exchangeCode: async () => noAuthorisation<SourceCredentials>(),
   refresh: async () => noAuthorisation<SourceCredentials>(),
+  revoke: async () => noAuthorisation<true>(),
+
+  /**
+   * The fixtures for the window asked, dated on it.
+   *
+   * Made-up activities have no history of their own: they are generated
+   * around a reference day. Answering with the fixtures for the window's own
+   * last day is what makes a catch-up rehearsable end to end without Strava.
+   */
+  async fetchActivities(
+    _accessToken: string,
+    profileId: string,
+    window: { after: Date; before: Date },
+  ): Promise<SourceResult<Activity[]>> {
+    const reference = window.before.toISOString().slice(0, 10);
+
+    return { ok: true, value: simulatedActivities(reference, profileId) };
+  },
+
+  async fetchActivity(
+    _accessToken: string,
+    profileId: string,
+    providerActivityId: string,
+  ): Promise<SourceResult<Activity>> {
+    const found = simulatedActivities("2026-11-15", profileId).find(
+      (activity) => activity.id === providerActivityId,
+    );
+
+    return found ? { ok: true, value: found } : sourceFailure("invalid");
+  },
 
   /**
    * The fixtures already have the internal shape, so normalising one is

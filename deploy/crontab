@@ -82,7 +82,20 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # other's refresh token.
 41 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/jetons >> /var/log/defi-movember-cron.log 2>&1
 
+# Strava catch-up (story 3.6). Every hour, at 17 past.
+#
+# ⚠️ On the environment WITHOUT the webhook subscription, this is not a safety
+# net — it is the only way activities arrive. Strava allows one subscription
+# per application, so preproduction and production cannot both have it.
+#
+# Where the webhook does run, this catches what it lost: a delivery failed, a
+# service restarted, a deployment in the middle of a Sunday morning. It looks
+# two days back, so an outage over a night is covered.
+#
+# Re-running it is harmless: the database refuses an activity it already has,
+# and only newly stored ones are evaluated.
+17 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/rattrapage >> /var/log/defi-movember-cron.log 2>&1
+
 # Business tasks arrive with their epics:
-#   - Strava catch-up ..................... epic 3, story 3.6
 #   - leaderboard refresh ................. epic 7
 #   - backups ............................. epic 11

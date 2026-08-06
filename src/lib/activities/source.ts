@@ -54,6 +54,14 @@ export type SourceCredentials = {
   scopes: string[];
 };
 
+/** A window to fetch over, as calendar-free instants. */
+export type FetchWindow = {
+  /** Inclusive lower bound. */
+  after: Date;
+  /** Exclusive upper bound. */
+  before: Date;
+};
+
 export type ActivitySource = {
   readonly key: ActivityProvider;
   /** Said the way a participant would say it: "Strava". */
@@ -78,4 +86,39 @@ export type ActivitySource = {
    *   of two hundred must not take the batch down with it.
    */
   normalise(raw: unknown, profileId: string): Activity | null;
+
+  /**
+   * The activities of one athlete over a window, already normalised.
+   *
+   * **A fifth operation, where architecture D3 named four.** The four are the
+   * authorisation dance; this is what a source is actually *for*, and leaving
+   * it out would have meant every caller reaching around the interface to
+   * talk to Strava directly — which is the one thing D3 exists to prevent.
+   * The amendment is small and it goes the way the decision intended.
+   *
+   * Returns `unavailable` when the provider is unreachable or rate-limiting,
+   * `denied` when the token is refused. The caller must be able to tell those
+   * apart: one is worth retrying, the other never is.
+   */
+  fetchActivities(
+    accessToken: string,
+    profileId: string,
+    window: FetchWindow,
+  ): Promise<SourceResult<Activity[]>>;
+
+  /** One activity by its provider identifier, for a webhook (story 3.5). */
+  fetchActivity(
+    accessToken: string,
+    profileId: string,
+    providerActivityId: string,
+  ): Promise<SourceResult<Activity>>;
+
+  /**
+   * Cuts the authorisation at the provider, not only on our side.
+   *
+   * Clearing our own token leaves the authorisation live in the
+   * participant's provider account: they believe they cut the link, and they
+   * have not (story 3.8 AC 6).
+   */
+  revoke(accessToken: string): Promise<SourceResult<true>>;
 };

@@ -97,11 +97,11 @@ les trois branches sont indépendantes.
 | 3.2 | [Consentement au traitement des données d'activité](3.2.consentement-donnees-activite.md) | **Review** | 1.7 |
 | 3.3 | [Connexion OAuth du compte Strava](3.3.connexion-oauth-strava.md) | **Review** | 3.1, 3.2 |
 | 3.4 | [Normalisation et minimisation des activités](3.4.normalisation-minimisation.md) | **Review** | 3.1 |
-| 3.5 | [Réception des activités par webhook](3.5.webhook-strava.md) | Draft | 3.3, 3.4 |
-| 3.6 | [Rattrapage périodique et import initial](3.6.rattrapage-import-initial.md) | Draft | 3.3, 3.4 |
+| 3.5 | [Réception des activités par webhook](3.5.webhook-strava.md) | **Review** | 3.3, 3.4 |
+| 3.6 | [Rattrapage périodique et import initial](3.6.rattrapage-import-initial.md) | **Review** | 3.3, 3.4 |
 | 3.7 | [Rafraîchissement des jetons et connexions expirées](3.7.rafraichissement-jetons.md) | **Review** | 3.3 |
-| 3.8 | [État de la connexion et resynchronisation](3.8.etat-connexion-resync.md) | Draft | 3.6, 3.7 |
-| 3.9 | [Comportement dégradé si Strava est indisponible](3.9.mode-degrade-strava.md) | Draft | 3.5, 3.6 |
+| 3.8 | [État de la connexion et resynchronisation](3.8.etat-connexion-resync.md) | **Review** | 3.6, 3.7 |
+| 3.9 | [Comportement dégradé si Strava est indisponible](3.9.mode-degrade-strava.md) | **Review** | 3.5, 3.6 |
 
 ### Ordre d'exécution
 
@@ -124,6 +124,9 @@ risque externe de l'epic, et c'est ce qui a permis de construire tout l'epic 4 s
 | **Quota d'athlètes relevé par Strava** | 3.3 en production | Le quota d'origine suffit pour développer et tester à quelques comptes. ⚠️ **Délai non maîtrisé : à demander le plus tôt possible** |
 | **Conformité de l'usage au contrat développeur Strava** | rien techniquement | ⚠️ **Vérification à mener par le PO sans délai.** Si l'usage prévu — classements entre participants à partir de données Strava — n'était pas conforme, c'est le concept du jeu qui serait à revoir, pas le code |
 | Un seul abonnement webhook par application Strava | 3.5 | Préproduction ou production, pas les deux. L'environnement non abonné vit sur le rattrapage de la story 3.6 |
+
+> **Epic 3 terminé** — les neuf stories sont en Review. Il reste au PO à créer l'abonnement
+> webhook et à installer les deux tâches planifiées (`jetons`, `rattrapage`).
 
 > **C'est l'epic le plus risqué du projet, et le risque n'est pas technique.** Les deux
 > points d'interrogation — le quota et la conformité — se règlent auprès de Strava, avec des

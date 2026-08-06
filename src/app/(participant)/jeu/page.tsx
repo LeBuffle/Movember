@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChallengeCard } from "@/components/game/challenge-card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
+import { ownSyncState } from "@/lib/activities/health";
 import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { todayInParis } from "@/lib/challenges/daily-draw";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
@@ -25,9 +26,10 @@ import { getShippingContext } from "@/lib/shipping/address";
 export default async function GameHome() {
   const today = todayInParis();
 
-  const [shipping, challenges] = await Promise.all([
+  const [shipping, challenges, sync] = await Promise.all([
     getShippingContext(),
     getParticipantChallenges(30),
+    ownSyncState(),
   ]);
 
   const todays = challenges.filter(
@@ -49,6 +51,32 @@ export default async function GameHome() {
 
   return (
     <div className="space-y-8">
+      {/* Said plainly, because from where the participant stands a Strava
+          outage and a broken game look exactly the same (story 3.9 AC 2).
+          One sentence here saves thirty messages — and it is true: nothing
+          marks a challenge missed during the edition, they stay open and
+          settle when the outing finally arrives. */}
+      {sync === "behind" && (
+        <Alert tone="warning" title="Vos sorties tardent à remonter">
+          La récupération depuis Strava est perturbée. Vos défis restent ouverts
+          et se valideront tout seuls dès que vos sorties arriveront — vous
+          n’avez rien à faire.
+        </Alert>
+      )}
+
+      {sync === "broken" && (
+        <Alert tone="danger" title="Votre compte Strava n’est plus relié">
+          Vos sorties ne sont plus récupérées.{" "}
+          <Link
+            href="/mon-compte/activites"
+            className="underline underline-offset-4"
+          >
+            Reconnectez votre compte
+          </Link>{" "}
+          pour que vos défis recomptent. Ce qui est déjà acquis le reste.
+        </Alert>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-ink text-3xl font-bold tracking-tight">

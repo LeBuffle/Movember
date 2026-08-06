@@ -5,6 +5,7 @@ import { parisDate, sportFamilyFromProvider } from "@/lib/activities/activity";
 import {
   sourceFailure,
   type ActivitySource,
+  type FetchWindow,
   type SourceCredentials,
   type SourceResult,
 } from "@/lib/activities/source";
@@ -26,6 +27,24 @@ import {
 
 const AUTHORIZE_URL = "https://www.strava.com/oauth/authorize";
 const TOKEN_URL = "https://www.strava.com/oauth/token";
+const DEAUTHORIZE_URL = "https://www.strava.com/oauth/deauthorize";
+const API_URL = "https://www.strava.com/api/v3";
+
+/**
+ * How many activities one request brings back.
+ *
+ * Strava allows up to 200. Asking for the maximum is what keeps an initial
+ * import of a whole month to a single call for almost everybody — and the
+ * call quota is shared by every participant, so each one saved is one
+ * available on a Sunday morning when three hundred outings end at once.
+ */
+const PAGE_SIZE = 200;
+
+/** A hard stop. Thirty days of sport for one person is far below this. */
+const MAX_PAGES = 5;
+
+/** Long enough for a slow answer, short enough not to hold a task open. */
+const TIMEOUT_MS = 20_000;
 
 /** Includes private activities, which is why consent is collected first. */
 export const STRAVA_SCOPE = "activity:read_all";
@@ -128,6 +147,51 @@ async function postTokens(
   return { ok: true, value: parsed };
 }
 
+/**
+ * One call to Strava's API, with the failures told apart.
+ *
+ * **429 is its own case, and the most important one.** The call quota is
+ * shared by every participant: continuing to knock while rate-limited makes
+ * the outage last longer for everybody. It is reported as `unavailable`, and
+ * story 3.9 is what backs off on it.
+ */
+async function callStrava(
+  url: string,
+  accessToken: string,
+): Promise<SourceResult<unknown>> {
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch {
+    return sourceFailure("unavailable");
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    // The token was revoked, or the scope is narrower than we assumed.
+    // Retrying will never help.
+    return sourceFailure("denied");
+  }
+
+  if (response.status === 404) return sourceFailure("invalid");
+
+  if (response.status === 429) {
+    console.warn("[strava] quota d’appels atteint");
+    return sourceFailure("unavailable");
+  }
+
+  if (!response.ok) return sourceFailure("unavailable");
+
+  try {
+    return { ok: true, value: await response.json() };
+  } catch {
+    return sourceFailure("invalid");
+  }
+}
+
 type StravaActivity = {
   id?: unknown;
   name?: unknown;
@@ -177,6 +241,95 @@ export const stravaSource: ActivitySource = {
       { refresh_token: refreshToken, grant_type: "refresh_token" },
       [],
     );
+  },
+
+  /**
+   * Every activity of one athlete over a window.
+   *
+   * Paged, because a month of sport can exceed one request — and bounded,
+   * because a bug in the caller must not turn into an unbounded walk through
+   * somebody's entire Strava history.
+   */
+  async fetchActivities(
+    accessToken: string,
+    profileId: string,
+    window: FetchWindow,
+  ): Promise<SourceResult<Activity[]>> {
+    const collected: Activity[] = [];
+
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const url = new URL(`${API_URL}/athlete/activities`);
+      // Strava counts in whole seconds since the epoch, and both bounds are
+      // exclusive on its side — hence the second of slack on `after`.
+      url.searchParams.set(
+        "after",
+        String(Math.floor(window.after.getTime() / 1000) - 1),
+      );
+      url.searchParams.set(
+        "before",
+        String(Math.floor(window.before.getTime() / 1000)),
+      );
+      url.searchParams.set("per_page", String(PAGE_SIZE));
+      url.searchParams.set("page", String(page));
+
+      const answer = await callStrava(url.toString(), accessToken);
+
+      if (!answer.ok) return answer;
+
+      const batch = Array.isArray(answer.value) ? answer.value : [];
+
+      for (const raw of batch) {
+        const activity = stravaSource.normalise(raw, profileId);
+        // One unreadable activity in two hundred must not take the batch
+        // down with it.
+        if (activity) collected.push(activity);
+      }
+
+      // A short page is the last page. Asking for the next would spend a call
+      // to be told the same thing.
+      if (batch.length < PAGE_SIZE) break;
+    }
+
+    return { ok: true, value: collected };
+  },
+
+  async fetchActivity(
+    accessToken: string,
+    profileId: string,
+    providerActivityId: string,
+  ): Promise<SourceResult<Activity>> {
+    const answer = await callStrava(
+      `${API_URL}/activities/${encodeURIComponent(providerActivityId)}`,
+      accessToken,
+    );
+
+    if (!answer.ok) return answer;
+
+    const activity = stravaSource.normalise(answer.value, profileId);
+
+    return activity ? { ok: true, value: activity } : sourceFailure("invalid");
+  },
+
+  async revoke(accessToken: string): Promise<SourceResult<true>> {
+    const client = credentials();
+    if (!client) return sourceFailure("unsupported");
+
+    try {
+      const response = await fetch(DEAUTHORIZE_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+
+      // A token Strava has already forgotten answers 401, and that is the
+      // outcome we wanted: the authorisation is gone either way.
+      if (response.ok || response.status === 401)
+        return { ok: true, value: true };
+    } catch {
+      return sourceFailure("unavailable");
+    }
+
+    return sourceFailure("unavailable");
   },
 
   /**

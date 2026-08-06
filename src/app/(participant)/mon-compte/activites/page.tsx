@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 import {
+  Disconnect,
+  Resynchronise,
+} from "@/components/activities/connection-panel";
+import {
   ConsentForm,
   WithdrawConsent,
 } from "@/components/activities/consent-form";
@@ -19,6 +23,10 @@ import {
   grantActivityConsent,
   withdrawActivityConsent,
 } from "@/lib/activities/consent-actions";
+import {
+  disconnectAccount,
+  resynchronise,
+} from "@/lib/activities/sync-actions";
 import { ROUTES } from "@/lib/auth/routes";
 
 export const metadata = {
@@ -164,6 +172,15 @@ export default async function ActivityConsentPage({
                       athlète {connection.providerAccountId}.
                     </p>
 
+                    {/* The question this screen exists to answer without
+                        anybody writing in: "is my run from this morning
+                        counted?" (story 3.8 AC 1). */}
+                    <p className="text-ink-muted mt-1 text-sm">
+                      {connection.lastSyncedAt
+                        ? `Dernière vérification le ${formatDateTime(connection.lastSyncedAt)}.`
+                        : "Vos sorties n’ont pas encore été vérifiées."}
+                    </p>
+
                     {connection.status === "broken" && (
                       <>
                         <p className="text-danger mt-2 text-sm">
@@ -184,6 +201,13 @@ export default async function ActivityConsentPage({
                             Reconnecter mon compte
                           </Link>
                         </p>
+                      </>
+                    )}
+
+                    {connection.status === "active" && (
+                      <>
+                        <Resynchronise action={resynchronise} />
+                        <Disconnect action={disconnectAccount} />
                       </>
                     )}
                   </CardBody>
@@ -257,6 +281,15 @@ const FAILURES: Record<string, string> = {
     "Votre compte Strava a bien répondu, mais la liaison n’a pas pu être enregistrée. Réessayez.",
   inconnu: "Ce service sportif n’est pas reconnu.",
 };
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";

@@ -6,6 +6,7 @@ import { linkAccount } from "@/lib/activities/connection";
 import { secretsMatch } from "@/lib/activities/crypto";
 import { STATE_COOKIE } from "@/lib/activities/oauth-state";
 import { activitySource, isConnectable } from "@/lib/activities/sources";
+import { importInitialActivities } from "@/lib/activities/sync";
 import { createClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/site-url";
 
@@ -129,6 +130,22 @@ export async function GET(
     provider: fournisseur,
     athlete: exchanged.value.providerAccountId,
   });
+
+  // Everything they have done since the edition began (story 3.6 AC 3).
+  // Somebody joining on 12 November should find their first eleven days
+  // counted rather than starting from zero — and finding an empty screen
+  // after connecting is the moment they decide the game does not work.
+  //
+  // Awaited rather than left running: the participant is redirected to a
+  // screen that shows the result, and an import finishing after the page has
+  // rendered would show them nothing.
+  const imported = await importInitialActivities(user.id, source.key);
+
+  if (!imported.ok) {
+    console.warn("[connexion] import initial incomplet", {
+      reason: imported.reason,
+    });
+  }
 
   return finish("connecte=1");
 }
