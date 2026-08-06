@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epics 1 à 5 détaillés · epics 6 à 11 à détailler au fil de l'avancement |
+| **Statut** | Epics 1 à 6 détaillés · epics 7 à 11 à détailler au fil de l’avancement |
 
 ---
 
@@ -214,6 +214,53 @@ découvre sur un type, pas sur sept.
 > **Le risque de cet epic n'est pas technique, il est graphique.** Une cinquantaine de cartes
 > à dessiner, et un album de silhouettes grises n'a jamais donné envie à personne de
 > collectionner quoi que ce soit.
+
+---
+
+## Epic 6 : Notifications et installation PWA
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 6.1 | [Service worker et abonnement push](6.1.abonnement-push.md) | Draft | 1.8 |
+| 6.2 | [Parcours d'installation guidé](6.2.parcours-installation.md) | Draft | 1.8, 2.4 |
+| 6.3 | [Envoi de notifications push par lots](6.3.envoi-push-par-lots.md) | Draft | 6.1 |
+| 6.4 | [Repli e-mail pour les participants sans push](6.4.repli-email.md) | Draft | 6.1 |
+| 6.5 | [Notification du défi du jour](6.5.notification-defi-du-jour.md) | Draft | 6.3, 6.4, 4.4 |
+| 6.6 | [Notification de validation, groupée](6.6.notification-validation-groupee.md) | Draft | 6.3, 4.3, 5.3 |
+| 6.7 | [Préférences de notification par catégorie](6.7.preferences-notification.md) | Draft | 6.1 |
+| 6.8 | [Envoi manuel depuis le back-office](6.8.envoi-manuel-back-office.md) | Draft | 6.3, 6.7, 1.10 |
+
+### Ordre d'exécution
+
+```
+6.1 ──┬──► 6.3 ──┬──► 6.5
+      │          ├──► 6.6
+      │          └──► 6.8
+      ├──► 6.4 ────┘
+      └──► 6.7 ────┘
+
+6.2 (indépendante, mais à livrer avant l'ouverture des inscriptions)
+```
+
+**6.1 en premier**, puis 6.3, 6.4 et 6.7 en parallèle : ce sont les trois briques que les
+notifications réelles (6.5, 6.6, 6.8) traversent toutes. **6.2 est indépendante du reste
+et pourtant la plus urgente sur le calendrier** : elle doit être en place avant que le
+premier participant ne s'inscrive, sinon il s'inscrit sans installer.
+
+### Ce qui bloque quoi
+
+| Prérequis externe | Bloque | Contournement |
+| --- | --- | --- |
+| **Clés VAPID** *(à générer, gratuit et immédiat)* | 6.1 et suivantes | Aucun — une commande, aucune inscription à un service |
+| **Compte Resend** | 6.4 | Le push fonctionne sans. Bloque aussi la story 2.5 |
+| **Domaine d'expédition authentifié SPF/DKIM** | 6.4 en réel | ⚠️ **À préparer en septembre.** Un domaine neuf qui envoie 800 e-mails d'un coup part en indésirable |
+| Appareils de test iPhone **et** Android | 6.2 réellement | Le code se mène sans ; la vérification, non |
+
+> **Le risque de cet epic est un taux d'installation insuffisant sur iPhone** (risque T5).
+> Aucune notification web n'existe sur iPhone hors application installée, et rien dans le
+> code ne rattrape quelqu'un qui ne l'a pas installée. D'où l'installation traitée comme
+> une étape du parcours d'inscription, et le repli e-mail traité comme un canal de premier
+> rang.
 
 ---
 
