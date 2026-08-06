@@ -578,6 +578,25 @@ export type Database = {
         >;
         Relationships: [];
       };
+      leaderboard_settings: {
+        Row: {
+          id: boolean;
+          /** Team score = points / (members ^ exponent). Tuned in SQL. */
+          team_exponent: number;
+          team_min_members: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          team_exponent?: number;
+          team_min_members?: number;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["leaderboard_settings"]["Insert"]
+        >;
+        Relationships: [];
+      };
       teams: {
         Row: {
           id: string;
@@ -710,6 +729,37 @@ export type Database = {
         };
         Relationships: [];
       };
+      /**
+       * All eight rankings, recomputed every fifteen minutes.
+       *
+       * A materialised view, so nothing computes a ranking on demand. The
+       * general ranking never reads `card_grants`; the collection ranking
+       * counts only what was earned by playing (architecture D8, D14).
+       */
+      leaderboard_entries: {
+        Row: {
+          profile_id: string;
+          edition_id: string;
+          team_id: string | null;
+          points: number;
+          challenges_succeeded: number;
+          /** Cards earned by playing. Never a bought pack. */
+          cards_earned: number;
+          run_distance_meters: number;
+          bike_distance_meters: number;
+          activity_count: number;
+          total_duration_seconds: number;
+          rank_points: number;
+          rank_challenges: number;
+          rank_cards: number;
+          rank_run: number;
+          rank_bike: number;
+          rank_activities: number;
+          rank_duration: number;
+          computed_at: string;
+        };
+        Relationships: [];
+      };
       /** Name, slug and kind. Never the join code — see the migration. */
       public_teams: {
         Row: {
@@ -725,6 +775,11 @@ export type Database = {
     };
     Functions: {
       is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      /** Recomputes the rankings. False when one is already running. */
+      refresh_leaderboards: {
         Args: Record<string, never>;
         Returns: boolean;
       };

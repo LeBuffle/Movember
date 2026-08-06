@@ -96,6 +96,20 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # and only newly stored ones are evaluated.
 17 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/rattrapage >> /var/log/defi-movember-cron.log 2>&1
 
+# Leaderboards (story 7.3). Every fifteen minutes, offset from the quarter.
+#
+# Nothing computes a ranking on demand: all eight come from one materialised
+# view, and this is what keeps it current. A ranking recomputed on every page
+# load, for 800 participants, would be both expensive and unstable — and this
+# is a screen people open several times a day.
+#
+# Fifteen minutes of lag is irrelevant in a game that lasts a month. A
+# leaderboard that takes four seconds to open is not.
+#
+# Re-running it is harmless, and two runs never collide: the function takes an
+# advisory lock and the second one gives up rather than queueing behind the
+# first. Two of these piling up is how a small delay becomes an outage.
+3,18,33,48 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/classements >> /var/log/defi-movember-cron.log 2>&1
+
 # Business tasks arrive with their epics:
-#   - leaderboard refresh ................. epic 7
 #   - backups ............................. epic 11

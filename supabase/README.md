@@ -64,6 +64,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806180000_notification_deliveries.sql` | `notification_deliveries` — ce qui a déjà été envoyé, pour ne jamais l'envoyer deux fois |
 | `20260806190000_notification_preferences.sql` | `notification_preferences` — ce dont chacun veut être prévenu |
 | `20260806200000_teams.sql` | `teams`, `team_members`, `public_teams` — les équipes et leur code d'adhésion |
+| `20260806210000_leaderboards.sql` | `leaderboard_entries` — les huit classements en une vue, et leur rafraîchissement |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 
