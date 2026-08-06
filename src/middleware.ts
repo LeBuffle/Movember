@@ -1,8 +1,35 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  GATE_COOKIE,
+  gateCode,
+  gateTokenMatches,
+  isOpenPath,
+} from "@/lib/gate/access";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  const code = gateCode();
+
+  // The preproduction gate, before anything else — including before the
+  // Supabase round-trip, which there is no point paying for a visitor who is
+  // not getting a page.
+  if (code && !isOpenPath(request.nextUrl.pathname)) {
+    const presented = request.cookies.get(GATE_COOKIE)?.value;
+
+    if (!(await gateTokenMatches(presented, code))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/acces";
+      url.search = "";
+      // Rewritten, not redirected: the address stays the one that was asked
+      // for, so the entry screen can send the visitor there once they are
+      // through — and a bookmarked link still works after the code.
+      url.searchParams.set("suite", request.nextUrl.pathname);
+
+      return NextResponse.rewrite(url);
+    }
+  }
+
   return updateSession(request);
 }
 

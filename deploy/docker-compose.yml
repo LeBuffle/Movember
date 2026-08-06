@@ -153,33 +153,24 @@ services:
       traefik.http.routers.movember-staging.rule: Host(`${STAGING_DOMAIN}`)
       traefik.http.routers.movember-staging.entrypoints: websecure
       traefik.http.routers.movember-staging.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
-      # Password-protected and excluded from search engines: staging runs
-      # against test payment keys and must never be publicly reachable.
-      traefik.http.routers.movember-staging.middlewares: movember-staging-auth@docker,movember-staging-noindex@docker,movember-security@docker
-      traefik.http.middlewares.movember-staging-auth.basicauth.users: ${STAGING_BASIC_AUTH}
+      # Excluded from search engines. Staging runs against test payment keys
+      # and must never be publicly reachable.
+      #
+      # **The entry code is no longer here.** It used to be an HTTP password
+      # on this router, and that had one consequence nobody anticipated: an
+      # application added to a phone's home screen does not share the
+      # browser's credential store and has no address bar to ask for it, so
+      # it answered 401 and stopped. The one environment where the installed
+      # application can be checked was the one place it could not be checked
+      # (story 1.8). The code now lives in the application itself, on
+      # `/acces`, driven by `ACCESS_CODE` in `.env.staging`.
+      #
+      # The icon exemption that used to sit here went with it: a phone
+      # fetching an icon outside the page context is let through by the
+      # application's own middleware.
+      traefik.http.routers.movember-staging.middlewares: movember-staging-noindex@docker,movember-security@docker
       traefik.http.middlewares.movember-staging-noindex.headers.customResponseHeaders.X-Robots-Tag: "noindex, nofollow, noarchive"
       traefik.http.services.movember-staging.loadbalancer.server.port: "3000"
-      # Application icons, and only them, reachable without the password.
-      #
-      # When a phone installs the application, it downloads the icons named in
-      # the manifest OUTSIDE the page context — no cookie, no HTTP
-      # authentication. Behind the password they answer 401, the phone finds no
-      # icon and draws a letter on a coloured square instead. Staging would then
-      # be the one place where the icon cannot be checked, which is the place it
-      # has to be checked.
-      #
-      # `crossorigin="use-credentials"` on the manifest link fixes the manifest
-      # itself; it does not extend to the images it names.
-      #
-      # What is exposed: a moustache on a blue background. No data, no page, and
-      # the noindex header still applies.
-      traefik.http.routers.movember-staging-icons.rule: Host(`${STAGING_DOMAIN}`) && PathPrefix(`/icons/`)
-      # Explicit, rather than relying on Traefik ranking rules by length.
-      traefik.http.routers.movember-staging-icons.priority: "100"
-      traefik.http.routers.movember-staging-icons.entrypoints: websecure
-      traefik.http.routers.movember-staging-icons.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
-      traefik.http.routers.movember-staging-icons.middlewares: movember-staging-noindex@docker,movember-security@docker
-      traefik.http.routers.movember-staging-icons.service: movember-staging
 
   # Background queue: Strava activity ingestion, push and e-mail delivery.
   #

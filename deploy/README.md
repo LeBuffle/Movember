@@ -89,15 +89,9 @@ cd deploy
 
 # 1. Configuration de l'infrastructure
 cp .env.example .env
-nano .env      # domaines, réseau Traefik, mot de passe de la préproduction
+nano .env      # domaines, réseau Traefik
 
-# 2. Mot de passe de la préproduction
-#    Le | sed double les $ : sans lui, Docker Compose tronque le hash et
-#    l'authentification devient impossible, sans message d'erreur.
-docker run --rm httpd:alpine htpasswd -nbB po 'mot-de-passe-choisi' | sed -e 's/\$/\$\$/g'
-#    → reporter le résultat dans STAGING_BASIC_AUTH
-
-# 3. Variables applicatives — vides pour l'instant, remplies au fil des epics
+# 2. Variables applicatives — vides pour l'instant, remplies au fil des epics
 cp ../.env.example .env.production
 cp ../.env.example .env.staging
 
@@ -273,11 +267,10 @@ cp ../.env.example .env.staging           # variables applicatives — préprodu
 # 3. Les renseigner, puis les restreindre
 chmod 600 .env .env.production .env.staging
 
-# 4. Générer le mot de passe de la préproduction
-#    Le | sed double les $, sans quoi Docker Compose tronque le hash
-#    et l'authentification devient impossible sans message d'erreur.
-docker run --rm httpd:alpine htpasswd -nbB po 'mot-de-passe-choisi' | sed -e 's/\$/\$\$/g'
-#    puis reporter le résultat dans STAGING_BASIC_AUTH
+# 4. Code d'accès à la préproduction
+#    Une ligne dans .env.staging, six caractères minimum :
+#      ACCESS_CODE=un-code-choisi
+#    Il ouvre /acces. La production n'en a jamais.
 
 # 5. Démarrer
 docker compose up -d
@@ -324,91 +317,66 @@ dans `docs/runbook.md` (story 1.11).
 
 ---
 
-## Limite connue : l'application installée et le mot de passe de la préproduction
+## Le code d'accès à la préproduction
 
-Sur iPhone, une application ajoutée à l'écran d'accueil s'exécute dans un espace de
-stockage **séparé de Safari**. Les identifiants saisis dans le navigateur n'y sont pas, et
-une application en plein écran n'a plus de barre de navigateur pour les redemander : elle
-affiche `401 Unauthorized` et s'arrête là.
+La préproduction n'est pas ouverte au public : elle tourne sur des clés de paiement de
+test. Elle demande un **code d'accès** sur `/acces`, puis pose un cookie valable trente
+jours.
 
-**Le mot de passe HTTP et une application installée sont donc incompatibles.** Ce n'est
-pas un défaut de l'application : c'est une conséquence de la façon dont iOS cloisonne les
-applications web.
+### Le régler
 
-Conséquence pratique : **la vérification de l'application installée ne peut pas se faire
-sur la préproduction** tant qu'elle est protégée ainsi. Décision du PO le 2026-08-04 :
-on laisse en l'état et la vérification se fera sur la production (story 1.4). Les deux
-autres options, si l'on revient dessus :
+Dans `deploy/.env.staging` :
 
-- remplacer le mot de passe du serveur par une page d'entrée dans l'application, avec un
-  code retenu par un cookie — fonctionne dans l'application installée, mais déplace la
-  protection du serveur vers notre code ;
-- retirer le mot de passe, en gardant l'en-tête qui interdit l'indexation — immédiat, mais
-  la préproduction devient accessible à qui connaît l'adresse.
+```
+ACCESS_CODE=un-code-d-au-moins-six-caracteres
+```
 
----
-
-## La fenêtre de mot de passe de la préproduction refuse l'accès
-
-C'est un cas où le navigateur n'affiche **aucun message d'erreur** : il repose la même
-question, indéfiniment. Il faut donc chercher la cause ailleurs que dans l'écran.
-
-### 1. Ce que Traefik a réellement reçu
+Puis, sur le VPS :
 
 ```bash
 cd /opt/defi-movember/deploy
-
-C=$(docker ps -q --filter "label=com.docker.compose.service=app-staging")
-docker inspect "$C" --format '{{index .Config.Labels "traefik.http.middlewares.movember-staging-auth.basicauth.users"}}' \
-| awk '{ if (length($0)==0) print "VIDE";
-         else if (length($0)>=55) print "COMPLET (" length($0) " caracteres)";
-         else print "TRONQUE (" length($0) " caracteres) : " $0 }'
-```
-
-N'affiche pas le mot de passe, seulement un verdict.
-
-| Verdict | Cause | Correction |
-| --- | --- | --- |
-| **TRONQUÉ** | Les `$` n'ont pas été doublés dans `.env` | régénérer avec le `sed` ci-dessous |
-| **VIDE** | `STAGING_BASIC_AUTH` est dans le mauvais fichier | il va dans `deploy/.env`, **pas** dans `.env.staging` |
-| **COMPLET** | Le réglage est bon | passer au point 2 |
-
-Un hash bcrypt fait 60 caractères. `COMPLET (63)` signifie donc un identifiant de deux
-lettres suivi d'un hash entier — la longueur donne au passage la taille de l'identifiant.
-
-### 2. Le mot de passe lui-même, sans passer par le navigateur
-
-Depuis le VPS :
-
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" -u po https://staging.defi-movember.fr/
-```
-
-`curl` demande le mot de passe et ne le laisse pas dans l'historique du shell.
-
-- **200** — les identifiants sont bons. Le problème est dans le navigateur, qui rejoue une
-  mauvaise combinaison mise en cache. Rouvrir en navigation privée.
-- **401** — le mot de passe saisi n'est pas celui qui a été haché. Le plus souvent parce
-  qu'il contenait un `$`, une apostrophe ou une espace et que le shell en a mangé une
-  partie au moment de la génération.
-
-### 3. Repartir d'un mot de passe simple
-
-Plus rapide que de chercher quel caractère a été mangé :
-
-```bash
-cd /opt/defi-movember/deploy
-
-# Uniquement des lettres et des chiffres : aucun caractère que le shell puisse manger.
-docker run --rm httpd:alpine htpasswd -nbB po 'MoustacheBleue2026' | sed -e 's/\$/\$\$/g'
-# → reporter dans deploy/.env, ligne STAGING_BASIC_AUTH
-
 docker compose up -d --force-recreate app-staging
 ```
 
-> **`restart` ne suffit pas.** Traefik lit ce mot de passe sur une étiquette posée à la
-> *création* du conteneur. Un `docker compose restart` relance le conteneur sans relire
-> `.env` : on croit avoir corrigé, rien n'a changé, et on cherche ailleurs.
+> `docker compose restart` ne suffit pas : il relance le processus sans relire le fichier
+> d'environnement.
+
+### Pourquoi ce n'est plus un mot de passe du serveur
+
+C'était un mot de passe HTTP posé par Traefik jusqu'au 6 août 2026. Il avait une
+conséquence que personne n'avait anticipée : **une application ajoutée à l'écran d'accueil
+d'un téléphone ne partage pas le magasin de mots de passe du navigateur**, et n'a plus de
+barre d'adresse pour le redemander. Elle répondait `401 Unauthorized` et s'arrêtait là.
+La préproduction — seul endroit où l'application installée peut être vérifiée — était donc
+le seul endroit où elle ne pouvait pas l'être (story 1.8).
+
+Le même symptôme frappait un navigateur ordinaire ayant mis en cache une mauvaise
+combinaison : il la rejouait indéfiniment sans jamais reproposer la fenêtre.
+
+**Ce qu'on accepte en échange** : la protection est passée du serveur à notre code. Un
+défaut dans le code ouvrirait la préproduction, là où un défaut dans Traefik ne l'aurait
+pas fait. Compromis assumé — cet environnement ne contient que des paiements de test et
+des activités inventées, et l'alternative était un environnement que personne ne peut
+tester.
+
+L'exclusion des moteurs de recherche, elle, reste posée par Traefik.
+
+### En cas de refus
+
+- **« Ce code n'est pas le bon »** — le code saisi diffère de `ACCESS_CODE`. Attention aux
+  espaces en fin de ligne dans le fichier d'environnement.
+- **La page `/acces` ne s'affiche pas du tout** — `ACCESS_CODE` fait moins de six
+  caractères, ou le conteneur n'a pas été recréé. Vérifier :
+
+  ```bash
+  docker compose exec app-staging sh -c 'echo ${#ACCESS_CODE}'
+  ```
+
+- **Pour repartir de zéro sur un appareil** : effacer les cookies du site, ou ouvrir une
+  fenêtre de navigation privée.
+
+**La production n'a jamais de code.** Le contrôle y est sauté explicitement, quoi que
+contienne la variable.
 
 ---
 
