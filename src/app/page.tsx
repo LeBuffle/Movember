@@ -11,6 +11,7 @@ import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { collectiveTotals } from "@/lib/leaderboards/collective";
 import { getRegistrationTiers } from "@/lib/registration/tiers";
 
 export const metadata: Metadata = {
@@ -46,12 +47,17 @@ export const revalidate = 300;
  * letter of that criterion with a line in the footer; it would have missed
  * the point of `CLAUDE.md` §6.
  *
- * Statically rendered, with no request to the database. Everything shown
- * comes from `lib/edition/calendar.ts` and `lib/registration/tiers.ts`,
- * which epic 2 rewires to Supabase once there is something real to count.
+ * Regenerated on a timer rather than rendered per visit. The prices come from
+ * the database (story 2.1) and the collective counters from the rankings
+ * (story 7.7); both are read with the anonymous client, which reads no cookie
+ * — that is what keeps this page cacheable, and it is the page a share leads
+ * to, opened on a phone.
  */
 export default async function Home() {
-  const tiers = await getRegistrationTiers();
+  const [tiers, live] = await Promise.all([
+    getRegistrationTiers(),
+    collectiveTotals(),
+  ]);
 
   return (
     <>
@@ -150,7 +156,7 @@ export default async function Home() {
         {/* --- Chiffres --------------------------------------------------- */}
         <div className="bg-surface-sunken border-line border-y">
           <div className="mx-auto max-w-3xl px-4 py-14">
-            <CollectiveFigures />
+            <CollectiveFigures live={live} />
           </div>
         </div>
 

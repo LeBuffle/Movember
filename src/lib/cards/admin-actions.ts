@@ -10,7 +10,7 @@ import {
   cardDetailsSchema,
   parseRarityWeights,
 } from "@/lib/cards/form";
-import { removeCardImage, uploadCardImage } from "@/lib/cards/storage";
+import { removeImage, uploadImage } from "@/lib/cards/storage";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
 
@@ -98,7 +98,7 @@ export async function saveCard(
   let imageUrl: string | null = null;
 
   if (file instanceof File && file.size > 0) {
-    const uploaded = await uploadCardImage(file);
+    const uploaded = await uploadImage(file);
     if (!uploaded.ok) return { fieldErrors: { image: uploaded.message } };
     imageUrl = uploaded.url;
   }
@@ -141,7 +141,7 @@ export async function saveCard(
   }
 
   if (imageUrl && previousImage && previousImage !== imageUrl) {
-    await removeCardImage(previousImage);
+    await removeImage(previousImage);
   }
 
   await logAdminAction({
@@ -298,7 +298,7 @@ export async function deleteCard(
     return { message: "Cette carte a été publiée entre-temps." };
   }
 
-  if (card.image_path) await removeCardImage(card.image_path);
+  if (card.image_path) await removeImage(card.image_path);
 
   await logAdminAction({
     action: "card.deleted",

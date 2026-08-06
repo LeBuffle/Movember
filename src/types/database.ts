@@ -694,6 +694,37 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      news_posts: {
+        Row: {
+          id: string;
+          edition_id: string;
+          author_id: string | null;
+          title: string;
+          body: string;
+          image_path: string;
+          kind: "admin" | "auto";
+          /** Null means a draft. Invisible to participants. */
+          published_at: string | null;
+          is_pinned: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          author_id?: string | null;
+          title: string;
+          body?: string;
+          image_path?: string;
+          kind?: "admin" | "auto";
+          published_at?: string | null;
+          is_pinned?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["news_posts"]["Insert"]>;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;

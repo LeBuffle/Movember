@@ -172,7 +172,7 @@ describe("le visuel", () => {
     const region = actions.slice(
       actions.indexOf("export async function saveCard"),
     );
-    const upload = region.indexOf("uploadCardImage");
+    const upload = region.indexOf("uploadImage");
     const write = region.search(/\.(insert|update)\(/);
 
     expect(upload).toBeGreaterThan(-1);

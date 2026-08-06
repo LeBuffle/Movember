@@ -275,12 +275,12 @@ premier participant ne s'inscrive, sinon il s'inscrit sans installer.
 | 7.1 | [Schéma des équipes et adhésion par code](7.1.schema-equipes.md) | **Review** | 1.6 |
 | 7.2 | [Création et gestion d'une équipe](7.2.gestion-equipe.md) | **Review** | 7.1 |
 | 7.3 | [Vue matérialisée des classements](7.3.vue-materialisee-classements.md) | **Review** | 4.3, 5.3, 7.1 |
-| 7.4 | [Affichage des classements](7.4.affichage-classements.md) | Draft | 7.3 |
-| 7.5 | [Classement par équipe normalisé](7.5.classement-equipe.md) | Draft | 7.3, 7.1 |
-| 7.6 | [Tableau de bord personnel](7.6.tableau-de-bord.md) | Draft | 7.3 |
-| 7.7 | [Compteurs collectifs](7.7.compteurs-collectifs.md) | Draft | 7.3, 2.6 |
-| 7.8 | [Fil d'actualité et publication](7.8.fil-actualite.md) | Draft | 1.10, 5.6 |
-| 7.9 | [Page dédiée d'équipe](7.9.page-equipe.md) | Draft | 7.5 |
+| 7.4 | [Affichage des classements](7.4.affichage-classements.md) | **Review** | 7.3 |
+| 7.5 | [Classement par équipe normalisé](7.5.classement-equipe.md) | **Review** | 7.3, 7.1 |
+| 7.6 | [Tableau de bord personnel](7.6.tableau-de-bord.md) | **Review** | 7.3 |
+| 7.7 | [Compteurs collectifs](7.7.compteurs-collectifs.md) | **Review** | 7.3, 2.6 |
+| 7.8 | [Fil d'actualité et publication](7.8.fil-actualite.md) | **Review** | 1.10, 5.6 |
+| 7.9 | [Page dédiée d'équipe](7.9.page-equipe.md) | **Review** | 7.5 |
 
 ### Ordre d'exécution
 
@@ -304,6 +304,12 @@ les quatre stories qui la lisent sont des écrans.
 | --- | --- | --- |
 | Des données de jeu réelles | La vérification de 7.3 à 7.7 | Le code se mène sur des activités simulées ; les chiffres justes demandent un mois de jeu |
 | Formule de normalisation validée par le PO | rien techniquement | Point de départ posé en base, ajustable sans redéploiement (7.5) |
+
+> **Epic 7 terminé** — les neuf stories sont en Review. Il reste au PO à appliquer les
+> trois migrations (`teams`, `leaderboards`, `news_posts`), à **lancer un premier
+> `select public.refresh_leaderboards();`** sans lequel tous les classements resteront
+> vides, à installer la tâche planifiée de rafraîchissement, et à trancher l'exposant de
+> normalisation d'équipe — une commande SQL, sans redéploiement.
 
 > **Deux règles portent l'intégrité du jeu, et sont vérifiées automatiquement** : le
 > classement général ne lit jamais les cartes, et le classement collection ne compte que

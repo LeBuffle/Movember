@@ -10,7 +10,12 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Putting a card's picture somewhere it can be served from.
+ * Putting a picture somewhere it can be served from.
+ *
+ * One bucket for every image the back-office uploads — card visuals (story
+ * 5.6) and news pictures (story 7.8). One set of rules, one size limit, one
+ * place to change them. Two buckets would mean two sets of policies drifting
+ * apart, for pictures that are handled identically.
  *
  * Through the administrator's own session, like every other back-office
  * write. Storage has its own row level security, and the bucket's policies
@@ -28,7 +33,7 @@ import { createClient } from "@/lib/supabase/server";
 export type UploadResult =
   { ok: true; url: string } | { ok: false; message: string };
 
-export async function uploadCardImage(file: File): Promise<UploadResult> {
+export async function uploadImage(file: File): Promise<UploadResult> {
   const checked = checkImage({ size: file.size, type: file.type });
   if (!checked.ok) return { ok: false, message: checked.message };
 
@@ -80,7 +85,7 @@ export async function uploadCardImage(file: File): Promise<UploadResult> {
  * What is left behind is an unreferenced object, which the storage bill will
  * never notice at fifty cards.
  */
-export async function removeCardImage(url: string): Promise<void> {
+export async function removeImage(url: string): Promise<void> {
   const objectName = imageObjectNameFromUrl(url);
   if (!objectName) return;
 

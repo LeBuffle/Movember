@@ -128,10 +128,28 @@ export default async function GameHome() {
           </Link>
         )}{" "}
         <Link
+          href="/jeu/classement"
+          className={buttonClasses({ variant: "ghost" })}
+        >
+          Classements
+        </Link>{" "}
+        <Link
+          href="/jeu/tableau-de-bord"
+          className={buttonClasses({ variant: "ghost" })}
+        >
+          Mes chiffres
+        </Link>{" "}
+        <Link
           href="/jeu/equipe"
           className={buttonClasses({ variant: "ghost" })}
         >
           Mon équipe
+        </Link>{" "}
+        <Link
+          href="/jeu/actualites"
+          className={buttonClasses({ variant: "ghost" })}
+        >
+          Actualités
         </Link>
       </p>
 

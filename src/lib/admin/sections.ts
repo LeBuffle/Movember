@@ -69,7 +69,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     description:
       "Les messages publiés à tous les participants pendant le mois.",
     epic: "epic 7",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "notifications",

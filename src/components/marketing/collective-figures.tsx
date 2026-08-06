@@ -4,6 +4,7 @@ import {
   EDITION_YEAR,
   PREVIOUS_EDITION,
 } from "@/lib/edition/calendar";
+import type { CollectiveTotals } from "@/lib/leaderboards/collective";
 
 function Figure({
   value,
@@ -40,7 +41,7 @@ const number = (value: number) => new Intl.NumberFormat("fr-FR").format(value);
  * which means nothing to a newcomer, into something they can picture
  * themselves doing.
  */
-export function CollectiveFigures() {
+export function CollectiveFigures({ live }: { live?: CollectiveTotals }) {
   const perParticipant = (
     PREVIOUS_EDITION.amountEuros / PREVIOUS_EDITION.participants
   ).toLocaleString("fr-FR", { minimumFractionDigits: 2 });
@@ -85,18 +86,46 @@ export function CollectiveFigures() {
       <div className="border-line bg-surface-sunken rounded-xl border p-5">
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-ink font-semibold">
-            L’objectif de l’édition {EDITION_YEAR}
+            L’édition {EDITION_YEAR} en cours
           </h3>
-          {/* Says plainly that nothing is being counted yet. A counter at
-              zero without this label reads as a failing counter. */}
-          <Badge tone="neutral">Compteur en préparation</Badge>
+          {/* The badge changes with the figures rather than being removed.
+              A counter at zero without a label reads as a failing counter,
+              and "aucun participant inscrit" is a true and useful thing to
+              say in September. */}
+          <Badge tone={live?.available ? "success" : "neutral"}>
+            {live?.available ? "En direct" : "Compteur en préparation"}
+          </Badge>
         </div>
-        <p className="text-ink-muted mt-2">
-          {number(COLLECTIVE_GOALS.participants)} participants,{" "}
-          {number(COLLECTIVE_GOALS.amountEuros)} € reversés et{" "}
-          {number(COLLECTIVE_GOALS.kilometres)} km parcourus. Le compteur en
-          temps réel s’affichera ici à l’ouverture des inscriptions.
-        </p>
+
+        {live?.available ? (
+          <>
+            <div className="mt-4 grid gap-6 sm:grid-cols-3">
+              <Figure
+                value={`${number(Math.round(live.collectedCents / 100))} €`}
+                label="collectés"
+                detail={`${number(live.participants)} participant${live.participants > 1 ? "s" : ""} inscrit${live.participants > 1 ? "s" : ""}`}
+              />
+              <Figure
+                value={`${number(live.kilometres)} km`}
+                label="parcourus"
+              />
+              <Figure value={`${number(live.hours)} h`} label="de sport" />
+            </div>
+
+            <p className="text-ink-muted mt-4 text-sm">
+              Objectif : {number(COLLECTIVE_GOALS.participants)} participants,{" "}
+              {number(COLLECTIVE_GOALS.amountEuros)} € reversés et{" "}
+              {number(COLLECTIVE_GOALS.kilometres)} km parcourus.
+            </p>
+          </>
+        ) : (
+          <p className="text-ink-muted mt-2">
+            {number(COLLECTIVE_GOALS.participants)} participants,{" "}
+            {number(COLLECTIVE_GOALS.amountEuros)} € reversés et{" "}
+            {number(COLLECTIVE_GOALS.kilometres)} km parcourus. Le compteur en
+            temps réel s’affichera ici à l’ouverture des inscriptions.
+          </p>
+        )}
       </div>
     </section>
   );
