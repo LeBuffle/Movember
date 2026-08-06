@@ -38,7 +38,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     description:
       "Les cartes moustachues : visuels, raretés, probabilités de tirage.",
     epic: "epic 5",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "livraisons",

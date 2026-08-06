@@ -187,7 +187,7 @@ découvre sur un type, pas sur sept.
 | 5.3 | [Attribution transactionnelle à la réussite d'un défi](5.3.attribution-transactionnelle.md) | **Review** | 5.2, 4.3 |
 | 5.4 | [Album de collection avec les deux compteurs](5.4.album-collection.md) | **Review** | 5.3 |
 | 5.5 | [Détail d'une carte et révélation](5.5.detail-carte-revelation.md) | Draft | 5.4 |
-| 5.6 | [Création et publication de cartes](5.6.back-office-cartes.md) | Draft | 5.1, 1.10 |
+| 5.6 | [Création et publication de cartes](5.6.back-office-cartes.md) | **Review** | 5.1, 1.10 |
 | 5.7 | [Packs bonus du niveau 3](5.7.packs-bonus-niveau-3.md) | **Review** | 5.2, 2.4 |
 | 5.8 | [Galerie publique de la collection](5.8.galerie-publique.md) | Draft | 5.6 |
 

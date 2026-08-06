@@ -22,6 +22,21 @@ const nextConfig: NextConfig = {
    */
   poweredByHeader: false,
 
+  experimental: {
+    /**
+     * Card visuals are uploaded through a server action (story 5.6), and the
+     * default ceiling on a server action body is one megabyte — below the two
+     * megabytes the bucket itself accepts. Left as it is, a volunteer
+     * uploading a 1.5 MB picture would get a framework error rather than the
+     * sentence the form is ready to show them.
+     *
+     * Three megabytes rather than two: the body carries the form fields as
+     * well as the file, and the real limit is the one checked in
+     * `src/lib/cards/form.ts` and by the bucket.
+     */
+    serverActions: { bodySizeLimit: "3mb" },
+  },
+
   /**
    * Removes the parts of the error reporter we do not use.
    *

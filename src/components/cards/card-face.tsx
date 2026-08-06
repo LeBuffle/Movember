@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { AlbumCard } from "@/lib/cards/collection";
 import type { Rarity } from "@/lib/cards/draw";
+import { RARITY_LABELS } from "@/lib/cards/form";
 import { cn } from "@/lib/cn";
 
 /**
@@ -25,13 +26,6 @@ const RARITY_TONE: Record<Rarity, "neutral" | "blue" | "orange" | "success"> = {
   rare: "blue",
   epique: "orange",
   legendaire: "success",
-};
-
-const RARITY_LABEL: Record<Rarity, string> = {
-  commune: "Commune",
-  rare: "Rare",
-  epique: "Épique",
-  legendaire: "Légendaire",
 };
 
 /** Placeholder tints, distinguishable in greyscale as well as in colour. */
@@ -87,7 +81,7 @@ export function CardFace({ card }: { card: AlbumCard }) {
 
         <div className="flex flex-wrap items-center gap-1">
           <Badge tone={RARITY_TONE[card.rarity]}>
-            {RARITY_LABEL[card.rarity]}
+            {RARITY_LABELS[card.rarity]}
           </Badge>
 
           {card.copies > 1 && (
