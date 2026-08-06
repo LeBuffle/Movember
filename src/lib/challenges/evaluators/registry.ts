@@ -76,6 +76,35 @@ const windowField: ConfigField = {
   ],
 };
 
+/**
+ * One outing, or several added up.
+ *
+ * The two readings of "Parcourir 5 km" are both defensible — one 5 km run,
+ * or two 2,5 km walks in the same day — and the PO's decision was to settle
+ * it **per challenge** rather than once for the whole catalogue. Some
+ * challenges want the effort in one go; most want to be reachable by
+ * somebody with a life.
+ *
+ * `single` is the default because it is what the sentence says on its face,
+ * and because a challenge written before this setting existed must not
+ * change meaning. The preview sentence names the choice either way, so the
+ * author sees which one they got.
+ */
+const effortSchema = z.enum(["single", "cumulative"], {
+  error: "L’effort doit être « en une fois » ou « cumulé ».",
+});
+
+const effortField: ConfigField = {
+  kind: "choice",
+  name: "effort",
+  label: "Comment l’atteindre",
+  options: [
+    { value: "single", label: "En une seule sortie" },
+    { value: "cumulative", label: "En cumulant plusieurs sorties" },
+  ],
+  hint: "« En cumulant » additionne toutes les sorties de la fenêtre. Deux fois 2,5 km valent alors 5 km.",
+};
+
 /* -------------------------------------------------------------------------
  * Configuration per evaluator
  * ---------------------------------------------------------------------- */
@@ -86,6 +115,7 @@ const distanceConfig = z.object({
   min_distance_meters: boundedInteger(200_000, TOO_FAR),
   sport_types: sportList,
   window: windowSchema.default("day"),
+  effort: effortSchema.default("single"),
 });
 
 const distanceFields: ConfigField[] = [
@@ -99,6 +129,7 @@ const distanceFields: ConfigField[] = [
   },
   sportsField,
   windowField,
+  effortField,
 ];
 
 const durationConfig = z.object({
@@ -106,6 +137,7 @@ const durationConfig = z.object({
   min_duration_seconds: boundedInteger(86_400, TOO_LONG),
   sport_types: sportList,
   window: windowSchema.default("day"),
+  effort: effortSchema.default("single"),
 });
 
 const durationFields: ConfigField[] = [
@@ -119,12 +151,14 @@ const durationFields: ConfigField[] = [
   },
   sportsField,
   windowField,
+  effortField,
 ];
 
 const elevationConfig = z.object({
   min_elevation_meters: boundedInteger(9_000, TOO_HIGH),
   sport_types: sportList,
   window: windowSchema.default("day"),
+  effort: effortSchema.default("single"),
 });
 
 const elevationFields: ConfigField[] = [
@@ -138,6 +172,7 @@ const elevationFields: ConfigField[] = [
   },
   sportsField,
   windowField,
+  effortField,
 ];
 
 const streakConfig = z.object({
@@ -357,8 +392,13 @@ export type EvaluatorDefinition = {
    * look at a set of activities, not at the one that just arrived. Story 4.3
    * has to know that before designing the evaluation signature, or story 4.7
    * ends up rewriting it.
+   *
+   * A predicate rather than a flag, because since the `effort` setting the
+   * answer depends on the challenge and not only on its type: the same
+   * distance challenge needs one activity when it asks for a single outing,
+   * and the whole window when it adds them up.
    */
-  needsHistory: boolean;
+  needsHistory: (config: Record<string, unknown>) => boolean;
   /**
    * Whether it depends on everyone's activities rather than one person's.
    * `collective` cannot be judged when an activity arrives; it is computed
@@ -367,6 +407,12 @@ export type EvaluatorDefinition = {
   isCollective: boolean;
 };
 
+/** Reads the `effort` setting, whatever else the configuration holds. */
+const isCumulative = (config: Record<string, unknown>): boolean =>
+  config.effort === "cumulative";
+
+const always = (): boolean => true;
+
 export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
   distance: {
     key: "distance",
@@ -374,7 +420,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
     description: "Parcourir une distance minimale, sur un ou plusieurs sports.",
     configSchema: distanceConfig,
     fields: distanceFields,
-    needsHistory: false,
+    needsHistory: isCumulative,
     isCollective: false,
   },
   duration: {
@@ -383,7 +429,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
     description: "Tenir une durée minimale d’activité.",
     configSchema: durationConfig,
     fields: durationFields,
-    needsHistory: false,
+    needsHistory: isCumulative,
     isCollective: false,
   },
   elevation: {
@@ -392,7 +438,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
     description: "Cumuler un dénivelé positif minimal.",
     configSchema: elevationConfig,
     fields: elevationFields,
-    needsHistory: false,
+    needsHistory: isCumulative,
     isCollective: false,
   },
   streak: {
@@ -402,7 +448,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
       "Bouger plusieurs jours de suite, avec une tolérance paramétrable.",
     configSchema: streakConfig,
     fields: streakFields,
-    needsHistory: true,
+    needsHistory: always,
     isCollective: false,
   },
   multisport: {
@@ -412,7 +458,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
       "Pratiquer plusieurs sports différents dans une fenêtre donnée.",
     configSchema: multisportConfig,
     fields: multisportFields,
-    needsHistory: true,
+    needsHistory: always,
     isCollective: false,
   },
   collective: {
@@ -422,7 +468,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
       "Un objectif atteint par l’ensemble des participants, pas individuellement.",
     configSchema: collectiveConfig,
     fields: collectiveFields,
-    needsHistory: true,
+    needsHistory: always,
     isCollective: true,
   },
   surprise: {
@@ -431,7 +477,7 @@ export const EVALUATORS: Record<EvaluatorKey, EvaluatorDefinition> = {
     description: "Combiner plusieurs conditions en un seul défi.",
     configSchema: surpriseConfig,
     fields: surpriseFields,
-    needsHistory: true,
+    needsHistory: always,
     isCollective: false,
   },
 };

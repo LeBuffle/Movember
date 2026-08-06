@@ -117,14 +117,29 @@ function Rehearsal({
   // A fixed day in the edition rather than today's date: the same challenge
   // must rehearse the same way on any screen, on any day.
   const day = "2026-11-15";
+  const outings = simulatedActivitiesForDay(day);
+  const context = { assignedFor: day, durationDays: 1 };
 
-  const results = simulatedActivitiesForDay(day).map((activity) => ({
+  // A cumulative challenge is judged on the day's total, so rehearsing it one
+  // activity at a time would answer a question nobody asked. It gets its own
+  // verdict, below.
+  if (config.effort === "cumulative") {
+    return (
+      <CumulativeRehearsal
+        verdict={evaluate(evaluator, {
+          activity: outings[0]!,
+          history: outings,
+          config,
+          context,
+        })}
+        outings={outings.length}
+      />
+    );
+  }
+
+  const results = outings.map((activity) => ({
     activity,
-    verdict: evaluate(evaluator, {
-      activity,
-      config,
-      context: { assignedFor: day, durationDays: 1 },
-    }),
+    verdict: evaluate(evaluator, { activity, config, context }),
   }));
 
   const unsupported = results.some(
@@ -175,6 +190,45 @@ function Rehearsal({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * The rehearsal for a challenge judged on a total.
+ *
+ * One verdict, not one per outing — because that is how the challenge is
+ * actually judged. What the author needs to see is whether an ordinary day
+ * adds up to the target, and by how much it falls short when it does not.
+ */
+function CumulativeRehearsal({
+  verdict,
+  outings,
+}: {
+  verdict: ReturnType<typeof evaluate>;
+  outings: number;
+}) {
+  return (
+    <div className="border-line mt-4 border-t pt-4">
+      <p className="text-ink-muted text-xs font-semibold tracking-wide uppercase">
+        À l’essai, sur une journée ordinaire
+      </p>
+
+      {verdict.completed ? (
+        <p className="text-success mt-2 text-sm">
+          Les {outings} sorties de la journée cumulées valideraient ce défi.
+        </p>
+      ) : "measured" in verdict ? (
+        <p className="text-danger mt-2 text-sm">
+          Les {outings} sorties de la journée cumulées n’y suffiraient pas. Il
+          est peut-être trop exigeant — ou réglé dans la mauvaise unité.
+        </p>
+      ) : (
+        <p className="text-ink-muted mt-2 text-sm">
+          Ce défi ne peut pas être mis à l’essai sur une seule journée. Ses
+          réglages, eux, sont valides.
+        </p>
+      )}
     </div>
   );
 }

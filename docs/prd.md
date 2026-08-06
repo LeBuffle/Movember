@@ -599,7 +599,7 @@ Phase 4 ou en cours de développement.
 | P7 | Traitement d'un participant qui paye puis refuse de connecter Strava. | Avant l'ouverture des inscriptions |
 | P8 | Inscriptions encore possibles après le 1ᵉʳ novembre ? Avec quel rattrapage sur les défis passés ? | Phase 4 |
 | P9 | Modalités de la formule entreprise (facturation groupée ou inscriptions individuelles). | V2 |
-| P10 | Durée de conservation des données d'activité après la fin de l'édition. | Phase 3 |
+| ~~P10~~ | ~~Durée de conservation des données d'activité après la fin de l'édition.~~ ✅ **Tranché — 12 mois.** | — |
 | P11 | Traitement des activités marquées comme manuelles ou importées sur Strava : exclues, ou acceptées sous contrôle ? | Phase 3 |
 
 ---

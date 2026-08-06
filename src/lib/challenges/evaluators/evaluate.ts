@@ -122,40 +122,63 @@ function eligible(
 }
 
 /* -------------------------------------------------------------------------
- * The three settled by a single activity
+ * The three settled by reaching a threshold
  *
- * One activity reaching the threshold — not a day's total. Both readings are
- * defensible; this one follows the acceptance criterion, matches what "faire
- * 5 km" means to most people, and lets a challenge be settled the moment an
- * activity arrives rather than at the end of the day. Summing over a day is a
- * different mechanic and would deserve its own type.
+ * One outing, or several added up — the challenge says which, through its
+ * `effort` setting. Both readings of "Parcourir 5 km" are defensible, and
+ * the PO's decision was to settle it per challenge rather than once for the
+ * whole catalogue: some challenges want the effort in one go, most want to
+ * be reachable by somebody with a life.
+ *
+ * `single` remains the default, so a challenge written before the setting
+ * existed keeps the meaning its sentence gives it.
  * ---------------------------------------------------------------------- */
 
-function singleActivity(
+function threshold(
   input: EvaluationInput,
   key: string,
   measure: (activity: Activity) => number,
   missing: string,
   shortfall: string,
 ): Verdict {
-  const { activity, config, context } = input;
+  const { activity, history, config, context } = input;
 
   const target = number(config[key]);
   if (target <= 0) return noTarget(missing);
 
+  const sports = list(config.sport_types);
+  const days = windowDays(config, context);
+
+  if (config.effort === "cumulative") {
+    if (!history) return noHistory;
+
+    const counted = eligible(history, sports, context.assignedFor, days);
+    const measured = counted.reduce((total, one) => total + measure(one), 0);
+
+    if (measured >= target) {
+      return {
+        completed: true,
+        evidence: {
+          activityIds: counted.map((one) => one.id),
+          measured,
+        },
+      };
+    }
+
+    // The trigger's own eligibility is not reported separately here: what the
+    // participant needs to know is how far the total is, and naming a single
+    // rejected outing in the middle of a running total would confuse more
+    // than it explains.
+    return { completed: false, reason: shortfall, measured, target };
+  }
+
   const measured = measure(activity);
 
-  if (!matchesSport(activity, list(config.sport_types))) {
+  if (!matchesSport(activity, sports)) {
     return { completed: false, reason: WRONG_SPORT, measured, target };
   }
 
-  if (
-    !withinWindow(
-      activity.localDate,
-      context.assignedFor,
-      windowDays(config, context),
-    )
-  ) {
+  if (!withinWindow(activity.localDate, context.assignedFor, days)) {
     return { completed: false, reason: OUT_OF_WINDOW, measured, target };
   }
 
@@ -173,7 +196,7 @@ function singleActivity(
 }
 
 export const evaluateDistance = (input: EvaluationInput): Verdict =>
-  singleActivity(
+  threshold(
     input,
     "min_distance_meters",
     (activity) => activity.distanceMeters,
@@ -182,7 +205,7 @@ export const evaluateDistance = (input: EvaluationInput): Verdict =>
   );
 
 export const evaluateDuration = (input: EvaluationInput): Verdict =>
-  singleActivity(
+  threshold(
     input,
     "min_duration_seconds",
     (activity) => activity.durationSeconds,
@@ -191,7 +214,7 @@ export const evaluateDuration = (input: EvaluationInput): Verdict =>
   );
 
 export const evaluateElevation = (input: EvaluationInput): Verdict =>
-  singleActivity(
+  threshold(
     input,
     "min_elevation_meters",
     (activity) => activity.elevationMeters,

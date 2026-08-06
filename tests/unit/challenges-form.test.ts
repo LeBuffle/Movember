@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 
@@ -125,6 +127,7 @@ describe("la conversion fait l’aller-retour", () => {
       min_distance_meters: 5000,
       sport_types: ["run"],
       window: "day",
+      effort: "single",
     };
 
     const { values } = valuesFromConfig("distance", stored);
@@ -410,5 +413,29 @@ describe("l’aperçu dit ce que la machine a compris", () => {
         sport_types: ["any"],
       }).join(" "),
     ).toMatch(/1 200 activités/);
+  });
+});
+
+describe("le banc d’essai du back-office", () => {
+  /** Les commentaires citent les termes que ces tests interdisent. */
+  const preview = readFileSync(
+    new URL(
+      "../../src/components/admin/challenge-preview.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  )
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
+  it("juge un défi cumulé sur le total, pas sortie par sortie", () => {
+    // Répéter le même verdict sur chaque ligne répondrait à une question que
+    // personne ne pose.
+    expect(preview).toMatch(/config\.effort === "cumulative"/);
+    expect(preview).toMatch(/history: outings/);
+  });
+
+  it("ne dit plus « pas jugeable » pour un défi cumulé sur la journée", () => {
+    expect(preview).toMatch(/cumulées valideraient ce défi/);
   });
 });

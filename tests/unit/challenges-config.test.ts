@@ -58,10 +58,28 @@ describe("le registre des évaluateurs", () => {
     // Déclaré ici plutôt que découvert plus tard : `streak` et `multisport`
     // regardent un ensemble d'activités, pas celle qui vient d'arriver. La
     // story 4.3 doit le savoir avant de figer la signature d'évaluation.
-    expect(EVALUATORS.distance.needsHistory).toBe(false);
-    expect(EVALUATORS.streak.needsHistory).toBe(true);
-    expect(EVALUATORS.multisport.needsHistory).toBe(true);
+    expect(EVALUATORS.streak.needsHistory({})).toBe(true);
+    expect(EVALUATORS.multisport.needsHistory({})).toBe(true);
     expect(EVALUATORS.collective.isCollective).toBe(true);
+  });
+
+  it("laisse le réglage du défi décider, pour les seuils", () => {
+    // Depuis que l'effort se règle par défi, la réponse dépend du défi et
+    // plus seulement de son type : « en une sortie » se juge sur l'activité
+    // qui arrive, « en cumulant » sur toute la fenêtre.
+    expect(EVALUATORS.distance.needsHistory({ effort: "single" })).toBe(false);
+    expect(EVALUATORS.distance.needsHistory({ effort: "cumulative" })).toBe(
+      true,
+    );
+    expect(EVALUATORS.duration.needsHistory({ effort: "cumulative" })).toBe(
+      true,
+    );
+    expect(EVALUATORS.elevation.needsHistory({ effort: "cumulative" })).toBe(
+      true,
+    );
+
+    // Un défi écrit avant que le réglage existe garde le sens de sa phrase.
+    expect(EVALUATORS.distance.needsHistory({})).toBe(false);
   });
 
   it("alimente le formulaire du back-office", () => {

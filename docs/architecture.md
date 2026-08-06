@@ -995,7 +995,7 @@ explicitement dans la politique de confidentialité.
 
 | Donnée | Durée | Justification |
 | --- | --- | --- |
-| Activités sportives | **12 mois après la fin de l'édition**, puis suppression | Permet la comparaison d'une édition à l'autre ; au-delà, sans objet — *à valider (point P10 du PRD)* |
+| Activités sportives | **12 mois après la fin de l'édition**, puis suppression | Permet la comparaison d'une édition à l'autre ; au-delà, sans objet — ✅ **tranché par le PO le 6 août 2026** |
 | Jetons Strava | Révoqués à la clôture de l'édition | Aucune raison de conserver un accès après le jeu |
 | Adresses de livraison | **Purgées 3 mois après l'expédition** | Finalité épuisée |
 | Comptes participants | Jusqu'à suppression par l'utilisateur ou 3 ans d'inactivité | Réutilisation d'une édition à l'autre |
@@ -1299,7 +1299,7 @@ premier incident.
 | ~~A1~~ | ~~Offre Vercel~~ | ✅ **Résolue** — hébergement sur VPS Hostinger | — |
 | A2 | Offre Supabase Pro (~23 €/mois sur 3 mois) pour les sauvegardes quotidiennes | **Oui, sans réserve** — le PO l'envisage déjà ; à activer avant l'ouverture des inscriptions | Avant octobre |
 | A3 | Portée Strava `activity:read_all` (inclut les activités privées) | Oui, avec consentement explicite et minimisation | Phase 4 |
-| A4 | Durée de conservation des activités après l'édition (point P10 du PRD) | 12 mois | Phase 4 |
+| ~~A4~~ | ~~Durée de conservation des activités après l'édition~~ | ✅ **Résolue** — 12 mois après la fin de l'édition. Annoncée au participant sur l'écran de consentement | — |
 | A5 | Traitement des activités saisies à la main sur Strava (point P11 du PRD) | Exclues ; les imports depuis une montre restent acceptés | Phase 4 |
 | A6 | Nom de domaine de l'édition | À réserver — le PO s'en occupe | Août |
 | A7 | Compte Sentry pour la remontée des erreurs | Oui, offre gratuite | Phase 4 |

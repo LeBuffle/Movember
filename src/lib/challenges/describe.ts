@@ -80,6 +80,20 @@ function windowSuffix(value: unknown): string {
   return value === "multi_day" ? "sur plusieurs jours" : "dans la journée";
 }
 
+/**
+ * One outing, or several added up.
+ *
+ * Always said, in both directions. The setting decides whether two 2,5 km
+ * walks are worth a 5 km challenge — which is the difference between a
+ * challenge somebody can fit into their day and one they cannot — so leaving
+ * it implicit would let an author publish the opposite of what they meant.
+ */
+function effortSuffix(value: unknown): string {
+  return value === "cumulative"
+    ? ", en cumulant les sorties"
+    : ", en une seule sortie";
+}
+
 function plural(count: number, one: string, many: string): string {
   return count > 1 ? many : one;
 }
@@ -116,7 +130,7 @@ export function describeChallenge(
       if (meters === null) break;
 
       return withSports([
-        `Parcourir ${formatDistance(meters)} ${windowSuffix(config.window)}.`,
+        `Parcourir ${formatDistance(meters)} ${windowSuffix(config.window)}${effortSuffix(config.effort)}.`,
       ]);
     }
 
@@ -125,7 +139,7 @@ export function describeChallenge(
       if (seconds === null) break;
 
       return withSports([
-        `Bouger pendant ${formatDuration(seconds)} ${windowSuffix(config.window)}.`,
+        `Bouger pendant ${formatDuration(seconds)} ${windowSuffix(config.window)}${effortSuffix(config.effort)}.`,
       ]);
     }
 
@@ -134,7 +148,7 @@ export function describeChallenge(
       if (meters === null) break;
 
       return withSports([
-        `Cumuler ${group(meters)} m de dénivelé positif ${windowSuffix(config.window)}.`,
+        `Cumuler ${group(meters)} m de dénivelé positif ${windowSuffix(config.window)}${effortSuffix(config.effort)}.`,
       ]);
     }
 

@@ -3,6 +3,10 @@ import "server-only";
 import { addDays, type Activity } from "@/lib/activities/activity";
 import { readChallengeConfig } from "@/lib/challenges/config";
 import { evaluate, type Verdict } from "@/lib/challenges/evaluators/evaluate";
+import {
+  EVALUATORS,
+  type EvaluatorKey,
+} from "@/lib/challenges/evaluators/registry";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -38,6 +42,9 @@ const MAX_WINDOW_DAYS = 30;
 
 /** A hard stop, well above the thirty an edition can produce. */
 const MAX_OPEN_ASSIGNMENTS = 60;
+
+/** Two months of activity for one person. Generous, and still bounded. */
+const MAX_HISTORY = 300;
 
 export type CompletionReport = {
   examined: number;
@@ -111,6 +118,16 @@ export async function applyActivity(
   let completed = 0;
   let unsupported = 0;
 
+  // Loaded once, lazily, and shared by every assignment that needs it.
+  //
+  // Before story 3.1 there was no activity store at all, so the evaluators
+  // that judge on several activities — regularity, multi-sport, and now a
+  // cumulative distance — always refused. The table exists now, so they can
+  // actually be judged; the laziness is what keeps the common case (one
+  // activity, one threshold) at a single query.
+  let history: Activity[] | undefined;
+  let historyLoaded = false;
+
   for (const assignment of assignments) {
     const challenge = assignment.challenges;
     if (!challenge) continue;
@@ -125,8 +142,16 @@ export async function applyActivity(
       continue;
     }
 
+    const definition = EVALUATORS[challenge.evaluator as EvaluatorKey];
+
+    if (definition?.needsHistory(config) && !historyLoaded) {
+      history = await readHistory(activity);
+      historyLoaded = true;
+    }
+
     const verdict = evaluate(challenge.evaluator, {
       activity,
+      history,
       config,
       context: {
         assignedFor: assignment.assigned_for,
@@ -149,6 +174,74 @@ export async function applyActivity(
   }
 
   return { examined: assignments.length, completed, unsupported };
+}
+
+/**
+ * The participant's activities around the one that just arrived.
+ *
+ * A band rather than "everything": an edition lasts thirty days and a
+ * challenge's window never exceeds that, so nothing outside this range can
+ * belong to a window that contains the trigger. Reading the whole history
+ * would grow with every edition for no gain.
+ *
+ * The band reaches **forward** as well as back, which is not obvious: an
+ * initial import (story 3.6) can bring activities in any order, so a
+ * challenge assigned yesterday may already have activities dated tomorrow.
+ *
+ * @returns `undefined` when the read fails, and an array — possibly empty —
+ *   when it succeeds. The distinction is exactly what the evaluators read:
+ *   absent means "not available" and they refuse to judge, empty means
+ *   "nothing yet" and they judge and find nothing. A database error must
+ *   never be turned into a challenge marked as not achieved.
+ */
+async function readHistory(
+  activity: Activity,
+): Promise<Activity[] | undefined> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("activities")
+    .select(
+      "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters",
+    )
+    .eq("profile_id", activity.profileId)
+    .gte("local_date", addDays(activity.localDate, -(MAX_WINDOW_DAYS - 1)))
+    .lte("local_date", addDays(activity.localDate, MAX_WINDOW_DAYS - 1))
+    .order("local_date", { ascending: true })
+    .limit(MAX_HISTORY);
+
+  if (error) {
+    console.error("[défis] historique d’activités illisible", {
+      profile: activity.profileId,
+      code: error.code,
+    });
+    return undefined;
+  }
+
+  type Row = {
+    provider_activity_id: string;
+    provider: Activity["provider"];
+    name: string;
+    sport_family: Activity["sportFamily"];
+    started_at: string;
+    local_date: string;
+    distance_meters: number;
+    duration_seconds: number;
+    elevation_meters: number;
+  };
+
+  return (data as Row[]).map((row) => ({
+    id: row.provider_activity_id,
+    provider: row.provider,
+    profileId: activity.profileId,
+    name: row.name,
+    sportFamily: row.sport_family,
+    startedAt: row.started_at,
+    localDate: row.local_date,
+    distanceMeters: row.distance_meters,
+    durationSeconds: row.duration_seconds,
+    elevationMeters: row.elevation_meters,
+  }));
 }
 
 /**

@@ -490,3 +490,176 @@ describe("l’ajout des six types", () => {
     expect(evaluator).not.toMatch(/server-only/);
   });
 });
+
+/* =========================================================================
+ * Une sortie, ou plusieurs additionnées
+ *
+ * Les deux lectures de « Parcourir 5 km » se défendent, et le PO a tranché :
+ * c'est le défi qui décide, pas le catalogue entier. Ce qui rend le réglage
+ * dangereux, c'est qu'il change qui peut réussir — d'où ces tests.
+ * ====================================================================== */
+
+describe("l’effort demandé par un défi de seuil", () => {
+  const config = (effort: string) => ({
+    min_distance_meters: 5000,
+    sport_types: ["run"],
+    window: "day",
+    effort,
+  });
+
+  const outing = (id: string, meters: number, day = DAY): Activity =>
+    activity({ id, distanceMeters: meters, localDate: day });
+
+  it("en une seule sortie, refuse deux moitiés", () => {
+    const verdict = evaluate("distance", {
+      activity: outing("a", 2500),
+      history: [outing("a", 2500), outing("b", 2500)],
+      config: config("single"),
+      context: CONTEXT,
+    });
+
+    expect(verdict.completed).toBe(false);
+  });
+
+  it("en cumulant, deux moitiés suffisent", () => {
+    const verdict = evaluate("distance", {
+      activity: outing("b", 2500),
+      history: [outing("a", 2500), outing("b", 2500)],
+      config: config("cumulative"),
+      context: CONTEXT,
+    });
+
+    expect(verdict.completed).toBe(true);
+    if (verdict.completed) {
+      expect(verdict.evidence.measured).toBe(5000);
+      // Les deux sorties sont citées : le participant qui conteste doit
+      // pouvoir voir ce qui a compté.
+      expect(verdict.evidence.activityIds).toEqual(["a", "b"]);
+    }
+  });
+
+  it("en cumulant, n’additionne que la fenêtre et les bons sports", () => {
+    const verdict = evaluate("distance", {
+      activity: outing("a", 2500),
+      history: [
+        outing("a", 2500),
+        outing("b", 2500, addDays(DAY, -1)),
+        activity({ id: "c", distanceMeters: 9000, sportFamily: "bike" }),
+      ],
+      config: config("cumulative"),
+      context: CONTEXT,
+    });
+
+    expect(verdict.completed).toBe(false);
+    if (!verdict.completed && "measured" in verdict) {
+      expect(verdict.measured).toBe(2500);
+    }
+  });
+
+  it("en cumulant sans historique, refuse de juger plutôt que d’échouer", () => {
+    // « Pas encore jugé » et « jugé et manqué » ne sont pas la même réponse.
+    const verdict = evaluate("distance", {
+      activity: outing("a", 9000),
+      config: config("cumulative"),
+      context: CONTEXT,
+    });
+
+    expect(verdict.completed).toBe(false);
+    expect("unsupported" in verdict).toBe(true);
+  });
+
+  it("sans réglage, garde le sens que sa phrase donne", () => {
+    // Un défi écrit avant que le réglage existe ne doit pas changer de sens.
+    const verdict = evaluate("distance", {
+      activity: outing("a", 2500),
+      history: [outing("a", 2500), outing("b", 2500)],
+      config: {
+        min_distance_meters: 5000,
+        sport_types: ["run"],
+        window: "day",
+      },
+      context: CONTEXT,
+    });
+
+    expect(verdict.completed).toBe(false);
+  });
+
+  it("vaut aussi pour la durée et le dénivelé", () => {
+    const duration = evaluate("duration", {
+      activity: activity({ id: "a", durationSeconds: 900 }),
+      history: [
+        activity({ id: "a", durationSeconds: 900 }),
+        activity({ id: "b", durationSeconds: 900 }),
+      ],
+      config: {
+        min_duration_seconds: 1800,
+        sport_types: ["run"],
+        window: "day",
+        effort: "cumulative",
+      },
+      context: CONTEXT,
+    });
+
+    const elevation = evaluate("elevation", {
+      activity: activity({ id: "a", elevationMeters: 300 }),
+      history: [
+        activity({ id: "a", elevationMeters: 300 }),
+        activity({ id: "b", elevationMeters: 300 }),
+      ],
+      config: {
+        min_elevation_meters: 600,
+        sport_types: ["run"],
+        window: "day",
+        effort: "cumulative",
+      },
+      context: CONTEXT,
+    });
+
+    expect(duration.completed).toBe(true);
+    expect(elevation.completed).toBe(true);
+  });
+
+  it("dit toujours laquelle des deux règles s’applique", () => {
+    // Laisser le réglage implicite laisserait un auteur publier le contraire
+    // de ce qu'il voulait.
+    const described = code("src/lib/challenges/describe.ts");
+
+    expect(described).toMatch(/en cumulant les sorties/);
+    expect(described).toMatch(/en une seule sortie/);
+  });
+});
+
+describe("l’historique atteint enfin les évaluateurs", () => {
+  const completion = code("src/lib/challenges/completion.ts");
+
+  it("est lu depuis la table des activités", () => {
+    // Avant la story 3.1 il n'existait pas de stock d'activités : régularité,
+    // multi-sports et collectif refusaient donc toujours de juger.
+    expect(completion).toMatch(/from\("activities"\)/);
+  });
+
+  it("n’est chargé que si un défi en a besoin", () => {
+    expect(completion).toMatch(/needsHistory\(config\) && !historyLoaded/);
+  });
+
+  it("n’est chargé qu’une fois pour toutes les attributions", () => {
+    expect(completion).toMatch(/historyLoaded = true/);
+  });
+
+  it("regarde aussi vers l’avant", () => {
+    // Un import initial peut apporter les activités dans le désordre.
+    expect(completion).toMatch(
+      /\.lte\("local_date", addDays\(activity\.localDate, MAX_WINDOW_DAYS - 1\)\)/,
+    );
+  });
+
+  it("ne transforme pas une erreur de lecture en défi manqué", () => {
+    // Absent veut dire « indisponible », vide veut dire « rien » : les
+    // évaluateurs refusent de juger dans le premier cas.
+    const read = completion.slice(
+      completion.indexOf("async function readHistory"),
+    );
+
+    expect(read).toMatch(/if \(error\)[\s\S]{0,200}return undefined;/);
+  });
+});
