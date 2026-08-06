@@ -55,12 +55,18 @@ export const CARD_DETAIL_LABELS: Record<string, string> = {
 /**
  * The picture.
  *
- * Two megabytes, three formats. Not an arbitrary tightening: the album shows
- * a dozen thumbnails at once, on a phone, often on mobile data — a 6 MB PNG
- * uploaded by mistake is paid for by every participant who opens the screen,
- * every time.
+ * Eight megabytes, three formats. It was two, and two turned out to be below
+ * what the real card artwork weighs: illustrated cards at printable
+ * resolution land between three and six megabytes before anyone has done
+ * anything wrong.
+ *
+ * The ceiling is still a ceiling, and the reason has not changed: the album
+ * shows a dozen of these at once, on a phone, often on mobile data. What is
+ * uploaded is paid for by every participant who opens the screen, every
+ * time. Eight megabytes is room for the artwork as it comes out of the
+ * generator — not an invitation to publish it that way.
  */
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 export const IMAGE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -92,7 +98,7 @@ export function checkImage(file: ImageCandidate): ImageCheck {
 
     return {
       ok: false,
-      message: `L’image fait ${megabytes} Mo, la limite est de 2 Mo. Réduisez-la avant de la téléverser.`,
+      message: `L’image fait ${megabytes} Mo, la limite est de 8 Mo. Réduisez-la avant de la téléverser.`,
     };
   }
 

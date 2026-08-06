@@ -131,7 +131,7 @@ export function NewsForm({
           </p>
         ) : (
           <p className="text-ink-muted text-sm">
-            JPEG, PNG ou WebP, 2 Mo maximum. Une photo prise au téléphone
+            JPEG, PNG ou WebP, 8 Mo maximum. Une photo prise au téléphone
             convient — pensez à la réduire si elle est refusée.
           </p>
         )}

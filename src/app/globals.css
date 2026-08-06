@@ -51,6 +51,16 @@
   --color-danger: #b91c1c;
   --color-danger-soft: #fef2f2;
 
+  /* --- Card proportions --------------------------------------------------
+     The real artwork's ratio, measured on the delivered files (1040 × 1500),
+     and not the 3/4 that was guessed before any card existed. Guessing left
+     a band of empty colour above and below every visual.
+
+     Declared once because four screens draw a card — the album, the reveal,
+     the public gallery and the back-office preview — and a ratio that drifts
+     between them is a catalogue that looks wrong on one screen out of four. */
+  --aspect-carte: 1040 / 1500;
+
   /* --- Typography ------------------------------------------------------- */
   --font-sans:
     system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

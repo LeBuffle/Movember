@@ -147,8 +147,9 @@ export function CardForm({
               </p>
             ) : (
               <p className="text-ink-muted text-sm">
-                JPEG, PNG ou WebP, 2 Mo maximum. Format portrait, idéalement 3
-                sur 4. Sans visuel, la carte affiche ses initiales.
+                JPEG, PNG ou WebP, 8 Mo maximum. Format portrait, dans les
+                proportions d’une carte à collectionner (environ 1040 × 1500).
+                Sans visuel, la carte affiche ses initiales.
               </p>
             )}
           </div>
@@ -207,7 +208,7 @@ function CardPreview({
     <figure className="border-line bg-surface overflow-hidden rounded-xl border">
       <div
         className={cn(
-          "flex aspect-3/4 items-center justify-center",
+          "aspect-carte flex items-center justify-center",
           PREVIEW_FILL[rarity] ?? PREVIEW_FILL.commune,
         )}
       >

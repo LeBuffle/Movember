@@ -204,7 +204,7 @@ describe("le visuel", () => {
     });
 
     expect(refused.ok).toBe(false);
-    expect(refused.ok === false && refused.message).toMatch(/2 Mo/);
+    expect(refused.ok === false && refused.message).toMatch(/8 Mo/);
   });
 
   it("accepte les trois formats attendus", () => {
@@ -263,7 +263,15 @@ describe("le stockage des visuels", () => {
     // Le contrôle applicatif donne au bénévole une phrase actionnable ;
     // celui-ci est ce qui tient si une requête arrive autrement.
     expect(migration).toMatch(/insert into storage\.buckets/);
-    expect(migration).toMatch(/2097152/);
+    // La limite du seau et celle du code doivent rester identiques : une base
+    // plus permissive donne un refus applicatif là où le fichier serait passé,
+    // et l'inverse une erreur de stockage après une longue attente.
+    const bucketLimit = read(
+      "supabase/migrations/20260806240000_card_image_size.sql",
+    );
+
+    expect(bucketLimit).toMatch(/file_size_limit = 8388608/);
+    expect(MAX_IMAGE_BYTES).toBe(8388608);
     expect(migration).toMatch(/image\/jpeg/);
     expect(migration).toMatch(/image\/webp/);
   });
@@ -402,5 +410,28 @@ describe("le catalogue dit où il en est", () => {
 
   it("signale une carte en jeu sans visuel", () => {
     expect(catalogue).toMatch(/Visuel manquant/);
+  });
+});
+
+describe("le format d'une carte", () => {
+  it("est déclaré une seule fois", () => {
+    // Quatre écrans dessinent une carte — l'album, la révélation, la galerie
+    // publique et l'aperçu du back-office. Un rapport qui dérive entre eux,
+    // c'est un catalogue qui paraît faux sur un écran sur quatre.
+    expect(read("src/app/globals.css")).toMatch(/--aspect-carte:/);
+  });
+
+  it("et suit les proportions des visuels réels", () => {
+    for (const screen of [
+      "src/components/cards/card-detail.tsx",
+      "src/components/cards/card-face.tsx",
+      "src/app/(public)/cartes/page.tsx",
+      "src/components/admin/card-form.tsx",
+    ]) {
+      const source = read(screen);
+
+      expect(source).toMatch(/aspect-carte/);
+      expect(source).not.toMatch(/aspect-3\/4/);
+    }
   });
 });

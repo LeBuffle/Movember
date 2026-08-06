@@ -48,7 +48,7 @@ export function CardFace({ card }: { card: AlbumCard }) {
     >
       <div
         className={cn(
-          "flex aspect-3/4 items-center justify-center",
+          "aspect-carte flex items-center justify-center",
           owned ? RARITY_FILL[card.rarity] : "bg-surface-sunken",
         )}
       >

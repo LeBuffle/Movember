@@ -44,7 +44,7 @@ export function CardDetail({
     <article className="border-line bg-surface mx-auto max-w-sm overflow-hidden rounded-2xl border">
       <div
         className={cn(
-          "flex aspect-3/4 items-center justify-center",
+          "aspect-carte flex items-center justify-center",
           RARITY_FILL[card.rarity],
         )}
       >
