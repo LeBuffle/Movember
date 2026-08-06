@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ChallengeCard } from "@/components/game/challenge-card";
+import { InstallReminder } from "@/components/pwa/install-reminder";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
@@ -127,6 +128,10 @@ export default async function GameHome() {
           </Link>
         )}
       </p>
+
+      {/* Brought back for whoever skipped the step at registration (story
+          6.2 AC 4). Renders nothing once installed. */}
+      <InstallReminder />
 
       <AddressReminder context={shipping} />
 

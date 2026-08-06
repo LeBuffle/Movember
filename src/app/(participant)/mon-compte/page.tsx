@@ -113,6 +113,14 @@ export default async function AccountPage() {
             <div className="mt-3">
               <InstallState />
             </div>
+            <p className="mt-3">
+              <Link
+                href="/installer"
+                className="text-brand-blue underline underline-offset-4"
+              >
+                Comment installer l’application
+              </Link>
+            </p>
           </CardBody>
         </Card>
 

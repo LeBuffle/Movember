@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { InstallGuide } from "@/components/pwa/install-guide";
 import { ResumePayment } from "@/components/registration/resume-payment";
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { ROUTES } from "@/lib/auth/routes";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { resumeCheckout } from "@/lib/registration/actions";
@@ -114,6 +116,35 @@ export default async function PaymentReturnPage({
             <PendingState statut={statut} />
           )}
         </div>
+
+        {/* The installation step of the journey (story 6.2 AC 3), placed
+            where a registration actually ends rather than offered later from
+            a menu. On iPhone there are no notifications at all without it,
+            and somebody who leaves this page without installing is somebody
+            who will not hear about their first challenge. */}
+        {isActive && (
+          <section className="border-line mt-10 border-t pt-8">
+            <h2 className="text-ink text-2xl font-bold tracking-tight">
+              Dernière étape : installez l’application
+            </h2>
+            <p className="text-ink-muted mt-2">
+              C’est ce qui vous permettra de recevoir votre défi chaque matin.
+            </p>
+
+            <div className="mt-6">
+              <InstallGuide compact />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/jeu" className={buttonClasses()}>
+                C’est fait, aller au jeu
+              </Link>
+              <Link href="/jeu" className={buttonClasses({ variant: "ghost" })}>
+                Plus tard
+              </Link>
+            </div>
+          </section>
+        )}
 
         <p className="mt-8">
           <Link

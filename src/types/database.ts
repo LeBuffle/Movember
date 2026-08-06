@@ -578,6 +578,28 @@ export type Database = {
         >;
         Relationships: [];
       };
+      notification_deliveries: {
+        Row: {
+          id: string;
+          profile_id: string;
+          /** What makes a send unique. The guard against sending twice. */
+          dedupe_key: string;
+          category: string;
+          channel: "push" | "email" | "none";
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          dedupe_key: string;
+          category: string;
+          channel: "push" | "email" | "none";
+          sent_at?: string;
+        };
+        /* No Update type: a delivery is a fact, never a correction. */
+        Update: never;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;

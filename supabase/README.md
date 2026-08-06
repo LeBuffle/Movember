@@ -61,6 +61,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806150000_card_images.sql` | le stockage des visuels, et l'interdiction de supprimer une carte publiée |
 | `20260806160000_card_reveal.sql` | la file des cartes qui attendent d'être découvertes |
 | `20260806170000_push_subscriptions.sql` | `push_subscriptions` — un navigateur, un appareil, une notification |
+| `20260806180000_notification_deliveries.sql` | `notification_deliveries` — ce qui a déjà été envoyé, pour ne jamais l'envoyer deux fois |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 
