@@ -41,6 +41,7 @@ const migration = code(
   read("supabase/migrations/20260806180000_notification_deliveries.sql"),
 );
 const send = code(read("src/lib/notifications/send.ts"));
+const ledger = code(read("src/lib/notifications/ledger.ts"));
 
 describe("un envoi ne part jamais deux fois", () => {
   it("la garde est un index unique, pas une vérification dans le code", () => {
@@ -53,31 +54,27 @@ describe("un envoi ne part jamais deux fois", () => {
   });
 
   it("la ligne est écrite avant l'envoi, jamais après", () => {
-    const claimAt = send.indexOf("async function claim");
-    const sendAt = send.indexOf("export async function sendPush");
-    const insertAt = send.indexOf(".upsert(");
-    const deliverAt = send.indexOf("webpush.sendNotification");
+    const region = send.slice(send.indexOf("export async function sendPush"));
 
-    expect(claimAt).toBeGreaterThan(-1);
-    expect(sendAt).toBeGreaterThan(-1);
     // La réservation est appelée avant que le premier abonnement soit lu.
-    expect(send.slice(sendAt).indexOf("await claim(")).toBeLessThan(
-      send.slice(sendAt).indexOf("push_subscriptions"),
+    expect(region.indexOf("await claimDelivery(")).toBeGreaterThan(-1);
+    expect(region.indexOf("await claimDelivery(")).toBeLessThan(
+      region.indexOf("push_subscriptions"),
     );
-    expect(insertAt).toBeLessThan(deliverAt);
+    expect(region.indexOf("await claimDelivery(")).toBeLessThan(
+      region.indexOf("webpush.sendNotification"),
+    );
   });
 
   it("un conflit se lit comme « déjà fait », pas comme une erreur", () => {
-    expect(send).toMatch(/ignoreDuplicates: true/);
-    expect(send).toMatch(/onConflict: "profile_id,dedupe_key"/);
+    expect(ledger).toMatch(/ignoreDuplicates: true/);
+    expect(ledger).toMatch(/onConflict: "profile_id,dedupe_key"/);
   });
 
   it("préfère ne rien envoyer à tout envoyer deux fois", () => {
     // Une notification manquée est une déception ; une notification doublée
     // est un défaut sur lequel les gens écrivent.
-    const region = send.slice(send.indexOf("async function claim"));
-
-    expect(region).toMatch(/if \(error\)[\s\S]*?return \[\]/);
+    expect(ledger).toMatch(/if \(error\)[\s\S]*?return \[\]/);
   });
 });
 
@@ -223,7 +220,7 @@ describe("sans clés, rien n'est envoyé et rien n'est cassé", () => {
     const region = send.slice(send.indexOf("export async function sendPush"));
 
     expect(region.indexOf("configure()")).toBeLessThan(
-      region.indexOf("await claim("),
+      region.indexOf("await claimDelivery("),
     );
   });
 });

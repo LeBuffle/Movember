@@ -2,6 +2,7 @@ import "server-only";
 
 import webpush from "web-push";
 
+import { claimDelivery } from "@/lib/notifications/ledger";
 import type {
   NotificationCategory,
   NotificationPayload,
@@ -105,49 +106,6 @@ type Device = {
 };
 
 /**
- * Claims the send for a list of participants, and returns those still to do.
- *
- * **The row is written before anything goes out.** Two overlapping runs both
- * read "not yet sent" and both send; only a unique index refuses. A conflict
- * therefore means somebody else got there first, and is not an error.
- */
-async function claim(
-  profileIds: string[],
-  dedupeKey: string,
-  category: NotificationCategory,
-  channel: "push" | "email" | "none",
-): Promise<string[]> {
-  if (profileIds.length === 0) return [];
-
-  const admin = createAdminClient();
-
-  const { data, error } = await admin
-    .from("notification_deliveries")
-    .upsert(
-      profileIds.map((profileId) => ({
-        profile_id: profileId,
-        dedupe_key: dedupeKey,
-        category,
-        channel,
-      })),
-      { onConflict: "profile_id,dedupe_key", ignoreDuplicates: true },
-    )
-    .select("profile_id");
-
-  if (error) {
-    console.error("[notifications] réservation impossible", {
-      code: error.code,
-    });
-    // Nothing is sent rather than everything sent twice. A missed
-    // notification is a disappointment; a duplicated one is a defect people
-    // write in about.
-    return [];
-  }
-
-  return (data ?? []).map((row) => row.profile_id);
-}
-
-/**
  * Sends one payload to every live device of the given participants.
  *
  * The caller decides *who* — preferences (story 6.7) and the e-mail fallback
@@ -162,7 +120,7 @@ export async function sendPush(request: SendRequest): Promise<SendReport> {
     return { ...EMPTY, skipped: request.profileIds.length };
   }
 
-  const toSend = await claim(
+  const toSend = await claimDelivery(
     request.profileIds,
     request.dedupeKey,
     request.category,

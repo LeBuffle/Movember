@@ -578,6 +578,34 @@ export type Database = {
         >;
         Relationships: [];
       };
+      notification_preferences: {
+        Row: {
+          profile_id: string;
+          channel_push: boolean;
+          channel_email: boolean;
+          cat_defi_du_jour: boolean;
+          cat_resultat: boolean;
+          cat_carte: boolean;
+          cat_annonce: boolean;
+          cat_relance: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          channel_push?: boolean;
+          channel_email?: boolean;
+          cat_defi_du_jour?: boolean;
+          cat_resultat?: boolean;
+          cat_carte?: boolean;
+          cat_annonce?: boolean;
+          cat_relance?: boolean;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["notification_preferences"]["Insert"]
+        >;
+        Relationships: [];
+      };
       notification_deliveries: {
         Row: {
           id: string;

@@ -62,6 +62,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806160000_card_reveal.sql` | la file des cartes qui attendent d'être découvertes |
 | `20260806170000_push_subscriptions.sql` | `push_subscriptions` — un navigateur, un appareil, une notification |
 | `20260806180000_notification_deliveries.sql` | `notification_deliveries` — ce qui a déjà été envoyé, pour ne jamais l'envoyer deux fois |
+| `20260806190000_notification_preferences.sql` | `notification_preferences` — ce dont chacun veut être prévenu |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PreferencesForm } from "@/components/notifications/preferences-form";
 import { PushPermission } from "@/components/notifications/push-permission";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { ROUTES } from "@/lib/auth/routes";
@@ -10,6 +11,8 @@ import {
   forgetPushSubscription,
   registerPushSubscription,
 } from "@/lib/notifications/actions";
+import { saveNotificationPreferences } from "@/lib/notifications/preference-actions";
+import { ownPreferences } from "@/lib/notifications/preferences";
 import { ownSubscriptions } from "@/lib/notifications/subscriptions";
 import { vapidPublicKey } from "@/lib/notifications/vapid";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +46,10 @@ export default async function NotificationsPage() {
   // must never depend on middleware alone, or a matcher change exposes it.
   if (!user) redirect(ROUTES.signIn);
 
-  const devices = await ownSubscriptions();
+  const [devices, preferences] = await Promise.all([
+    ownSubscriptions(),
+    ownPreferences(),
+  ]);
 
   return (
     <>
@@ -69,8 +75,8 @@ export default async function NotificationsPage() {
               une de vos sorties le valide et qu’une carte vous revient.
             </p>
             <p className="mt-2 text-sm">
-              Vous pourrez choisir plus finement ce dont vous voulez être
-              prévenu. Sans notification, l’essentiel vous arrivera par e-mail.
+              Vous choisissez plus bas ce dont vous voulez être prévenu. Sans
+              notification, l’essentiel vous arrivera par e-mail.
             </p>
 
             <div className="mt-4">
@@ -79,6 +85,23 @@ export default async function NotificationsPage() {
                 subscribed={devices.length > 0}
                 register={registerPushSubscription}
                 forget={forgetPushSubscription}
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardTitle>Ce dont je veux être prévenu</CardTitle>
+          <CardBody>
+            <p className="text-sm">
+              Couper une catégorie ne coupe que celle-là. Vous pouvez garder le
+              défi du jour et ne plus rien recevoir d’autre.
+            </p>
+
+            <div className="mt-4">
+              <PreferencesForm
+                action={saveNotificationPreferences}
+                preferences={preferences}
               />
             </div>
           </CardBody>
