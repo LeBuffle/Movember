@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import {
@@ -52,18 +53,11 @@ export default async function DashboardPage() {
       };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Mon tableau de bord
-        </h1>
-      </div>
-
+    <ParticipantShell
+      title="Mon tableau de bord"
+      eyebrow="Mes chiffres"
+      intro="Vos totaux, et votre rang dans chacun des classements."
+    >
       {!standing ? (
         <>
           <Alert tone="info" title="Vos chiffres arrivent">
@@ -118,7 +112,7 @@ export default async function DashboardPage() {
           </p>
         </>
       )}
-    </div>
+    </ParticipantShell>
   );
 }
 

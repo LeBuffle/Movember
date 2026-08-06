@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
 import { ROUTES } from "@/lib/auth/routes";
 import { getParticipantAccess } from "@/lib/registration/access";
 
@@ -45,11 +43,8 @@ export default async function GameLayout({
     redirect(ROUTES.participate);
   }
 
-  return (
-    <>
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl px-4 py-8">{children}</main>
-      <SiteFooter />
-    </>
-  );
+  // No header, no footer, no container: each screen wraps itself in
+  // `ParticipantShell`, which carries the tinted band, the sunken page and
+  // the tab bar. Putting the band here would mean one title for six screens.
+  return children;
 }

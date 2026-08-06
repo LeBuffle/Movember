@@ -2,12 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AccountForm } from "@/components/auth/account-form";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { InstallState } from "@/components/pwa/install-state";
+import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { ROUTES } from "@/lib/auth/routes";
+import { getParticipantAccess } from "@/lib/registration/access";
 import { getShippingContext } from "@/lib/shipping/address";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,16 +34,45 @@ export default async function AccountPage() {
     .single();
 
   // Only asks of those who actually have something coming (story 2.7).
-  const shipping = await getShippingContext();
+  const [shipping, access] = await Promise.all([
+    getShippingContext(),
+    getParticipantAccess(),
+  ]);
 
   return (
-    <>
-      <SiteHeader />
+    <ParticipantShell title="Mon compte" tabs={access.isActive}>
+      <div className="space-y-4">
+        {/* The way forward, for somebody signed in whose registration is not
+            finished. Its absence is what left the first real user stuck:
+            account created, signed in, and no door anywhere on the page. */}
+        {!access.isActive && (
+          <Card accent>
+            <CardTitle>Votre inscription n’est pas finalisée</CardTitle>
+            <CardBody>
+              Le jeu s’ouvre une fois l’inscription réglée. Choisissez votre
+              formule — il y en a trois.
+            </CardBody>
+            <p className="mt-4">
+              <Link href="/participer" className={buttonClasses()}>
+                Choisir ma formule
+              </Link>
+            </p>
+          </Card>
+        )}
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-12">
-        <h1 className="text-ink text-3xl font-bold tracking-tight">
-          Mon compte
-        </h1>
+        {access.isActive && (
+          <Card>
+            <CardTitle>Le jeu</CardTitle>
+            <CardBody>
+              Votre défi du jour, votre collection et les classements.
+            </CardBody>
+            <p className="mt-4">
+              <Link href="/jeu" className={buttonClasses()}>
+                Ouvrir le jeu
+              </Link>
+            </p>
+          </Card>
+        )}
 
         <AddressReminder context={shipping} />
 
@@ -144,9 +174,7 @@ export default async function AccountPage() {
             </CardBody>
           </Card>
         )}
-      </main>
-
-      <SiteFooter />
-    </>
+      </div>
+    </ParticipantShell>
   );
 }

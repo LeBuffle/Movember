@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export default async function TeamPublicPage({
   const kind = TEAM_KINDS.find((entry) => entry.value === team.kind);
 
   return (
-    <div className="space-y-6">
+    <ParticipantShell title={team.name} eyebrow="Équipe">
       <div>
         <p className="text-ink-muted text-sm">
           <Link
@@ -159,7 +160,7 @@ export default async function TeamPublicPage({
           </Link>
         </p>
       )}
-    </div>
+    </ParticipantShell>
   );
 }
 

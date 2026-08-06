@@ -8,8 +8,7 @@ import {
   ConsentForm,
   WithdrawConsent,
 } from "@/components/activities/consent-form";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -67,191 +66,184 @@ export default async function ActivityConsentPage({
   ]);
 
   return (
-    <>
-      <SiteHeader />
+    <ParticipantShell title="Mes activités sportives" eyebrow="Mon compte">
+      <p className="text-ink-muted text-sm">
+        <Link href={ROUTES.account} className="underline underline-offset-4">
+          Mon compte
+        </Link>
+      </p>
 
-      <main className="mx-auto w-full max-w-2xl px-4 py-12">
-        <p className="text-ink-muted text-sm">
-          <Link href={ROUTES.account} className="underline underline-offset-4">
-            Mon compte
-          </Link>
-        </p>
+      <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
+        Mes activités sportives
+      </h1>
 
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Mes activités sportives
-        </h1>
+      <p className="text-ink-muted mt-3">
+        Le jeu valide vos défis à partir de vos sorties enregistrées sur Strava.
+        Voici exactement ce que cela veut dire.
+      </p>
 
-        <p className="text-ink-muted mt-3">
-          Le jeu valide vos défis à partir de vos sorties enregistrées sur
-          Strava. Voici exactement ce que cela veut dire.
-        </p>
+      <div className="mt-8 grid gap-4">
+        <Card accent>
+          <CardTitle>Ce que nous récupérons</CardTitle>
+          <CardBody>
+            <ul className="text-ink space-y-1 text-sm">
+              {CONSENT_COLLECTED.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
 
-        <div className="mt-8 grid gap-4">
-          <Card accent>
-            <CardTitle>Ce que nous récupérons</CardTitle>
-            <CardBody>
-              <ul className="text-ink space-y-1 text-sm">
-                {CONSENT_COLLECTED.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </CardBody>
-          </Card>
+        <Card>
+          <CardTitle>Ce que nous ne récupérons jamais</CardTitle>
+          <CardBody>
+            <ul className="text-ink space-y-1 text-sm">
+              {CONSENT_NEVER_COLLECTED.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="text-ink-muted mt-3 text-sm">
+              Ce n’est pas une promesse : ces données n’ont aucune colonne où
+              être écrites. Elles ne sont pas stockées, donc elles ne peuvent
+              pas fuiter.
+            </p>
+          </CardBody>
+        </Card>
 
-          <Card>
-            <CardTitle>Ce que nous ne récupérons jamais</CardTitle>
-            <CardBody>
-              <ul className="text-ink space-y-1 text-sm">
-                {CONSENT_NEVER_COLLECTED.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className="text-ink-muted mt-3 text-sm">
-                Ce n’est pas une promesse : ces données n’ont aucune colonne où
-                être écrites. Elles ne sont pas stockées, donc elles ne peuvent
-                pas fuiter.
-              </p>
-            </CardBody>
-          </Card>
+        <Card>
+          <CardTitle>Combien de temps, et comment effacer</CardTitle>
+          <CardBody>
+            <p className="text-ink text-sm">
+              Vos activités sont conservées <strong>12 mois</strong> après la
+              fin de l’édition, puis supprimées. Vous pouvez retirer votre
+              autorisation à tout moment, et supprimer votre compte et toutes
+              vos données depuis{" "}
+              <Link
+                href={ROUTES.account}
+                className="underline underline-offset-4"
+              >
+                Mon compte
+              </Link>
+              .
+            </p>
+            <p className="text-ink-muted mt-3 text-sm">
+              Strava est une société américaine. C’est précisément ce que cette
+              autorisation encadre : sans elle, rien n’est demandé à Strava.
+            </p>
+          </CardBody>
+        </Card>
+      </div>
 
-          <Card>
-            <CardTitle>Combien de temps, et comment effacer</CardTitle>
-            <CardBody>
-              <p className="text-ink text-sm">
-                Vos activités sont conservées <strong>12 mois</strong> après la
-                fin de l’édition, puis supprimées. Vous pouvez retirer votre
-                autorisation à tout moment, et supprimer votre compte et toutes
-                vos données depuis{" "}
-                <Link
-                  href={ROUTES.account}
-                  className="underline underline-offset-4"
-                >
-                  Mon compte
-                </Link>
-                .
-              </p>
-              <p className="text-ink-muted mt-3 text-sm">
-                Strava est une société américaine. C’est précisément ce que
-                cette autorisation encadre : sans elle, rien n’est demandé à
-                Strava.
-              </p>
-            </CardBody>
-          </Card>
+      {failure && (
+        <div className="mt-8">
+          <Alert tone="danger" title="La connexion n’a pas abouti">
+            {FAILURES[failure] ?? FAILURES.echange}
+          </Alert>
         </div>
+      )}
 
-        {failure && (
-          <div className="mt-8">
-            <Alert tone="danger" title="La connexion n’a pas abouti">
-              {FAILURES[failure] ?? FAILURES.echange}
+      {query.connecte === "1" && (
+        <div className="mt-8">
+          <Alert tone="success" title="Compte Strava connecté">
+            Vos prochaines sorties seront prises en compte automatiquement.
+          </Alert>
+        </div>
+      )}
+
+      <div className="mt-10">
+        {consent.granted ? (
+          <div className="space-y-4">
+            <Alert tone="success" title="Autorisation donnée">
+              Le {formatDate(consent.grantedAt)}. Vos sorties peuvent être
+              récupérées pendant l’édition.
             </Alert>
-          </div>
-        )}
 
-        {query.connecte === "1" && (
-          <div className="mt-8">
-            <Alert tone="success" title="Compte Strava connecté">
-              Vos prochaines sorties seront prises en compte automatiquement.
-            </Alert>
-          </div>
-        )}
+            {connection ? (
+              <Card accent={connection.status === "broken"}>
+                <CardTitle>Compte Strava</CardTitle>
+                <CardBody>
+                  <p className="text-ink text-sm">
+                    Connecté depuis le {formatDate(connection.connectedAt)} —
+                    athlète {connection.providerAccountId}.
+                  </p>
 
-        <div className="mt-10">
-          {consent.granted ? (
-            <div className="space-y-4">
-              <Alert tone="success" title="Autorisation donnée">
-                Le {formatDate(consent.grantedAt)}. Vos sorties peuvent être
-                récupérées pendant l’édition.
-              </Alert>
-
-              {connection ? (
-                <Card accent={connection.status === "broken"}>
-                  <CardTitle>Compte Strava</CardTitle>
-                  <CardBody>
-                    <p className="text-ink text-sm">
-                      Connecté depuis le {formatDate(connection.connectedAt)} —
-                      athlète {connection.providerAccountId}.
-                    </p>
-
-                    {/* The question this screen exists to answer without
+                  {/* The question this screen exists to answer without
                         anybody writing in: "is my run from this morning
                         counted?" (story 3.8 AC 1). */}
-                    <p className="text-ink-muted mt-1 text-sm">
-                      {connection.lastSyncedAt
-                        ? `Dernière vérification le ${formatDateTime(connection.lastSyncedAt)}.`
-                        : "Vos sorties n’ont pas encore été vérifiées."}
-                    </p>
+                  <p className="text-ink-muted mt-1 text-sm">
+                    {connection.lastSyncedAt
+                      ? `Dernière vérification le ${formatDateTime(connection.lastSyncedAt)}.`
+                      : "Vos sorties n’ont pas encore été vérifiées."}
+                  </p>
 
-                    {connection.status === "broken" && (
-                      <>
-                        <p className="text-danger mt-2 text-sm">
-                          La liaison est rompue : Strava ne nous laisse plus
-                          récupérer vos sorties. Cela arrive si vous avez retiré
-                          l’autorisation depuis Strava. Vos défis déjà réussis
-                          sont conservés.
-                        </p>
-                        {/* One tap back (story 3.7 AC 5). The reconnection
+                  {connection.status === "broken" && (
+                    <>
+                      <p className="text-danger mt-2 text-sm">
+                        La liaison est rompue : Strava ne nous laisse plus
+                        récupérer vos sorties. Cela arrive si vous avez retiré
+                        l’autorisation depuis Strava. Vos défis déjà réussis
+                        sont conservés.
+                      </p>
+                      {/* One tap back (story 3.7 AC 5). The reconnection
                             replaces the broken link rather than colliding
                             with it. */}
-                        <p className="mt-3">
-                          <Link
-                            href="/api/activites/connexion/strava"
-                            prefetch={false}
-                            className={buttonClasses({ size: "md" })}
-                          >
-                            Reconnecter mon compte
-                          </Link>
-                        </p>
-                      </>
-                    )}
+                      <p className="mt-3">
+                        <Link
+                          href="/api/activites/connexion/strava"
+                          prefetch={false}
+                          className={buttonClasses({ size: "md" })}
+                        >
+                          Reconnecter mon compte
+                        </Link>
+                      </p>
+                    </>
+                  )}
 
-                    {connection.status === "active" && (
-                      <>
-                        <Resynchronise action={resynchronise} />
-                        <Disconnect action={disconnectAccount} />
-                      </>
-                    )}
-                  </CardBody>
-                </Card>
-              ) : (
-                <div>
-                  {/* A link, not a button: it is a navigation to a route that
+                  {connection.status === "active" && (
+                    <>
+                      <Resynchronise action={resynchronise} />
+                      <Disconnect action={disconnectAccount} />
+                    </>
+                  )}
+                </CardBody>
+              </Card>
+            ) : (
+              <div>
+                {/* A link, not a button: it is a navigation to a route that
                       redirects, and it works before any JavaScript has loaded.
                       The route re-checks the consent — hiding this link is a
                       courtesy, not a control. */}
-                  <Link
-                    href="/api/activites/connexion/strava"
-                    prefetch={false}
-                    className={buttonClasses({ size: "lg" })}
-                  >
-                    Connecter mon compte Strava
-                  </Link>
-                  <p className="text-ink-muted mt-2 text-sm">
-                    Vous serez renvoyé vers Strava, qui vous demandera votre
-                    accord, puis ramené ici.
-                  </p>
-                </div>
-              )}
+                <Link
+                  href="/api/activites/connexion/strava"
+                  prefetch={false}
+                  className={buttonClasses({ size: "lg" })}
+                >
+                  Connecter mon compte Strava
+                </Link>
+                <p className="text-ink-muted mt-2 text-sm">
+                  Vous serez renvoyé vers Strava, qui vous demandera votre
+                  accord, puis ramené ici.
+                </p>
+              </div>
+            )}
 
-              {/* On the same screen as granting, not buried three levels
+            {/* On the same screen as granting, not buried three levels
                   down: a consent that is easy to give and hard to take back
                   is not a free consent. */}
-              <WithdrawConsent action={withdrawActivityConsent} />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Alert tone="info" title="Rien n’est récupéré pour l’instant">
-                Tant que vous n’avez pas autorisé, aucune donnée sportive n’est
-                demandée à Strava et aucun compte ne peut être connecté.
-              </Alert>
+            <WithdrawConsent action={withdrawActivityConsent} />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Alert tone="info" title="Rien n’est récupéré pour l’instant">
+              Tant que vous n’avez pas autorisé, aucune donnée sportive n’est
+              demandée à Strava et aucun compte ne peut être connecté.
+            </Alert>
 
-              <ConsentForm action={grantActivityConsent} />
-            </div>
-          )}
-        </div>
-      </main>
-
-      <SiteFooter />
-    </>
+            <ConsentForm action={grantActivityConsent} />
+          </div>
+        )}
+      </div>
+    </ParticipantShell>
   );
 }
 

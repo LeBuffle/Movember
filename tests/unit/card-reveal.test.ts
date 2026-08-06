@@ -216,9 +216,12 @@ describe("une carte à la fois", () => {
   });
 
   it("et l'écran du jeu annonce ce qui attend", () => {
+    // Une carte qui attend est annoncée sur l'écran qu'on ouvre le matin,
+    // pas découverte par hasard deux jours plus tard.
     const game = code(read("src/app/(participant)/jeu/page.tsx"));
 
     expect(game).toMatch(/pendingRevealCount/);
-    expect(game).toMatch(/à découvrir/);
+    expect(game).toMatch(/vous attend/);
+    expect(game).toMatch(/\/jeu\/collection\/reveler/);
   });
 });

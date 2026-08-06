@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { publishedPosts } from "@/lib/news/posts";
@@ -27,21 +26,10 @@ export default async function NewsPage() {
   const posts = await publishedPosts();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Actualités
-        </h1>
-        <p className="text-ink-muted mt-2">
-          Les messages de l’organisation pendant le mois.
-        </p>
-      </div>
-
+    <ParticipantShell
+      title="Actualités"
+      intro="Les messages de l’organisation pendant le mois."
+    >
       {posts.length === 0 ? (
         <Alert tone="info" title="Rien pour l’instant">
           Les messages de l’organisation apparaîtront ici pendant l’édition.
@@ -95,7 +83,7 @@ export default async function NewsPage() {
           ))}
         </ul>
       )}
-    </div>
+    </ParticipantShell>
   );
 }
 

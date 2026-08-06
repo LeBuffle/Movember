@@ -1,6 +1,12 @@
 import Link from "next/link";
 
 import { ChallengeCard } from "@/components/game/challenge-card";
+import {
+  ParticipantShell,
+  Panel,
+  SectionHeading,
+  StatRow,
+} from "@/components/layout/participant-shell";
 import { InstallReminder } from "@/components/pwa/install-reminder";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
@@ -8,8 +14,9 @@ import { buttonClasses } from "@/components/ui/button";
 import { ownSyncState } from "@/lib/activities/health";
 import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { todayInParis } from "@/lib/challenges/daily-draw";
-import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
+import { EDITION_MILESTONES } from "@/lib/edition/calendar";
 import { totalPoints } from "@/lib/challenges/progress";
+import { getAlbum } from "@/lib/cards/collection";
 import { pendingRevealCount } from "@/lib/cards/reveal";
 import { getShippingContext } from "@/lib/shipping/address";
 
@@ -29,12 +36,18 @@ import { getShippingContext } from "@/lib/shipping/address";
 export default async function GameHome() {
   const today = todayInParis();
 
-  const [shipping, challenges, sync, pendingCards] = await Promise.all([
+  const [shipping, challenges, sync, pendingCards, album] = await Promise.all([
     getShippingContext(),
     getParticipantChallenges(30),
     ownSyncState(),
     pendingRevealCount(),
+    getAlbum(),
   ]);
+
+  // Cards held, packs included — this figure says what the album contains,
+  // not what ranks. The ranking counter is a different one, on purpose
+  // (architecture D8), and it lives on the collection screen.
+  const cardsOwned = album.counters.collected;
 
   const todays = challenges.filter(
     (challenge) => challenge.assignedFor === today,
@@ -53,8 +66,19 @@ export default async function GameHome() {
     (challenge) => challenge.status === "completed",
   ).length;
 
+  const dayLabel = new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Europe/Paris",
+  }).format(new Date(`${today}T12:00:00Z`));
+
   return (
-    <div className="space-y-8">
+    <ParticipantShell
+      eyebrow={dayLabel}
+      title={todays.length > 0 ? "Votre défi du jour" : "Vos défis"}
+      intro="Rien à déclarer : vos activités valident vos défis toutes seules."
+    >
       {/* Said plainly, because from where the participant stands a Strava
           outage and a broken game look exactly the same (story 3.9 AC 2).
           One sentence here saves thirty messages — and it is true: nothing
@@ -81,77 +105,45 @@ export default async function GameHome() {
         </Alert>
       )}
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-ink text-3xl font-bold tracking-tight">
-            {todays.length > 0 ? "Votre défi du jour" : "Vos défis"}
-          </h1>
-          <p className="text-ink-muted mt-2">
-            Édition {EDITION_YEAR}. Rien à déclarer : vos activités valident vos
-            défis toutes seules.
-          </p>
-        </div>
+      {/* The three figures that say where somebody stands, before anything
+          else. Each is a way in rather than a decoration: points open the
+          history, cards the album, the rank the leaderboard. */}
+      <StatRow
+        stats={[
+          { value: String(score), label: "points", href: "/jeu/historique" },
+          {
+            value: String(completed),
+            label: `défi${completed > 1 ? "s" : ""} réussi${completed > 1 ? "s" : ""}`,
+            href: "/jeu/historique",
+          },
+          {
+            value: String(cardsOwned),
+            label: `carte${cardsOwned > 1 ? "s" : ""}`,
+            href: "/jeu/collection",
+          },
+        ]}
+      />
 
-        {completed > 0 && (
-          <Link
-            href="/jeu/historique"
-            className="border-line bg-surface hover:border-brand-blue block rounded-xl border px-4 py-3 text-right transition-colors"
-          >
-            <span className="text-brand-orange-ink block text-2xl font-extrabold">
-              {score} points
-            </span>
-            <span className="text-ink-muted block text-sm">
-              {completed} défi{completed > 1 ? "s" : ""} réussi
-              {completed > 1 ? "s" : ""} — voir l’historique
-            </span>
-          </Link>
-        )}
-      </div>
-
-      {/* The album, reachable from the screen people open every morning. A
-          collection nobody can find is a collection nobody completes — and a
-          card waiting to be opened is announced here rather than discovered
-          by chance two days later. */}
-      <p>
-        {pendingCards > 0 ? (
-          <Link href="/jeu/collection/reveler" className={buttonClasses()}>
+      {/* A card waiting to be opened is announced on the screen people open
+          every morning, rather than discovered by chance two days later. */}
+      {pendingCards > 0 && (
+        <Panel className="border-brand-orange bg-brand-orange-soft">
+          <p className="text-ink font-semibold">
             {pendingCards > 1
-              ? `${pendingCards} cartes à découvrir`
-              : "Une carte à découvrir"}
-          </Link>
-        ) : (
-          <Link
-            href="/jeu/collection"
-            className={buttonClasses({ variant: "secondary" })}
-          >
-            Ma collection de cartes
-          </Link>
-        )}{" "}
-        <Link
-          href="/jeu/classement"
-          className={buttonClasses({ variant: "ghost" })}
-        >
-          Classements
-        </Link>{" "}
-        <Link
-          href="/jeu/tableau-de-bord"
-          className={buttonClasses({ variant: "ghost" })}
-        >
-          Mes chiffres
-        </Link>{" "}
-        <Link
-          href="/jeu/equipe"
-          className={buttonClasses({ variant: "ghost" })}
-        >
-          Mon équipe
-        </Link>{" "}
-        <Link
-          href="/jeu/actualites"
-          className={buttonClasses({ variant: "ghost" })}
-        >
-          Actualités
-        </Link>
-      </p>
+              ? `${pendingCards} cartes vous attendent`
+              : "Une carte vous attend"}
+          </p>
+          <p className="text-ink-muted mt-1 text-sm">
+            Gagnée en validant un défi. Elle rejoint votre collection une fois
+            découverte.
+          </p>
+          <p className="mt-3">
+            <Link href="/jeu/collection/reveler" className={buttonClasses()}>
+              Découvrir
+            </Link>
+          </p>
+        </Panel>
+      )}
 
       {/* Brought back for whoever skipped the step at registration (story
           6.2 AC 4). Renders nothing once installed. */}
@@ -180,10 +172,8 @@ export default async function GameHome() {
 
       {stillOpen.length > 0 && (
         <section aria-labelledby="encore-ouverts" className="space-y-3">
-          <h2 id="encore-ouverts" className="text-ink text-xl font-bold">
-            Encore jouables
-          </h2>
-          <p className="text-ink-muted text-sm">
+          <SectionHeading>Encore jouables</SectionHeading>
+          <p className="text-ink-muted -mt-1 text-sm">
             Un défi manqué ne bloque rien, et il reste validable : une activité
             plus tardive peut encore le compléter.
           </p>
@@ -195,15 +185,50 @@ export default async function GameHome() {
 
       {settled.length > 0 && (
         <section aria-labelledby="derriere-vous" className="space-y-3">
-          <h2 id="derriere-vous" className="text-ink text-xl font-bold">
-            Déjà joués
-          </h2>
-          {settled.map((challenge) => (
+          <SectionHeading href="/jeu/historique">Déjà joués</SectionHeading>
+          {settled.slice(0, 5).map((challenge) => (
             <ChallengeCard key={challenge.id} challenge={challenge} />
           ))}
         </section>
       )}
-    </div>
+
+      <SectionHeading>Le reste du jeu</SectionHeading>
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          {
+            href: "/jeu/tableau-de-bord",
+            title: "Mes chiffres",
+            detail: "Totaux et rangs",
+          },
+          {
+            href: "/jeu/actualites",
+            title: "Actualités",
+            detail: "Les messages de l’organisation",
+          },
+          {
+            href: "/jeu/historique",
+            title: "Mon historique",
+            detail: "Tous mes défis",
+          },
+          {
+            href: "/mon-compte",
+            title: "Mon compte",
+            detail: "Strava, notifications",
+          },
+        ].map((entry) => (
+          <Link
+            key={entry.href}
+            href={entry.href}
+            className="border-line bg-surface hover:border-brand-blue rounded-2xl border p-4 transition-colors"
+          >
+            <span className="text-ink block font-semibold">{entry.title}</span>
+            <span className="text-ink-muted mt-0.5 block text-sm">
+              {entry.detail}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </ParticipantShell>
   );
 }
 

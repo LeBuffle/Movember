@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { PreferencesForm } from "@/components/notifications/preferences-form";
 import { PushPermission } from "@/components/notifications/push-permission";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -52,96 +51,88 @@ export default async function NotificationsPage() {
   ]);
 
   return (
-    <>
-      <SiteHeader />
+    <ParticipantShell title="Mes notifications" eyebrow="Mon compte">
+      <div>
+        <p className="text-ink-muted text-sm">
+          <Link href="/mon-compte" className="underline underline-offset-4">
+            Mon compte
+          </Link>
+        </p>
+        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
+          Mes notifications
+        </h1>
+      </div>
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-12">
-        <div>
-          <p className="text-ink-muted text-sm">
-            <Link href="/mon-compte" className="underline underline-offset-4">
-              Mon compte
-            </Link>
+      <Card>
+        <CardTitle>Le rappel du jour</CardTitle>
+        <CardBody>
+          <p>
+            Chaque matin, votre défi. Puis, dans la journée, un message quand
+            une de vos sorties le valide et qu’une carte vous revient.
           </p>
-          <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-            Mes notifications
-          </h1>
-        </div>
+          <p className="mt-2 text-sm">
+            Vous choisissez plus bas ce dont vous voulez être prévenu. Sans
+            notification, l’essentiel vous arrivera par e-mail.
+          </p>
 
+          <div className="mt-4">
+            <PushPermission
+              publicKey={vapidPublicKey()}
+              subscribed={devices.length > 0}
+              register={registerPushSubscription}
+              forget={forgetPushSubscription}
+            />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardTitle>Ce dont je veux être prévenu</CardTitle>
+        <CardBody>
+          <p className="text-sm">
+            Couper une catégorie ne coupe que celle-là. Vous pouvez garder le
+            défi du jour et ne plus rien recevoir d’autre.
+          </p>
+
+          <div className="mt-4">
+            <PreferencesForm
+              action={saveNotificationPreferences}
+              preferences={preferences}
+            />
+          </div>
+        </CardBody>
+      </Card>
+
+      {devices.length > 0 && (
         <Card>
-          <CardTitle>Le rappel du jour</CardTitle>
-          <CardBody>
-            <p>
-              Chaque matin, votre défi. Puis, dans la journée, un message quand
-              une de vos sorties le valide et qu’une carte vous revient.
-            </p>
-            <p className="mt-2 text-sm">
-              Vous choisissez plus bas ce dont vous voulez être prévenu. Sans
-              notification, l’essentiel vous arrivera par e-mail.
-            </p>
-
-            <div className="mt-4">
-              <PushPermission
-                publicKey={vapidPublicKey()}
-                subscribed={devices.length > 0}
-                register={registerPushSubscription}
-                forget={forgetPushSubscription}
-              />
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardTitle>Ce dont je veux être prévenu</CardTitle>
+          <CardTitle>
+            {devices.length > 1
+              ? `${devices.length} appareils reliés`
+              : "Un appareil relié"}
+          </CardTitle>
           <CardBody>
             <p className="text-sm">
-              Couper une catégorie ne coupe que celle-là. Vous pouvez garder le
-              défi du jour et ne plus rien recevoir d’autre.
+              Vous recevez sur chacun d’eux. Le bouton ci-dessus ne retire que
+              l’appareil sur lequel vous êtes.
             </p>
 
-            <div className="mt-4">
-              <PreferencesForm
-                action={saveNotificationPreferences}
-                preferences={preferences}
-              />
-            </div>
+            <ul className="border-line divide-line mt-3 divide-y border-y text-sm">
+              {devices.map((device) => (
+                <li
+                  key={device.id}
+                  className="flex flex-wrap justify-between gap-2 py-2"
+                >
+                  <span className="text-ink">{describe(device.userAgent)}</span>
+                  <span className="text-ink-muted">
+                    depuis le {formatDate(device.createdAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </CardBody>
         </Card>
-
-        {devices.length > 0 && (
-          <Card>
-            <CardTitle>
-              {devices.length > 1
-                ? `${devices.length} appareils reliés`
-                : "Un appareil relié"}
-            </CardTitle>
-            <CardBody>
-              <p className="text-sm">
-                Vous recevez sur chacun d’eux. Le bouton ci-dessus ne retire que
-                l’appareil sur lequel vous êtes.
-              </p>
-
-              <ul className="border-line divide-line mt-3 divide-y border-y text-sm">
-                {devices.map((device) => (
-                  <li
-                    key={device.id}
-                    className="flex flex-wrap justify-between gap-2 py-2"
-                  >
-                    <span className="text-ink">
-                      {describe(device.userAgent)}
-                    </span>
-                    <span className="text-ink-muted">
-                      depuis le {formatDate(device.createdAt)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardBody>
-          </Card>
-        )}
-      </main>
-
-      <SiteFooter />
-    </>
+      )}
+    </ParticipantShell>
   );
 }
 

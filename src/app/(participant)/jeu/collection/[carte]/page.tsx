@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { CardDetail } from "@/components/cards/card-detail";
 import { buttonClasses } from "@/components/ui/button";
 import { getOwnedCard } from "@/lib/cards/reveal";
@@ -35,7 +36,7 @@ export default async function CardPage({
   if (!card) notFound();
 
   return (
-    <div className="space-y-6">
+    <ParticipantShell title={card.title} eyebrow="Ma collection">
       <p className="text-ink-muted text-sm">
         <Link href="/jeu/collection" className="underline underline-offset-4">
           Ma collection
@@ -52,6 +53,6 @@ export default async function CardPage({
           Retour à la collection
         </Link>
       </p>
-    </div>
+    </ParticipantShell>
   );
 }

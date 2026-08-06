@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { AddressForm } from "@/components/shipping/address-form";
 import { Alert } from "@/components/ui/alert";
 import { ROUTES } from "@/lib/auth/routes";
@@ -26,40 +25,34 @@ export default async function ShippingAddressPage() {
   }
 
   return (
-    <>
-      <SiteHeader />
+    <ParticipantShell title="Mon adresse de livraison" eyebrow="Mon compte">
+      <p className="text-ink-muted text-sm">
+        <Link href={ROUTES.account} className="underline underline-offset-4">
+          Mon compte
+        </Link>
+      </p>
 
-      <main className="mx-auto w-full max-w-2xl px-4 py-12">
-        <p className="text-ink-muted text-sm">
-          <Link href={ROUTES.account} className="underline underline-offset-4">
-            Mon compte
-          </Link>
-        </p>
+      <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
+        Où envoyer votre médaille
+      </h1>
 
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Où envoyer votre médaille
-        </h1>
+      <p className="text-ink-muted mt-3">
+        Votre niveau <strong>{context.tierName}</strong> comprend un envoi
+        postal. Les colis partent à la fin du défi, en décembre — vous pouvez
+        corriger cette adresse jusque-là.
+      </p>
 
-        <p className="text-ink-muted mt-3">
-          Votre niveau <strong>{context.tierName}</strong> comprend un envoi
-          postal. Les colis partent à la fin du défi, en décembre — vous pouvez
-          corriger cette adresse jusque-là.
-        </p>
+      <div className="mt-8">
+        <AddressForm action={saveShippingAddress} address={context.address} />
+      </div>
 
-        <div className="mt-8">
-          <AddressForm action={saveShippingAddress} address={context.address} />
-        </div>
-
-        <div className="mt-10">
-          <Alert tone="info" title="Ce que nous faisons de cette adresse">
-            Elle sert uniquement à vous envoyer votre contrepartie. Elle n’est
-            visible que de vous et des organisateurs, elle n’apparaît sur aucun
-            classement, et elle est supprimée avec votre compte.
-          </Alert>
-        </div>
-      </main>
-
-      <SiteFooter />
-    </>
+      <div className="mt-10">
+        <Alert tone="info" title="Ce que nous faisons de cette adresse">
+          Elle sert uniquement à vous envoyer votre contrepartie. Elle n’est
+          visible que de vous et des organisateurs, elle n’apparaît sur aucun
+          classement, et elle est supprimée avec votre compte.
+        </Alert>
+      </div>
+    </ParticipantShell>
   );
 }

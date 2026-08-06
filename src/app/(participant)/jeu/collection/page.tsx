@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { CardFace } from "@/components/cards/card-face";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
@@ -33,7 +34,11 @@ export default async function CollectionPage() {
   ]);
 
   return (
-    <div className="space-y-8">
+    <ParticipantShell
+      title="Ma collection"
+      eyebrow={`Édition ${EDITION_YEAR}`}
+      intro="Une carte par défi réussi, tirée au sort."
+    >
       {/* Placed above everything else: a card waiting to be discovered is the
           only thing on this screen that asks for an action. */}
       {pending > 0 && (
@@ -57,20 +62,6 @@ export default async function CollectionPage() {
           </p>
         </Alert>
       )}
-
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Ma collection
-        </h1>
-        <p className="text-ink-muted mt-2">
-          Une carte par défi réussi, tirée au sort. Édition {EDITION_YEAR}.
-        </p>
-      </div>
 
       {album.counters.total === 0 ? (
         <Alert tone="info" title="Les cartes arrivent">
@@ -144,6 +135,6 @@ export default async function CollectionPage() {
           ))}
         </>
       )}
-    </div>
+    </ParticipantShell>
   );
 }

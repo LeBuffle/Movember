@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { CardDetail } from "@/components/cards/card-detail";
 import { CardReveal } from "@/components/cards/card-reveal";
 import { RevealContinue } from "@/components/cards/reveal-continue";
@@ -31,11 +32,7 @@ export default async function RevealPage() {
 
   if (!card) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-ink text-3xl font-bold tracking-tight">
-          Rien à découvrir
-        </h1>
-
+      <ParticipantShell title="Rien à découvrir" eyebrow="Ma collection">
         <Alert tone="info" title="Vous êtes à jour">
           Toutes vos cartes sont dans votre collection. La prochaine arrivera
           avec votre prochain défi réussi.
@@ -49,23 +46,20 @@ export default async function RevealPage() {
             Voir ma collection
           </Link>
         </p>
-      </div>
+      </ParticipantShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-ink text-3xl font-bold tracking-tight">
-          Une carte pour vous
-        </h1>
-        <p className="text-ink-muted mt-2">
-          {card.earned
-            ? "Votre défi réussi vous en fait gagner une."
-            : "Elle vient de votre pack bonus."}
-        </p>
-      </div>
-
+    <ParticipantShell
+      title="Une carte pour vous"
+      eyebrow="Ma collection"
+      intro={
+        card.earned
+          ? "Votre défi réussi vous en fait gagner une."
+          : "Elle vient de votre pack bonus."
+      }
+    >
       <CardReveal>
         <CardDetail card={card} />
       </CardReveal>
@@ -75,6 +69,6 @@ export default async function RevealPage() {
         grantId={card.grantId}
         remaining={remaining}
       />
-    </div>
+    </ParticipantShell>
   );
 }

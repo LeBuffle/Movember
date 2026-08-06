@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -63,18 +64,7 @@ export default async function LeaderboardPage({
   const computedAt = board?.computedAt ?? teams?.computedAt ?? null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Classements
-        </h1>
-      </div>
-
+    <ParticipantShell title="Classements">
       {/* Tabs in the address bar. Eight of them, and that is deliberate: at
           600 participants a single ranking interests the first ten. */}
       <nav aria-label="Catégories" className="flex flex-wrap gap-2">
@@ -178,7 +168,7 @@ export default async function LeaderboardPage({
       )}
 
       <ComputedAt at={computedAt} />
-    </div>
+    </ParticipantShell>
   );
 }
 

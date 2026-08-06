@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { LeaveTeamForm, MemberList } from "@/components/teams/member-list";
 import { CreateTeamForm, JoinTeamForm } from "@/components/teams/team-forms";
 import { Alert } from "@/components/ui/alert";
@@ -41,23 +40,11 @@ export default async function TeamPage() {
     const members = await teamMembers(team.id);
 
     return (
-      <div className="space-y-6">
-        <div>
-          <p className="text-ink-muted text-sm">
-            <Link href="/jeu" className="underline underline-offset-4">
-              Le jeu
-            </Link>
-          </p>
-          <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-            {team.name}
-          </h1>
-          <p className="text-ink-muted mt-2">
-            {kind?.label} · {team.memberCount} membre
-            {team.memberCount > 1 ? "s" : ""}
-            {team.isCaptain ? " · vous en êtes le capitaine" : ""}
-          </p>
-        </div>
-
+      <ParticipantShell
+        title={team.name}
+        eyebrow="Mon équipe"
+        intro={`${kind?.label} · ${team.memberCount} membre${team.memberCount > 1 ? "s" : ""}${team.isCaptain ? " · vous en êtes le capitaine" : ""}`}
+      >
         {/* Only the captain, and it is the whole reason the join code lives
             behind its own read rule. Whoever holds it can join. */}
         {team.isCaptain && team.joinCode && (
@@ -112,27 +99,15 @@ export default async function TeamPage() {
             alone={members.length <= 1}
           />
         </section>
-      </div>
+      </ParticipantShell>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Mon équipe
-        </h1>
-        <p className="text-ink-muted mt-2">
-          Jouer en équipe ne change rien à vos défis : vous gardez les vôtres.
-          C’est un classement de plus, et une raison de s’encourager.
-        </p>
-      </div>
-
+    <ParticipantShell
+      title="Mon équipe"
+      intro="Jouer en équipe ne change rien à vos défis : vous gardez les vôtres. C’est un classement de plus, et une raison de s’encourager."
+    >
       <Card>
         <CardTitle>J’ai un code</CardTitle>
         <CardBody>
@@ -158,6 +133,6 @@ export default async function TeamPage() {
         Vous ne pouvez appartenir qu’à une seule équipe par édition — sans quoi
         le classement d’équipe ne voudrait plus rien dire.
       </p>
-    </div>
+    </ParticipantShell>
   );
 }

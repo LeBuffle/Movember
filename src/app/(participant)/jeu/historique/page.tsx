@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 import { ChallengeCard } from "@/components/game/challenge-card";
+import { ParticipantShell } from "@/components/layout/participant-shell";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { getChallengeHistory } from "@/lib/challenges/assignments";
-import { EDITION_YEAR } from "@/lib/edition/calendar";
 
 export const metadata = {
   title: "Mon historique — DEFI Movember",
@@ -37,22 +37,7 @@ export default async function HistoryPage({
   const history = await getChallengeHistory(Number(raw) || 1);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link href="/jeu" className="underline underline-offset-4">
-            Le jeu
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          Mon historique
-        </h1>
-        <p className="text-ink-muted mt-2">
-          Tout ce que vous avez fait depuis le début de l’édition {EDITION_YEAR}
-          .
-        </p>
-      </div>
-
+    <ParticipantShell title="Mon historique">
       {history.total === 0 ? (
         <Alert tone="info" title="Rien à revoir pour l’instant">
           Vos défis apparaîtront ici au fur et à mesure du mois.
@@ -140,7 +125,7 @@ export default async function HistoryPage({
           )}
         </>
       )}
-    </div>
+    </ParticipantShell>
   );
 }
 
