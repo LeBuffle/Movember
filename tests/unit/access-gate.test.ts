@@ -153,9 +153,16 @@ describe("le contrôle du code", () => {
   it("ne renvoie que vers un chemin du site", () => {
     // Une redirection dont la destination vient de la requête, c'est un
     // rebond ouvert — et cette page est atteignable par n'importe qui.
-    expect(actions).toMatch(
-      /raw\.startsWith\("\/"\) && !raw\.startsWith\("\/\/"\)/,
-    );
+    // `//` comme `/\` sont lus par les navigateurs comme une autre adresse.
+    const allowed = /^\/(?![/\\])/;
+
+    expect(allowed.test("/jeu")).toBe(true);
+    expect(allowed.test("/auth/confirmation?code=abc")).toBe(true);
+    expect(allowed.test("//exemple.fr")).toBe(false);
+    expect(allowed.test("/\\exemple.fr")).toBe(false);
+    expect(allowed.test("https://exemple.fr")).toBe(false);
+
+    expect(actions).toContain("/^\\/(?![/\\\\])/");
   });
 
   it("marque une pause avant de refuser", () => {
@@ -186,6 +193,16 @@ describe("le branchement dans le middleware", () => {
     // de page.
     expect(middleware.indexOf("gateCode()")).toBeLessThan(
       middleware.indexOf("updateSession(request)"),
+    );
+  });
+
+  it("emporte les paramètres de l’adresse, pas seulement le chemin", () => {
+    // Les liens qui comptent portent tout dans la requête : la confirmation
+    // d'un e-mail, la réinitialisation d'un mot de passe, le retour de
+    // Strava. N'en garder que le chemin ferait perdre le jeton même de la
+    // page, et l'échec ressemblerait à « le lien est cassé ».
+    expect(middleware).toMatch(
+      /request\.nextUrl\.pathname\}\$\{request\.nextUrl\.search\}/,
     );
   });
 

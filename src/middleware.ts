@@ -24,7 +24,17 @@ export async function middleware(request: NextRequest) {
       // Rewritten, not redirected: the address stays the one that was asked
       // for, so the entry screen can send the visitor there once they are
       // through — and a bookmarked link still works after the code.
-      url.searchParams.set("suite", request.nextUrl.pathname);
+      //
+      // **The query string travels too, and that is not a nicety.** The links
+      // that matter most here carry everything in it: an e-mail confirmation
+      // (`/auth/confirmation?code=…`), a password reset, the return from
+      // Strava. Keeping only the path would drop the very token the page
+      // needs, and the failure would look like "the link is broken" rather
+      // than "the gate ate it".
+      url.searchParams.set(
+        "suite",
+        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+      );
 
       return NextResponse.rewrite(url);
     }

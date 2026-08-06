@@ -49,8 +49,12 @@ export async function unlockAccess(
 
   // Only a path within the site, never an absolute URL: a redirection whose
   // destination comes from the request is how an open redirect is built, and
-  // this one is reachable by anybody.
-  const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  // this page is reachable by anybody.
+  //
+  // `//` and `/\` are both rejected: browsers read the second as a
+  // protocol-relative address too, so allowing it would send somebody to
+  // another site from a link that looks like ours.
+  const next = /^\/(?![/\\])/.test(raw) ? raw : "/";
 
   const jar = await cookies();
 
