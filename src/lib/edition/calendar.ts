@@ -22,6 +22,24 @@ export type EditionMilestone = {
 export const EDITION_YEAR = 2026;
 
 /**
+ * The day registrations open, and the single place that decides whether the
+ * public page says so.
+ *
+ * It was a sentence written by hand on the home page, from a time when there
+ * was no registration tunnel to open. The tunnel exists since epic 2, and a
+ * hard-coded "registrations are not open" would have gone on saying it on
+ * the morning of 15 October — with the tier cards below it leading straight
+ * to payment. That is the kind of contradiction nobody notices in August and
+ * everybody notices on launch day.
+ */
+export const REGISTRATION_OPENS_ON = "2026-10-15";
+
+/** Whether registrations are open, as of now. */
+export function registrationsOpen(now: Date = new Date()): boolean {
+  return now >= new Date(`${REGISTRATION_OPENS_ON}T00:00:00+02:00`);
+}
+
+/**
  * Dates fixed by the association. November is not negotiable — the whole
  * operation exists to coincide with it.
  */

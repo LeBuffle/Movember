@@ -10,7 +10,7 @@ import { TaxNotice } from "@/components/marketing/tax-notice";
 import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
-import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { EDITION_YEAR, registrationsOpen } from "@/lib/edition/calendar";
 import { collectiveTotals } from "@/lib/leaderboards/collective";
 import { getRegistrationTiers } from "@/lib/registration/tiers";
 
@@ -82,24 +82,35 @@ export default async function Home() {
             lutte contre les cancers masculins et le mal-être des hommes.
           </p>
 
-          <div className="mt-8">
-            <Alert tone="info" title="Les inscriptions ne sont pas ouvertes">
-              Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu commence le
-              1ᵉʳ novembre.
-            </Alert>
-          </div>
+          {/* Driven by the date rather than written out, so this stops
+              saying "not open" on the morning it opens — with the tier
+              cards below leading straight to payment. */}
+          {!registrationsOpen() && (
+            <div className="mt-8">
+              <Alert tone="info" title="Les inscriptions ne sont pas ouvertes">
+                Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu commence
+                le 1ᵉʳ novembre.
+              </Alert>
+            </div>
+          )}
 
-          {/* The gallery, reachable before anyone has an account. It is the
-              argument that needs no explaining: what there is to collect
-              (story 5.8). */}
-          <p className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-3">
+            {registrationsOpen() && (
+              <Link href="/participer" className={buttonClasses()}>
+                Je participe
+              </Link>
+            )}
+
+            {/* The gallery, reachable before anyone has an account. It is the
+                argument that needs no explaining: what there is to collect
+                (story 5.8). */}
             <Link
               href="/cartes"
               className={buttonClasses({ variant: "secondary" })}
             >
               Voir les cartes à collectionner
             </Link>
-          </p>
+          </div>
         </section>
 
         {/* --- Règle du jeu --------------------------------------------- */}
