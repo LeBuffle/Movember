@@ -1,11 +1,18 @@
 import Link from "next/link";
 
+import { LeaveTeamForm, MemberList } from "@/components/teams/member-list";
 import { CreateTeamForm, JoinTeamForm } from "@/components/teams/team-forms";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { formatJoinCode } from "@/lib/teams/code";
 import { createTeamAction, joinTeamAction } from "@/lib/teams/actions";
 import { TEAM_KINDS } from "@/lib/teams/kinds";
+import {
+  handOverAction,
+  leaveTeamAction,
+  removeMemberAction,
+} from "@/lib/teams/manage-actions";
+import { teamMembers } from "@/lib/teams/manage";
 import { ownTeam } from "@/lib/teams/membership";
 import { absoluteUrl } from "@/lib/site-url";
 
@@ -31,6 +38,7 @@ export default async function TeamPage() {
 
   if (team) {
     const kind = TEAM_KINDS.find((entry) => entry.value === team.kind);
+    const members = await teamMembers(team.id);
 
     return (
       <div className="space-y-6">
@@ -78,10 +86,32 @@ export default async function TeamPage() {
           </Card>
         )}
 
+        <section aria-labelledby="membres" className="space-y-3">
+          <h2 id="membres" className="text-ink text-xl font-bold">
+            Les membres
+          </h2>
+
+          <MemberList
+            members={members}
+            isCaptain={team.isCaptain}
+            remove={removeMemberAction}
+            handOver={handOverAction}
+          />
+        </section>
+
         <Alert tone="info" title="Le classement d’équipe arrive">
           Il sera normalisé par le nombre de membres : une équipe de cinq ne
           sera pas mécaniquement battue par une équipe de cinquante.
         </Alert>
+
+        <section className="border-line space-y-2 border-t pt-6">
+          <h2 className="text-ink text-lg font-bold">Quitter l’équipe</h2>
+          <LeaveTeamForm
+            action={leaveTeamAction}
+            isCaptain={team.isCaptain}
+            alone={members.length <= 1}
+          />
+        </section>
       </div>
     );
   }

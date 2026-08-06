@@ -61,7 +61,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Équipes",
     description: "Les équipes, leurs membres et le classement collectif.",
     epic: "epic 7",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "actualites",
