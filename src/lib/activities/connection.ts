@@ -102,6 +102,16 @@ export async function linkAccount(
 
   const admin = createAdminClient();
 
+  // Their own previous link goes first, whatever state it was in (story 3.7
+  // AC 5). Without this, reconnecting a broken link hits the one-live-link
+  // index and reads as "this account belongs to somebody else" — the most
+  // alarming possible message for the most ordinary situation.
+  //
+  // Only their own: a link held by ANOTHER game account is left standing, and
+  // the unique index below still refuses. That refusal is the one that
+  // matters, and it is untouched.
+  await unlinkAccount(profileId, provider);
+
   const { error } = await admin.from("activity_connections").insert({
     profile_id: profileId,
     provider,

@@ -433,6 +433,9 @@ export type Database = {
           connected_at: string;
           last_synced_at: string | null;
           disconnected_at: string | null;
+          /** Claim held while a refresh is in flight (story 3.7). */
+          refreshing_at: string | null;
+          broken_at: string | null;
         };
         Insert: {
           id?: string;
@@ -447,6 +450,8 @@ export type Database = {
           connected_at?: string;
           last_synced_at?: string | null;
           disconnected_at?: string | null;
+          refreshing_at?: string | null;
+          broken_at?: string | null;
         };
         Update: Partial<
           Database["public"]["Tables"]["activity_connections"]["Insert"]

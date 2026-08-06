@@ -68,7 +68,21 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # second one. If a morning goes wrong, run this line by hand and move on.
 4 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/defis-du-jour >> /var/log/defi-movember-cron.log 2>&1
 
+# Provider token renewal (story 3.7). Every hour, at 41 past.
+#
+# A Strava access token lasts a few hours. Without this line, every link made
+# during the game dies overnight, and each participant discovers it by losing
+# a challenge — three days later, with no way to connect the two events.
+#
+# It renews ahead of need: a token expiring within ninety minutes is taken by
+# THIS run rather than the next, so nothing dies in the gap between two.
+#
+# Re-running it is harmless. A link already renewed is no longer due, and a
+# claim taken before each provider call stops two runs from invalidating each
+# other's refresh token.
+41 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/jetons >> /var/log/defi-movember-cron.log 2>&1
+
 # Business tasks arrive with their epics:
-#   - Strava catch-up ..................... epic 3
+#   - Strava catch-up ..................... epic 3, story 3.6
 #   - leaderboard refresh ................. epic 7
 #   - backups ............................. epic 11

@@ -99,7 +99,7 @@ les trois branches sont indépendantes.
 | 3.4 | [Normalisation et minimisation des activités](3.4.normalisation-minimisation.md) | Draft | 3.1 |
 | 3.5 | [Réception des activités par webhook](3.5.webhook-strava.md) | Draft | 3.3, 3.4 |
 | 3.6 | [Rattrapage périodique et import initial](3.6.rattrapage-import-initial.md) | Draft | 3.3, 3.4 |
-| 3.7 | [Rafraîchissement des jetons et connexions expirées](3.7.rafraichissement-jetons.md) | Draft | 3.3 |
+| 3.7 | [Rafraîchissement des jetons et connexions expirées](3.7.rafraichissement-jetons.md) | **Review** | 3.3 |
 | 3.8 | [État de la connexion et resynchronisation](3.8.etat-connexion-resync.md) | Draft | 3.6, 3.7 |
 | 3.9 | [Comportement dégradé si Strava est indisponible](3.9.mode-degrade-strava.md) | Draft | 3.5, 3.6 |
 

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { mayConnectActivitySource } from "@/lib/activities/consent";
+import { STATE_COOKIE, STATE_TTL_SECONDS } from "@/lib/activities/oauth-state";
 import { encryptionAvailable } from "@/lib/activities/crypto";
 import { activitySource, isConnectable } from "@/lib/activities/sources";
 import { createClient } from "@/lib/supabase/server";
@@ -22,11 +23,6 @@ import { absoluteUrl } from "@/lib/site-url";
  * courtesy, not a control, and this is the control.
  */
 export const dynamic = "force-dynamic";
-
-/** Ten minutes: long enough to read Strava's screen, short enough to matter. */
-const STATE_TTL_SECONDS = 600;
-
-export const STATE_COOKIE = "connexion_activite";
 
 export async function GET(
   request: Request,

@@ -237,7 +237,12 @@ describe("le départ vers le fournisseur", () => {
   });
 
   it("fait expirer l’état", () => {
-    expect(start).toMatch(/STATE_TTL_SECONDS = 600/);
+    // Dans son propre module : un fichier de route Next.js ne peut exporter
+    // que des gestionnaires de requête, et la construction le refuse.
+    expect(code("src/lib/activities/oauth-state.ts")).toMatch(
+      /STATE_TTL_SECONDS = 600/,
+    );
+    expect(start).toMatch(/maxAge: STATE_TTL_SECONDS/);
   });
 });
 

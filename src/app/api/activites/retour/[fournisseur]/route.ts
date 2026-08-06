@@ -4,11 +4,10 @@ import { NextResponse } from "next/server";
 import { mayConnectActivitySource } from "@/lib/activities/consent";
 import { linkAccount } from "@/lib/activities/connection";
 import { secretsMatch } from "@/lib/activities/crypto";
+import { STATE_COOKIE } from "@/lib/activities/oauth-state";
 import { activitySource, isConnectable } from "@/lib/activities/sources";
 import { createClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/site-url";
-
-import { STATE_COOKIE } from "../../connexion/[fournisseur]/route";
 
 /**
  * Coming back from the provider.

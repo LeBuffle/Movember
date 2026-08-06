@@ -156,18 +156,35 @@ export default async function ActivityConsentPage({
               </Alert>
 
               {connection ? (
-                <Card>
+                <Card accent={connection.status === "broken"}>
                   <CardTitle>Compte Strava</CardTitle>
                   <CardBody>
                     <p className="text-ink text-sm">
                       Connecté depuis le {formatDate(connection.connectedAt)} —
                       athlète {connection.providerAccountId}.
                     </p>
+
                     {connection.status === "broken" && (
-                      <p className="text-danger mt-2 text-sm">
-                        La liaison est rompue : reconnectez votre compte pour
-                        que vos sorties recomptent.
-                      </p>
+                      <>
+                        <p className="text-danger mt-2 text-sm">
+                          La liaison est rompue : Strava ne nous laisse plus
+                          récupérer vos sorties. Cela arrive si vous avez retiré
+                          l’autorisation depuis Strava. Vos défis déjà réussis
+                          sont conservés.
+                        </p>
+                        {/* One tap back (story 3.7 AC 5). The reconnection
+                            replaces the broken link rather than colliding
+                            with it. */}
+                        <p className="mt-3">
+                          <Link
+                            href="/api/activites/connexion/strava"
+                            prefetch={false}
+                            className={buttonClasses({ size: "md" })}
+                          >
+                            Reconnecter mon compte
+                          </Link>
+                        </p>
+                      </>
                     )}
                   </CardBody>
                 </Card>
