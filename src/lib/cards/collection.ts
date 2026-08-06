@@ -79,7 +79,11 @@ export async function getAlbum(): Promise<Album> {
       .from("card_grants")
       .select("card_id, source, granted_at")
       .eq("profile_id", user.id)
-      .eq("edition_id", edition.id),
+      .eq("edition_id", edition.id)
+      // Only what has been opened (story 5.5). A card visible in the album
+      // before its reveal would spoil the one moment the reveal exists for —
+      // and the screen says so, so nobody wonders where their card went.
+      .not("revealed_at", "is", null),
     supabase.from("card_rarities").select("slug, label"),
   ]);
 

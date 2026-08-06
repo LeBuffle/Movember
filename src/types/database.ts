@@ -526,6 +526,8 @@ export type Database = {
           source: CardGrantSource;
           assignment_id: string | null;
           granted_at: string;
+          /** Null while the card is still waiting to be discovered. */
+          revealed_at: string | null;
         };
         Insert: {
           id?: string;
@@ -535,9 +537,13 @@ export type Database = {
           source: CardGrantSource;
           assignment_id?: string | null;
           granted_at?: string;
+          revealed_at?: string | null;
         };
-        /* No Update type: a grant is a fact, never a correction. */
-        Update: never;
+        /* One column, and one only. A grant is a fact, never a correction —
+           but "has been looked at" is a second fact about it, not a rewrite
+           of the first. Narrowing the type here is what stops a stray
+           `source` from ever being written by the reveal path. */
+        Update: { revealed_at?: string | null };
         Relationships: [];
       };
       admin_audit_log: {

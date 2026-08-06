@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import { CardFace } from "@/components/cards/card-face";
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { getAlbum } from "@/lib/cards/collection";
+import { pendingRevealCount } from "@/lib/cards/reveal";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 
 export const metadata = {
@@ -25,10 +27,37 @@ export const dynamic = "force-dynamic";
  * have makes nobody want anything.
  */
 export default async function CollectionPage() {
-  const album = await getAlbum();
+  const [album, pending] = await Promise.all([
+    getAlbum(),
+    pendingRevealCount(),
+  ]);
 
   return (
     <div className="space-y-8">
+      {/* Placed above everything else: a card waiting to be discovered is the
+          only thing on this screen that asks for an action. */}
+      {pending > 0 && (
+        <Alert
+          tone="success"
+          title={`${pending} carte${pending > 1 ? "s" : ""} à découvrir`}
+        >
+          <p>
+            Elle{pending > 1 ? "s" : ""} vous attend
+            {pending > 1 ? "ent" : ""} — vous ne l{pending > 1 ? "es" : "a"}{" "}
+            verrez dans l’album qu’une fois ouverte
+            {pending > 1 ? "s" : ""}.
+          </p>
+          <p className="mt-3">
+            <Link
+              href="/jeu/collection/reveler"
+              className={buttonClasses({ size: "sm" })}
+            >
+              Découvrir
+            </Link>
+          </p>
+        </Alert>
+      )}
+
       <div>
         <p className="text-ink-muted text-sm">
           <Link href="/jeu" className="underline underline-offset-4">
@@ -95,7 +124,19 @@ export default async function CollectionPage() {
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {group.cards.map((card) => (
                   <li key={card.id}>
-                    <CardFace card={card} />
+                    {/* Only a card they hold is a link. There is nothing
+                        behind an outline, and a link that leads to a refusal
+                        is worse than no link. */}
+                    {card.copies > 0 ? (
+                      <Link
+                        href={`/jeu/collection/${card.id}`}
+                        className="block rounded-xl"
+                      >
+                        <CardFace card={card} />
+                      </Link>
+                    ) : (
+                      <CardFace card={card} />
+                    )}
                   </li>
                 ))}
               </ul>

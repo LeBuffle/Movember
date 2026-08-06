@@ -9,6 +9,7 @@ import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { todayInParis } from "@/lib/challenges/daily-draw";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
 import { totalPoints } from "@/lib/challenges/progress";
+import { pendingRevealCount } from "@/lib/cards/reveal";
 import { getShippingContext } from "@/lib/shipping/address";
 
 /**
@@ -27,10 +28,11 @@ import { getShippingContext } from "@/lib/shipping/address";
 export default async function GameHome() {
   const today = todayInParis();
 
-  const [shipping, challenges, sync] = await Promise.all([
+  const [shipping, challenges, sync, pendingCards] = await Promise.all([
     getShippingContext(),
     getParticipantChallenges(30),
     ownSyncState(),
+    pendingRevealCount(),
   ]);
 
   const todays = challenges.filter(
@@ -106,14 +108,24 @@ export default async function GameHome() {
       </div>
 
       {/* The album, reachable from the screen people open every morning. A
-          collection nobody can find is a collection nobody completes. */}
+          collection nobody can find is a collection nobody completes — and a
+          card waiting to be opened is announced here rather than discovered
+          by chance two days later. */}
       <p>
-        <Link
-          href="/jeu/collection"
-          className={buttonClasses({ variant: "secondary" })}
-        >
-          Ma collection de cartes
-        </Link>
+        {pendingCards > 0 ? (
+          <Link href="/jeu/collection/reveler" className={buttonClasses()}>
+            {pendingCards > 1
+              ? `${pendingCards} cartes à découvrir`
+              : "Une carte à découvrir"}
+          </Link>
+        ) : (
+          <Link
+            href="/jeu/collection"
+            className={buttonClasses({ variant: "secondary" })}
+          >
+            Ma collection de cartes
+          </Link>
+        )}
       </p>
 
       <AddressReminder context={shipping} />

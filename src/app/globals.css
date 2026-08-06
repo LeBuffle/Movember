@@ -75,3 +75,53 @@
     border-radius: 2px;
   }
 }
+
+/* =========================================================================
+ * Card reveal (story 5.5)
+ *
+ * Written in CSS rather than in JavaScript on purpose, and it is not a
+ * stylistic preference. The animation has to run even when the script never
+ * arrives — a phone in a cold pocket on a poor connection is the normal case
+ * here — and `both` means the last keyframe is also the resting state. So the
+ * page ends on the revealed card whether the animation played, was skipped,
+ * or never started.
+ *
+ * Short: 700 ms. An animation you cannot skip becomes a chore on the third
+ * day, and one you can skip but that drags is worse — it teaches people to
+ * skip it.
+ * ========================================================================= */
+
+@keyframes carte-revelation {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(1.5rem);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(1.04) translateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.carte-revelation {
+  animation: carte-revelation 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Skipped. Set by the reveal component on the first tap or key press — and
+   the selector wins over the rule above without needing !important. */
+.carte-revelation[data-vue="oui"] {
+  animation: none;
+}
+
+/* Somebody who asked their system for less movement asked for a reason:
+   vestibular disorders, migraine, motion sickness. The card simply appears. */
+@media (prefers-reduced-motion: reduce) {
+  .carte-revelation {
+    animation: none;
+  }
+}

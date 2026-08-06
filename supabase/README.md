@@ -59,6 +59,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806130000_cards.sql` | `cards`, `card_rarities`, `card_grants` — les cartes et leur attribution |
 | `20260806140000_grant_card_with_completion.sql` | la fonction qui valide un défi et donne sa carte en une transaction |
 | `20260806150000_card_images.sql` | le stockage des visuels, et l'interdiction de supprimer une carte publiée |
+| `20260806160000_card_reveal.sql` | la file des cartes qui attendent d'être découvertes |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 
