@@ -48,11 +48,30 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Pins the server's fingerprint for this run. Trust-on-first-use is
-          # a known weakness: an attacker able to intercept this very first
-          # connection could impersonate the server. Pinning the host key as a
-          # secret is a task of the security review (story 11.8).
-          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # `ssh-keyscan` gives up after five seconds by default, and a VPS
+          # that is busy — rebuilding an image, running a scheduled task — can
+          # take longer than that to answer on port 22. Four staging
+          # deployments out of thirty died here, each of them reporting
+          # nothing at all, because the reason went to /dev/null.
+          #
+          # So: a longer wait, five attempts, and the reason kept and printed
+          # when they all fail. Retrying is safe — a fingerprint collected
+          # twice is a duplicate line in a file read top to bottom.
+          for attempt in 1 2 3 4 5; do
+            if ssh-keyscan -T 15 -H "$VPS_HOST" >> ~/.ssh/known_hosts 2> /tmp/keyscan.err \
+              && [ -s ~/.ssh/known_hosts ]; then
+              echo "✓ empreinte du serveur relevée (tentative $attempt)"
+              exit 0
+            fi
+            echo "  tentative $attempt/5 — pas de réponse sur le port 22, nouvel essai dans 5s"
+            sleep 5
+          done
+
+          echo "✗ Impossible de relever l'empreinte SSH du serveur." >&2
+          echo "  Vérifier que le VPS répond sur le port 22 et que VPS_HOST est correct." >&2
+          cat /tmp/keyscan.err >&2 || true
+          exit 1
 
       - name: Déployer
         env:
