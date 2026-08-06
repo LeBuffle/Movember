@@ -38,6 +38,22 @@ export const ROUTES = {
   home: "/",
 } as const;
 
+/**
+ * Where to send somebody who is not signed in.
+ *
+ * **Not always the sign-in page.** Somebody who just chose a formula on the
+ * public page has, by definition, no account yet — sending them to a form
+ * asking for a password they never set is the moment a funnel loses people.
+ * They get the account-creation screen instead, which carries "déjà inscrit ?
+ * se connecter" for the minority who are.
+ *
+ * The reverse for `/jeu` or `/mon-compte`: reaching those means a bookmark or
+ * a habit, so an account almost certainly exists.
+ */
+export function entryRouteFor(pathname: string): string {
+  return matches(pathname, ["/participer"]) ? ROUTES.signUp : ROUTES.signIn;
+}
+
 function matches(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),

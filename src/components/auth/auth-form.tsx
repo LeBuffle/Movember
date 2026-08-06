@@ -52,6 +52,7 @@ export function AuthForm({
   submitLabel,
   fields,
   hiddenFields,
+  banner,
   notice,
   footer,
 }: {
@@ -61,6 +62,8 @@ export function AuthForm({
   submitLabel: string;
   fields: AuthField[];
   hiddenFields?: Record<string, string>;
+  /** Shown above the title: what the visitor was in the middle of doing. */
+  banner?: React.ReactNode;
   /**
    * Something to say before anything has been submitted — typically why an
    * e-mail link did not work. Distinct from `state.message`, which only
@@ -74,6 +77,11 @@ export function AuthForm({
 
   return (
     <main className="mx-auto w-full max-w-md px-4 py-12">
+      {/* Above the title, because it is context rather than content: it
+          answers "am I still doing what I set out to do?" before the form
+          asks anything. */}
+      {banner && <div className="mb-5">{banner}</div>}
+
       <h1 className="text-ink text-3xl font-bold tracking-tight">{title}</h1>
       {intro && <p className="text-ink-muted mt-2">{intro}</p>}
 

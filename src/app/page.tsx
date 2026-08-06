@@ -10,7 +10,7 @@ import { TaxNotice } from "@/components/marketing/tax-notice";
 import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
-import { EDITION_YEAR, registrationsOpen } from "@/lib/edition/calendar";
+import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { collectiveTotals } from "@/lib/leaderboards/collective";
 import { getRegistrationTiers } from "@/lib/registration/tiers";
 
@@ -82,10 +82,54 @@ export default async function Home() {
             lutte contre les cancers masculins et le mal-être des hommes.
           </p>
 
-          {/* Driven by the date rather than written out, so this stops
-              saying "not open" on the morning it opens — with the tier
-              cards below leading straight to payment. */}
-          {!registrationsOpen() && (
+          {/* The page's one job, and it is a single button.
+
+              The funnel used to run the other way round: create an account,
+              then discover what there was to buy. Nobody creates an account
+              for something they have not seen the price of. Choosing a
+              formula now comes first, and the account is asked for at the
+              moment it becomes necessary — with the choice carried through
+              (see `entryRouteFor`).
+
+              Shown when there are tiers to show, and that is the honest
+              signal: registrations are open exactly when the edition is
+              published and its formulas readable. A date written here as
+              well would be a second source of truth, and the two would
+              disagree on the day it mattered. */}
+          {tiers.length > 0 ? (
+            <div className="mt-8">
+              <Link
+                href="#tarifs"
+                className={buttonClasses({
+                  size: "lg",
+                  className: "w-full sm:w-auto",
+                })}
+              >
+                Je participe
+              </Link>
+
+              <p className="text-ink-muted mt-4 text-sm">
+                Trois formules, à partir de{" "}
+                {(
+                  Math.min(...tiers.map((tier) => tier.priceCents)) / 100
+                ).toLocaleString("fr-FR")}
+                €. Le compte se crée après le choix.
+              </p>
+
+              {/* Second, and smaller, on purpose: somebody who has already
+                  registered has to find their way back without going through
+                  a screen that asks them to sign up again. */}
+              <p className="text-ink-muted mt-1 text-sm">
+                Déjà inscrit ?{" "}
+                <Link
+                  href="/connexion"
+                  className="text-brand-blue font-semibold underline underline-offset-4"
+                >
+                  Se connecter
+                </Link>
+              </p>
+            </div>
+          ) : (
             <div className="mt-8">
               <Alert tone="info" title="Les inscriptions ne sont pas ouvertes">
                 Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu commence
@@ -94,23 +138,17 @@ export default async function Home() {
             </div>
           )}
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            {registrationsOpen() && (
-              <Link href="/participer" className={buttonClasses()}>
-                Je participe
-              </Link>
-            )}
-
-            {/* The gallery, reachable before anyone has an account. It is the
-                argument that needs no explaining: what there is to collect
-                (story 5.8). */}
+          {/* The gallery, reachable before anyone has an account. It is the
+              argument that needs no explaining: what there is to collect
+              (story 5.8). */}
+          <p className="mt-6">
             <Link
               href="/cartes"
               className={buttonClasses({ variant: "secondary" })}
             >
               Voir les cartes à collectionner
             </Link>
-          </div>
+          </p>
         </section>
 
         {/* --- Règle du jeu --------------------------------------------- */}

@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isAuthRoute,
   requiresAdmin,
+  entryRouteFor,
   requiresSession,
   ROUTES,
 } from "@/lib/auth/routes";
@@ -52,8 +53,10 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && requiresSession(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = ROUTES.signIn;
-    // Remembers where they were headed so the sign-in form can send them
+    // Sign-up for a chosen formula, sign-in for the rest — see
+    // `entryRouteFor`. The visitor who picked a tier has no account yet.
+    url.pathname = entryRouteFor(pathname);
+    // Remembers where they were headed so the entry screen can send them
     // back there instead of dropping them on the home page.
     url.searchParams.set("suite", pathname);
     return NextResponse.redirect(url);
