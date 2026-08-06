@@ -1,7 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-
 import { EDITION_YEAR } from "@/lib/edition/calendar";
-import type { Database } from "@/types/database";
+import { createAnonClient } from "@/lib/supabase/anon";
 
 /**
  * The registration tiers, read from the database.
@@ -34,22 +32,6 @@ export type RegistrationTier = {
 };
 
 /**
- * Anonymous client: the tier list is public, and reading it must not depend
- * on a session. It is also what lets the home page stay cacheable — no
- * cookies read means nothing personal in the response.
- */
-function publicClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) return null;
-
-  return createClient<Database>(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-/**
  * The tiers on sale for the current edition, in display order.
  *
  * Returns an empty list rather than throwing when the database cannot be
@@ -62,7 +44,7 @@ function publicClient() {
  * it must fail loudly. What is displayed can degrade; what is charged cannot.
  */
 export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
-  const supabase = publicClient();
+  const supabase = createAnonClient();
   if (!supabase) return [];
 
   /* Two queries rather than one embedded join. The join would be one round

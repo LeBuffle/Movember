@@ -9,6 +9,7 @@ import { HowItWorks } from "@/components/marketing/how-it-works";
 import { TaxNotice } from "@/components/marketing/tax-notice";
 import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { getRegistrationTiers } from "@/lib/registration/tiers";
 
@@ -81,6 +82,18 @@ export default async function Home() {
               1ᵉʳ novembre.
             </Alert>
           </div>
+
+          {/* The gallery, reachable before anyone has an account. It is the
+              argument that needs no explaining: what there is to collect
+              (story 5.8). */}
+          <p className="mt-6">
+            <Link
+              href="/cartes"
+              className={buttonClasses({ variant: "secondary" })}
+            >
+              Voir les cartes à collectionner
+            </Link>
+          </p>
         </section>
 
         {/* --- Règle du jeu --------------------------------------------- */}

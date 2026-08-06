@@ -189,7 +189,7 @@ découvre sur un type, pas sur sept.
 | 5.5 | [Détail d’une carte et révélation](5.5.detail-carte-revelation.md) | **Review** | 5.4 |
 | 5.6 | [Création et publication de cartes](5.6.back-office-cartes.md) | **Review** | 5.1, 1.10 |
 | 5.7 | [Packs bonus du niveau 3](5.7.packs-bonus-niveau-3.md) | **Review** | 5.2, 2.4 |
-| 5.8 | [Galerie publique de la collection](5.8.galerie-publique.md) | Draft | 5.6 |
+| 5.8 | [Galerie publique de la collection](5.8.galerie-publique.md) | **Review** | 5.6 |
 
 ### Ordre d'exécution
 
@@ -205,7 +205,11 @@ découvre sur un type, pas sur sept.
 | --- | --- | --- |
 | **Visuels des cartes** *(chantier PO)* | 5.8 réellement | ⚠️ **Une cinquantaine de visuels à produire en septembre.** Des visuels de remplacement sont générés en développement, et les définitifs se substituent sans toucher au code — c'est la story 5.6 qui le permet |
 | Stockage Supabase configuré | 5.6 (téléversement) | Le reste de l'epic se mène sans |
-| **Probabilités de tirage** *(point A12)* | rien | Point de départ : commune 60 %, rare 28 %, épique 10 %, légendaire 2 %. Réglables en base, à calibrer en novembre |
+| **Probabilités de tirage** *(point A12)* | rien | Point de départ : commune 60 %, rare 28 %, épique 10 %, légendaire 2 %. Réglables **depuis le back-office** (`/admin/cartes/raretes`), à calibrer en novembre |
+
+> **Epic 5 terminé** — les huit stories sont en Review. Il reste au PO à appliquer les
+> trois migrations de cartes et à produire les visuels ; la publication d'une carte ne
+> demande plus aucun déploiement.
 
 > **Le risque de cet epic n'est pas technique, il est graphique.** Une cinquantaine de cartes
 > à dessiner, et un album de silhouettes grises n'a jamais donné envie à personne de
