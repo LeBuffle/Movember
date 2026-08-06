@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epics 1 à 6 détaillés · epics 7 à 11 à détailler au fil de l’avancement |
+| **Statut** | Epics 1 à 7 détaillés · epics 8 à 11 à détailler au fil de l’avancement |
 
 ---
 
@@ -265,6 +265,50 @@ premier participant ne s'inscrive, sinon il s'inscrit sans installer.
 > code ne rattrape quelqu'un qui ne l'a pas installée. D'où l'installation traitée comme
 > une étape du parcours d'inscription, et le repli e-mail traité comme un canal de premier
 > rang.
+
+---
+
+## Epic 7 : Équipes, classements et fil d'actualité
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 7.1 | [Schéma des équipes et adhésion par code](7.1.schema-equipes.md) | Draft | 1.6 |
+| 7.2 | [Création et gestion d'une équipe](7.2.gestion-equipe.md) | Draft | 7.1 |
+| 7.3 | [Vue matérialisée des classements](7.3.vue-materialisee-classements.md) | Draft | 4.3, 5.3, 7.1 |
+| 7.4 | [Affichage des classements](7.4.affichage-classements.md) | Draft | 7.3 |
+| 7.5 | [Classement par équipe normalisé](7.5.classement-equipe.md) | Draft | 7.3, 7.1 |
+| 7.6 | [Tableau de bord personnel](7.6.tableau-de-bord.md) | Draft | 7.3 |
+| 7.7 | [Compteurs collectifs](7.7.compteurs-collectifs.md) | Draft | 7.3, 2.6 |
+| 7.8 | [Fil d'actualité et publication](7.8.fil-actualite.md) | Draft | 1.10, 5.6 |
+| 7.9 | [Page dédiée d'équipe](7.9.page-equipe.md) | Draft | 7.5 |
+
+### Ordre d'exécution
+
+```
+7.1 ──┬──► 7.2
+      └──► 7.3 ──┬──► 7.4
+                 ├──► 7.5 ──► 7.9
+                 ├──► 7.6
+                 └──► 7.7
+
+7.8 (indépendante)
+```
+
+**7.3 est la clé de voûte de l'epic.** Les huit classements, le tableau de bord et les
+compteurs collectifs sortent tous de la même vue matérialisée : une fois qu'elle existe,
+les quatre stories qui la lisent sont des écrans.
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| Des données de jeu réelles | La vérification de 7.3 à 7.7 | Le code se mène sur des activités simulées ; les chiffres justes demandent un mois de jeu |
+| Formule de normalisation validée par le PO | rien techniquement | Point de départ posé en base, ajustable sans redéploiement (7.5) |
+
+> **Deux règles portent l'intégrité du jeu, et sont vérifiées automatiquement** : le
+> classement général ne lit jamais les cartes, et le classement collection ne compte que
+> les cartes gagnées en jouant. Un pack acheté ne doit déplacer personne — c'est le seul
+> endroit du projet où l'argent pourrait toucher au jeu.
 
 ---
 
