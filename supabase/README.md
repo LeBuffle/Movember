@@ -66,6 +66,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806200000_teams.sql` | `teams`, `team_members`, `public_teams` — les équipes et leur code d'adhésion |
 | `20260806210000_leaderboards.sql` | `leaderboard_entries` — les huit classements en une vue, et leur rafraîchissement |
 | `20260806220000_news_posts.sql` | `news_posts` — le fil d'actualité, brouillons invisibles des participants |
+| `20260806230000_display_name_is_final.sql` | le pseudonyme est fixé à l'inscription ; seule l'organisation peut le corriger |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

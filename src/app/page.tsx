@@ -67,97 +67,151 @@ export default async function Home() {
       <SiteHeader />
 
       <main>
-        {/* --- Accroche ------------------------------------------------- */}
-        <section className="mx-auto max-w-3xl px-4 pt-12 pb-14 sm:pt-16">
-          <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
-            Novembre {EDITION_YEAR}
-          </p>
+        {/* --- Accroche : la seule chose que cette page a à faire ------- */}
+        <section className="bg-brand-blue-soft border-line border-b">
+          <div className="mx-auto max-w-3xl px-4 pt-12 pb-14 sm:pt-16">
+            <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
+              Novembre {EDITION_YEAR}
+            </p>
 
-          <h1 className="text-ink mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Un mois, un défi par jour,
-            <br />
-            une collection à compléter.
-          </h1>
+            <h1 className="text-ink mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
+              Un mois, un défi par jour,
+              <br />
+              une collection à compléter.
+            </h1>
 
-          <p className="text-ink-muted mt-5 text-lg">
-            Vous faites déjà du sport. Reliez votre compte Strava, relevez le
-            défi du jour, gagnez des cartes moustachues — et faites avancer la
-            lutte contre les cancers masculins et le mal-être des hommes.
-          </p>
+            <p className="text-ink-muted mt-5 text-lg">
+              Vous faites déjà du sport. Reliez votre compte Strava, relevez le
+              défi du jour, gagnez des cartes moustachues — et faites avancer la
+              lutte contre les cancers masculins et le mal-être des hommes.
+            </p>
 
-          {/* The page's one job, and it is a single button.
+            {/* One button. The page has one job.
 
-              The funnel used to run the other way round: create an account,
-              then discover what there was to buy. Nobody creates an account
-              for something they have not seen the price of. Choosing a
-              formula now comes first, and the account is asked for at the
-              moment it becomes necessary — with the choice carried through
-              (see `entryRouteFor`).
+                The gallery link used to sit here and no longer does: what
+                there is to collect matters during the game, not at the moment
+                somebody decides whether to join. A second button next to the
+                first halves the first one. */}
+            {tiers.length > 0 ? (
+              <div className="mt-8">
+                <Link
+                  href="#tarifs"
+                  className={buttonClasses({
+                    size: "lg",
+                    className: "w-full sm:w-auto",
+                  })}
+                >
+                  Je participe
+                </Link>
 
-              Shown when there are tiers to show, and that is the honest
-              signal: registrations are open exactly when the edition is
-              published and its formulas readable. A date written here as
-              well would be a second source of truth, and the two would
-              disagree on the day it mattered. */}
-          {tiers.length > 0 ? (
-            <div className="mt-8">
-              <Link
-                href="#tarifs"
-                className={buttonClasses({
-                  size: "lg",
-                  className: "w-full sm:w-auto",
-                })}
-              >
-                Je participe
-              </Link>
+                <p className="text-ink-muted mt-3 text-sm">
+                  Trois formules, à partir de{" "}
+                  {(
+                    Math.min(...tiers.map((tier) => tier.priceCents)) / 100
+                  ).toLocaleString("fr-FR")}
+                  €. Le compte se crée après le choix.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-8">
+                <Alert
+                  tone="info"
+                  title="Les inscriptions ne sont pas ouvertes"
+                >
+                  Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu
+                  commence le 1ᵉʳ novembre.
+                </Alert>
+              </div>
+            )}
 
-              <p className="text-ink-muted mt-4 text-sm">
-                Trois formules, à partir de{" "}
-                {(
-                  Math.min(...tiers.map((tier) => tier.priceCents)) / 100
-                ).toLocaleString("fr-FR")}
-                €. Le compte se crée après le choix.
+            {/* As visible as the main action, and deliberately so. Somebody
+                who registered last week and comes back is not a lost cause to
+                be nudged towards signing up again — they are the person this
+                whole funnel already convinced. */}
+            <div className="border-line mt-8 border-t pt-5">
+              <p className="text-ink font-semibold">
+                Vous avez déjà un compte ?
               </p>
-
-              {/* Second, and smaller, on purpose: somebody who has already
-                  registered has to find their way back without going through
-                  a screen that asks them to sign up again. */}
-              <p className="text-ink-muted mt-1 text-sm">
-                Déjà inscrit ?{" "}
+              <p className="mt-2">
                 <Link
                   href="/connexion"
-                  className="text-brand-blue font-semibold underline underline-offset-4"
+                  className={buttonClasses({
+                    variant: "secondary",
+                    className: "w-full sm:w-auto",
+                  })}
                 >
-                  Se connecter
+                  Me connecter
                 </Link>
               </p>
             </div>
-          ) : (
-            <div className="mt-8">
-              <Alert tone="info" title="Les inscriptions ne sont pas ouvertes">
-                Elles ouvriront à la mi-octobre {EDITION_YEAR}. Le jeu commence
-                le 1ᵉʳ novembre.
-              </Alert>
-            </div>
-          )}
-
-          {/* The gallery, reachable before anyone has an account. It is the
-              argument that needs no explaining: what there is to collect
-              (story 5.8). */}
-          <p className="mt-6">
-            <Link
-              href="/cartes"
-              className={buttonClasses({ variant: "secondary" })}
-            >
-              Voir les cartes à collectionner
-            </Link>
-          </p>
+          </div>
         </section>
 
-        {/* --- Règle du jeu --------------------------------------------- */}
+        {/* --- Pourquoi ------------------------------------------------- */}
+        <section
+          aria-labelledby="pourquoi"
+          className="mx-auto max-w-3xl px-4 py-14"
+        >
+          <h2 id="pourquoi" className="text-ink text-2xl font-bold sm:text-3xl">
+            Pourquoi participer
+          </h2>
+
+          <div className="mt-6 space-y-5">
+            <div>
+              <h3 className="text-ink font-semibold">
+                Parce que la cause est réelle
+              </h3>
+              <p className="text-ink-muted mt-1">
+                Cancers masculins, santé mentale, prévention. Votre inscription
+                est reversée à la fondation Movember par l’association, et le
+                montant sur lequel elle s’engage est écrit en face de chaque
+                formule.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-ink font-semibold">
+                Parce que ça ne demande rien de plus
+              </h3>
+              <p className="text-ink-muted mt-1">
+                Vous courez, roulez ou nagez déjà. Vos sorties remontent toutes
+                seules depuis Strava et valident vos défis sans que vous ayez
+                quoi que ce soit à déclarer.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-ink font-semibold">
+                Parce qu’un mois, ça se tient à plusieurs
+              </h3>
+              <p className="text-ink-muted mt-1">
+                Sept classements, des équipes, une collection de cartes à
+                compléter. De quoi ressortir le neuvième jour, celui où on
+                arrête d’habitude.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* --- Comment -------------------------------------------------- */}
         <div className="bg-surface-sunken border-line border-y">
           <div className="mx-auto max-w-3xl px-4 py-14">
             <HowItWorks />
+
+            {/* A discreet link, and no longer a button in the hero. What
+                there is to collect is an argument (story 5.8), but it is an
+                argument for somebody already reading the rules — not a
+                second call to action competing with the only one that
+                matters. */}
+            <p className="text-ink-muted mt-8 text-sm">
+              Curieux de ce qu’il y a à collectionner ?{" "}
+              <Link
+                href="/cartes"
+                className="text-brand-blue font-semibold underline underline-offset-4"
+              >
+                Voir les cartes
+              </Link>
+            </p>
           </div>
         </div>
 
@@ -223,6 +277,33 @@ export default async function Home() {
         <div className="mx-auto max-w-3xl px-4 py-14">
           <EditionCalendar />
         </div>
+
+        {/* The last thing on the page is the same thing as the first. A
+            visitor who read to the bottom is the one most likely to join,
+            and asking them to scroll back up is asking them to leave. */}
+        {tiers.length > 0 && (
+          <div className="border-line bg-brand-blue-soft border-t">
+            <div className="mx-auto max-w-3xl px-4 py-12 text-center">
+              <p className="text-ink text-xl font-bold">
+                Prêt à relever le défi ?
+              </p>
+              <p className="text-ink-muted mt-2">
+                Trois formules, une inscription, un mois de novembre.
+              </p>
+              <p className="mt-5">
+                <Link
+                  href="#tarifs"
+                  className={buttonClasses({
+                    size: "lg",
+                    className: "w-full sm:w-auto",
+                  })}
+                >
+                  Je participe
+                </Link>
+              </p>
+            </div>
+          </div>
+        )}
       </main>
 
       <SiteFooter />

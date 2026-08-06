@@ -102,6 +102,13 @@ describe("elle sert d'argument à l'inscription", () => {
   it("et l'accueil y mène", () => {
     // Une galerie que personne ne trouve n'attire personne.
     expect(home).toMatch(/href="\/cartes"/);
+
+    // Mais pas dans l'accroche : un second bouton à côté de « Je participe »
+    // diviserait le premier par deux. C'est un argument pour quelqu'un qui
+    // lit déjà les règles.
+    expect(home.slice(0, home.indexOf("Pourquoi participer"))).not.toMatch(
+      /href="\/cartes"/,
+    );
   });
 });
 

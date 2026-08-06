@@ -61,10 +61,6 @@ export const newPasswordSchema = z.object({
   password: passwordSchema,
 });
 
-export const updateProfileSchema = z.object({
-  displayName: displayNameSchema,
-});
-
 /** First error message per field, in the shape the forms expect. */
 export function fieldErrors(error: z.ZodError): Record<string, string> {
   const result: Record<string, string> = {};

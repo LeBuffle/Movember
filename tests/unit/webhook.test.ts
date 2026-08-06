@@ -421,6 +421,19 @@ describe("la route du webhook", () => {
     expect(route).toMatch(/status:\s*400/);
   });
 
+  it("mais demande une nouvelle tentative quand le secret manque", () => {
+    // Un secret absent est notre faute, et elle est temporaire. Répondre 4xx
+    // disait à Stripe « classé, ne renvoie jamais » : un paiement encaissé
+    // pendant ce temps laissait quelqu'un payé et enfermé, définitivement.
+    // 500 fait réessayer Stripe pendant trois jours.
+    const body = route.slice(route.indexOf("export async function POST"));
+    const region = body.slice(0, body.indexOf("const { event }"));
+
+    expect(region).toMatch(
+      /reason === "not-configured"[\s\S]{0,120}status:\s*500/,
+    );
+  });
+
   it("renvoie une erreur quand le traitement échoue", () => {
     expect(route).toMatch(/status:\s*500/);
   });

@@ -11,7 +11,6 @@ import {
   newPasswordSchema,
   signInSchema,
   signUpSchema,
-  updateProfileSchema,
 } from "@/lib/auth/schemas";
 import { siteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
@@ -161,41 +160,4 @@ export async function setNewPassword(
 
   revalidatePath("/", "layout");
   redirect(ROUTES.account);
-}
-
-export async function updateDisplayName(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const parsed = updateProfileSchema.safeParse({
-    displayName: formData.get("displayName"),
-  });
-
-  if (!parsed.success) {
-    return { errors: fieldErrors(parsed.error) };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { message: "Votre session a expiré. Reconnectez-vous." };
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ display_name: parsed.data.displayName })
-    .eq("id", user.id);
-
-  if (error) {
-    // Uniqueness is enforced by a database index, so a clash surfaces here
-    // rather than during validation — two people can pick the same
-    // pseudonym at the same moment, and only the database can arbitrate.
-    return { errors: { displayName: authErrorMessage(error) } };
-  }
-
-  revalidatePath(ROUTES.account);
-  return { success: true, message: "Pseudonyme mis à jour." };
 }

@@ -38,9 +38,20 @@ export async function POST(request: Request) {
   const checked = await verifyStripeSignature(rawBody, signature);
 
   if (!checked.ok) {
-    // 400 rather than 401: there is nothing to authenticate *with* here, and
-    // Stripe treats 4xx as "do not retry" — which is right, since a badly
-    // signed call will not become well signed on a second attempt.
+    // **A missing secret is our fault, and it is temporary.** Answering 4xx
+    // there told Stripe "settled, never send it again" — so a payment taken
+    // while the secret was absent from the server left somebody paid and
+    // locked out, permanently, with nothing to notice it by. It happened on
+    // preproduction, and in November it would have happened to a
+    // participant. 500 asks Stripe to retry, which it does for three days:
+    // long enough for anybody to notice and redeploy.
+    if (checked.reason === "not-configured") {
+      return new Response("Configuration incomplète", { status: 500 });
+    }
+
+    // A badly signed call, on the other hand, will not become well signed on
+    // a second attempt. 4xx, and no explanation: telling a caller why their
+    // signature was refused is telling them how to get closer.
     return new Response("Signature refusée", { status: 400 });
   }
 

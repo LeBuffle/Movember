@@ -55,12 +55,35 @@ describe("le parcours commence par le choix, pas par le compte", () => {
     expect(home).toMatch(/tiers\.length > 0 \? \(/);
   });
 
-  it("celui qui a déjà un compte retrouve son chemin depuis l'accueil", () => {
-    // Sans quoi il repasse par un écran qui lui demande de s'inscrire.
-    const hero = home.slice(0, home.indexOf("Voir les cartes"));
+  it("celui qui a déjà un compte retrouve son chemin depuis l'accroche", () => {
+    // Et par un vrai bouton, pas par un lien discret : quelqu'un qui s'est
+    // inscrit la semaine dernière n'est pas à reconvaincre, c'est la
+    // personne que ce tunnel a déjà convaincue.
+    const hero = home.slice(0, home.indexOf("Pourquoi participer"));
 
-    expect(hero).toMatch(/Déjà inscrit \?/);
+    expect(hero).toMatch(/Vous avez déjà un compte \?/);
     expect(hero).toMatch(/href="\/connexion"/);
+    expect(hero).toMatch(/Me connecter/);
+  });
+
+  it("l'accroche ne propose rien d'autre que participer ou se connecter", () => {
+    // La galerie de cartes y figurait : ce qu'il y a à collectionner compte
+    // pendant le jeu, pas au moment de décider si on en est. Un second bouton
+    // à côté du premier divise le premier par deux.
+    const hero = home.slice(0, home.indexOf("Pourquoi participer"));
+
+    expect(hero).not.toMatch(/href="\/cartes"/);
+  });
+
+  it("et redemande à la fin, là où on a fini de lire", () => {
+    const foot = home.slice(home.indexOf("EditionCalendar"));
+
+    expect(foot).toMatch(/Je participe/);
+  });
+
+  it("la page dit pourquoi et comment, pas seulement combien", () => {
+    expect(home).toMatch(/Pourquoi participer/);
+    expect(home).toMatch(/<HowItWorks \/>/);
   });
 
   it("choisir une formule sans compte mène à la création, pas à la connexion", () => {

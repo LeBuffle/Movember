@@ -81,8 +81,22 @@ export default async function AccountPage() {
           <CardBody>
             Il apparaît dans les classements, à la place de votre nom.
           </CardBody>
-          <div className="mt-4">
-            <AccountForm displayName={profile?.display_name ?? ""} />
+
+          <p className="text-ink mt-3 text-xl font-bold">
+            {profile?.display_name ?? "—"}
+          </p>
+
+          {/* Said plainly rather than shown as a disabled field: a greyed-out
+              input reads as something temporarily unavailable, and invites
+              somebody to come back and look for the button. */}
+          <p className="text-ink-muted mt-1 text-sm">
+            Il a été choisi à l’inscription et ne change plus : vos coéquipiers
+            et les classements vous connaissent sous ce nom. Une erreur ?
+            Écrivez à l’organisation, qui peut la corriger.
+          </p>
+
+          <div className="border-line mt-4 border-t pt-4">
+            <AccountForm />
           </div>
         </Card>
 

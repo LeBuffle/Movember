@@ -1,52 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
-
-import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { signOut, updateDisplayName, type FormState } from "@/lib/auth/actions";
+import { signOut } from "@/lib/auth/actions";
 
-function SaveButton() {
-  const { pending } = useFormStatus();
+/**
+ * What is left of the account form: the way out.
+ *
+ * **The pseudonym is no longer editable here.** It is chosen when the
+ * account is created and does not change — it is the participant's public
+ * identity, printed in seven rankings, on team pages and in the history.
+ * Somebody who renames themselves mid-month vanishes for their teammates,
+ * who are looking for a name that no longer exists.
+ *
+ * The rule is carried by a database trigger, not by this file: removing a
+ * form removes a door, not a capability (story 1.13).
+ */
+export function AccountForm() {
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? "Enregistrement…" : "Enregistrer"}
-    </Button>
-  );
-}
-
-export function AccountForm({ displayName }: { displayName: string }) {
-  const [state, formAction] = useActionState<FormState, FormData>(
-    updateDisplayName,
-    {},
-  );
-
-  return (
-    <div className="space-y-4">
-      <form action={formAction} className="space-y-4">
-        <Input
-          label="Pseudonyme"
-          name="displayName"
-          defaultValue={displayName}
-          required
-          error={state.errors?.displayName}
-        />
-        <SaveButton />
-      </form>
-
-      {state.message && (
-        <Alert tone={state.success ? "success" : "danger"}>
-          {state.message}
-        </Alert>
-      )}
-
-      <form action={signOut} className="border-line border-t pt-4">
-        <Button type="submit" variant="ghost">
-          Se déconnecter
-        </Button>
-      </form>
-    </div>
+    <form action={signOut}>
+      <Button type="submit" variant="ghost">
+        Se déconnecter
+      </Button>
+    </form>
   );
 }
