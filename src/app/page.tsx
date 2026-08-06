@@ -136,17 +136,24 @@ export default async function Home() {
           <TaxNotice className="mt-6" />
 
           <div className="mt-8">
-            {/* No fallback price list, on purpose: showing one price while
+            {/* The failure message deliberately does not promise that
+                waiting helps. The first time it appeared it was not a
+                passing incident but a configuration state — an edition still
+                in draft — and "réessayez dans quelques minutes" sent
+                somebody waiting for something that was never going to
+                resolve on its own.
+
+                No fallback price list, on purpose: showing one price while
                 the payment charges another is the worst failure this page
                 can have. Nothing beats a wrong amount for losing someone's
                 trust in a fundraiser. */}
             {tiers.length > 0 ? (
               <TierCards tiers={tiers} />
             ) : (
-              <Alert tone="warning" title="Tarifs momentanément indisponibles">
-                Les niveaux d’inscription ne peuvent pas être affichés pour le
-                moment. Réessayez dans quelques minutes — le reste du site
-                fonctionne normalement.
+              <Alert tone="warning" title="Tarifs indisponibles">
+                Les niveaux d’inscription ne peuvent pas être affichés. Le reste
+                du site fonctionne normalement — prévenez l’organisation si cela
+                dure.
               </Alert>
             )}
           </div>

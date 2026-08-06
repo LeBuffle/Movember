@@ -58,7 +58,14 @@ export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
     .maybeSingle();
 
   if (!edition) {
-    console.error("[tiers] édition introuvable", { year: EDITION_YEAR });
+    // Almost always one thing: the edition is still `draft`, and the policy
+    // on `editions` hides a draft from the anonymous client. Nothing is
+    // broken, nothing will fix itself, and the symptom — an empty price list
+    // — points nowhere near the cause. Hence the sentence.
+    console.error(
+      "[tiers] édition introuvable — est-elle encore en statut draft ?",
+      { year: EDITION_YEAR },
+    );
     return [];
   }
 
@@ -74,6 +81,15 @@ export async function getRegistrationTiers(): Promise<RegistrationTier[]> {
   if (error || !data) {
     console.error("[tiers] lecture impossible", { code: error?.code });
     return [];
+  }
+
+  if (data.length === 0) {
+    // Read fine, found nothing: the tiers were never seeded for this
+    // edition. A different cause from the two above, and a different fix.
+    console.error("[tiers] aucun niveau disponible pour l’édition", {
+      year: EDITION_YEAR,
+      editionId: edition.id,
+    });
   }
 
   return data.map((row, index) => ({
