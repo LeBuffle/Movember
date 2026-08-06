@@ -86,6 +86,24 @@ export default async function AccountPage() {
         </Card>
 
         <Card>
+          <CardTitle>Mes notifications</CardTitle>
+          <CardBody>
+            <p>
+              Le rappel de votre défi du jour, et le message quand une sortie le
+              valide.
+            </p>
+            <p className="mt-3">
+              <Link
+                href="/mon-compte/notifications"
+                className="text-brand-blue underline underline-offset-4"
+              >
+                Activer ou gérer mes notifications
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+
+        <Card>
           <CardTitle>Application installée</CardTitle>
           <CardBody>
             <p>

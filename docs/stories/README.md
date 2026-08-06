@@ -221,7 +221,7 @@ découvre sur un type, pas sur sept.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 6.1 | [Service worker et abonnement push](6.1.abonnement-push.md) | Draft | 1.8 |
+| 6.1 | [Service worker et abonnement push](6.1.abonnement-push.md) | **Review** | 1.8 |
 | 6.2 | [Parcours d'installation guidé](6.2.parcours-installation.md) | Draft | 1.8, 2.4 |
 | 6.3 | [Envoi de notifications push par lots](6.3.envoi-push-par-lots.md) | Draft | 6.1 |
 | 6.4 | [Repli e-mail pour les participants sans push](6.4.repli-email.md) | Draft | 6.1 |

@@ -546,6 +546,38 @@ export type Database = {
         Update: { revealed_at?: string | null };
         Relationships: [];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          profile_id: string;
+          /** The push service's address for one browser on one device. */
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+          created_at: string;
+          last_success_at: string | null;
+          /** Sender's bookkeeping — never written by a participant. */
+          failure_count: number;
+          disabled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+          created_at?: string;
+          last_success_at?: string | null;
+          failure_count?: number;
+          disabled_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["push_subscriptions"]["Insert"]
+        >;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;
