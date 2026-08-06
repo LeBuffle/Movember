@@ -189,7 +189,7 @@ describe("les compteurs collectifs", () => {
   });
 
   it("et la page d'accueil les affiche", () => {
-    expect(home).toMatch(/collectiveTotals/);
+    expect(home).toMatch(/getPublicTotals/);
     expect(home).toMatch(/<CollectiveFigures live=\{live\} \/>/);
   });
 });

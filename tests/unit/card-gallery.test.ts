@@ -78,10 +78,11 @@ describe("elle fonctionne sans compte", () => {
   });
 
   it("et elle est mise en cache plutôt que recalculée à chaque visite", () => {
-    const match = page.match(/export const revalidate = (\d+)/);
-
-    expect(match).not.toBeNull();
-    expect(Number(match![1])).toBeGreaterThan(0);
+    // Le cache est sur la requête, plus sur le rendu : `revalidate` faisait
+    // pré-calculer la page pendant la construction, sans base de données,
+    // et la galerie partait vide dans l'image.
+    expect(page).toMatch(/getPublicGallery/);
+    expect(page).not.toMatch(/export const revalidate/);
   });
 });
 

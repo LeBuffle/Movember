@@ -11,8 +11,7 @@ import { TierCards } from "@/components/marketing/tier-cards";
 import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
-import { collectiveTotals } from "@/lib/leaderboards/collective";
-import { getRegistrationTiers } from "@/lib/registration/tiers";
+import { getPublicTiers, getPublicTotals } from "@/lib/public-cache";
 
 export const metadata: Metadata = {
   title: "DEFI Movember — un mois, un défi par jour",
@@ -23,15 +22,19 @@ export const metadata: Metadata = {
 };
 
 /**
- * Regenerated at most every five minutes.
+ * Rendered per request, with the queries behind it cached for five minutes.
  *
- * The prices now come from the database (story 2.1), and a page that queried
- * it on every visit would be the slowest page of the site — the one a share
- * leads to, opened on a phone. Five minutes is short enough that a price
- * corrected during the registration rush is live almost at once, and long
- * enough that a thousand visitors cost one query.
+ * **Not `revalidate`.** That made Next.js prerender this page during `docker
+ * build`, in a container with no database credentials — so every image
+ * shipped a home page with no prices and a counter that said it was being
+ * prepared, and it stayed that way until five minutes and two visits had
+ * gone by. See `lib/public-cache.ts`.
+ *
+ * Rendering costs a few milliseconds; the queries are what cost, and those
+ * are cached. A thousand visitors still make one round trip per five
+ * minutes — the property `revalidate` was chosen for in the first place.
  */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 /**
  * Public home page.
@@ -55,8 +58,8 @@ export const revalidate = 300;
  */
 export default async function Home() {
   const [tiers, live] = await Promise.all([
-    getRegistrationTiers(),
-    collectiveTotals(),
+    getPublicTiers(),
+    getPublicTotals(),
   ]);
 
   return (

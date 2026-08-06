@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import type { Rarity } from "@/lib/cards/draw";
 import { RARITY_LABELS } from "@/lib/cards/form";
-import { getGallery, type GalleryCard } from "@/lib/cards/gallery";
+import type { GalleryCard } from "@/lib/cards/gallery";
+import { getPublicGallery } from "@/lib/public-cache";
 import { cn } from "@/lib/cn";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 
@@ -27,7 +28,10 @@ export const metadata: Metadata = {
  * published from the back-office shows up here almost at once, and a thousand
  * visitors cost one query.
  */
-export const revalidate = 600;
+// Rendered per request, query cached for ten minutes — see the home page
+// and `lib/public-cache.ts`. With `revalidate` this page was prerendered at
+// build time, with no database, and shipped an empty gallery.
+export const dynamic = "force-dynamic";
 
 /**
  * The public gallery.
@@ -44,7 +48,7 @@ export const revalidate = 600;
  * but because they were never fetched (AC 2).
  */
 export default async function GalleryPage() {
-  const gallery = await getGallery();
+  const gallery = await getPublicGallery();
 
   return (
     <>
