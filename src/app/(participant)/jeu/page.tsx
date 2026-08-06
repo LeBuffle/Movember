@@ -126,7 +126,13 @@ export default async function GameHome() {
           >
             Ma collection de cartes
           </Link>
-        )}
+        )}{" "}
+        <Link
+          href="/jeu/equipe"
+          className={buttonClasses({ variant: "ghost" })}
+        >
+          Mon équipe
+        </Link>
       </p>
 
       {/* Brought back for whoever skipped the step at registration (story

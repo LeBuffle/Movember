@@ -272,7 +272,7 @@ premier participant ne s'inscrive, sinon il s'inscrit sans installer.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 7.1 | [Schéma des équipes et adhésion par code](7.1.schema-equipes.md) | Draft | 1.6 |
+| 7.1 | [Schéma des équipes et adhésion par code](7.1.schema-equipes.md) | **Review** | 1.6 |
 | 7.2 | [Création et gestion d'une équipe](7.2.gestion-equipe.md) | Draft | 7.1 |
 | 7.3 | [Vue matérialisée des classements](7.3.vue-materialisee-classements.md) | Draft | 4.3, 5.3, 7.1 |
 | 7.4 | [Affichage des classements](7.4.affichage-classements.md) | Draft | 7.3 |

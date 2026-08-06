@@ -578,6 +578,53 @@ export type Database = {
         >;
         Relationships: [];
       };
+      teams: {
+        Row: {
+          id: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          /** The secret. Never reaches a participant who is not the captain. */
+          join_code: string;
+          captain_id: string;
+          kind: "libre" | "entreprise" | "association";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          join_code: string;
+          captain_id: string;
+          kind?: "libre" | "entreprise" | "association";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["teams"]["Insert"]>;
+        Relationships: [];
+      };
+      team_members: {
+        Row: {
+          id: string;
+          team_id: string;
+          profile_id: string;
+          edition_id: string;
+          role: "capitaine" | "membre";
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          team_id: string;
+          profile_id: string;
+          edition_id: string;
+          role?: "capitaine" | "membre";
+          joined_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["team_members"]["Insert"]>;
+        Relationships: [];
+      };
       notification_preferences: {
         Row: {
           profile_id: string;
@@ -660,6 +707,18 @@ export type Database = {
           id: string;
           display_name: string;
           avatar_url: string | null;
+        };
+        Relationships: [];
+      };
+      /** Name, slug and kind. Never the join code — see the migration. */
+      public_teams: {
+        Row: {
+          id: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          kind: "libre" | "entreprise" | "association";
+          created_at: string;
         };
         Relationships: [];
       };
