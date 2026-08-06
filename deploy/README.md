@@ -341,6 +341,13 @@ docker compose up -d --force-recreate app-staging
 > `docker compose restart` ne suffit pas : il relance le processus sans relire le fichier
 > d'environnement.
 
+> **Cette commande relance bien la version déployée**, et pas une plus ancienne. Le script
+> de déploiement écrit le nom de l'image dans `deploy/.env`, que Docker Compose lit tout
+> seul. Sans cette écriture, un redémarrage à la main repartait sur l'image par défaut —
+> le site continuait de répondre, sur du code d'il y a une semaine, et rien ne le disait.
+> Pour vérifier ce qui tourne : `curl -s https://staging.defi-movember.fr/api/health`, le
+> champ `version` porte le début du commit.
+
 ### Pourquoi ce n'est plus un mot de passe du serveur
 
 C'était un mot de passe HTTP posé par Traefik jusqu'au 6 août 2026. Il avait une

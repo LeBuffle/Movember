@@ -95,6 +95,26 @@ info "Bascule du service $SERVICE"
 export "$IMAGE_VAR=$NEW_IMAGE"
 export "$VERSION_VAR=$SHORT_SHA"
 
+# Also written to `.env`, which Docker Compose reads on its own from this
+# directory. Exporting alone would only last for this script: a later
+# `docker compose up -d` typed by hand — to pick up a change in an
+# environment file, say — would find the variable unset, fall back to the
+# default in `docker-compose.yml`, and silently start an OLD image. It
+# happened, and it is invisible: the site keeps answering, on last week's
+# code. Persisting the value means the file on disk always says what is
+# actually meant to run.
+persist_var() {
+  local name="$1" value="$2"
+  touch .env
+  # Rewrite in place rather than append: a second line would leave the file
+  # ambiguous, and the answer would depend on which one Compose reads last.
+  sed -i "/^${name}=/d" .env
+  printf '%s=%s\n' "$name" "$value" >>.env
+}
+
+persist_var "$IMAGE_VAR" "$NEW_IMAGE"
+persist_var "$VERSION_VAR" "$SHORT_SHA"
+
 docker compose up -d --no-deps "$SERVICE" || fail "Le démarrage du conteneur a échoué."
 
 # --- Health check ---------------------------------------------------------
@@ -130,6 +150,10 @@ if [[ "$status" != "healthy" ]]; then
   if [[ -n "$PREVIOUS_IMAGE" && "$PREVIOUS_IMAGE" != "$NEW_IMAGE" ]]; then
     info "Retour à la version précédente : $PREVIOUS_IMAGE"
     export "$IMAGE_VAR=$PREVIOUS_IMAGE"
+    # Persisted here too, so the file keeps describing what is running. A
+    # rollback that left `.env` pointing at the failed image would put that
+    # image back at the next manual restart.
+    persist_var "$IMAGE_VAR" "$PREVIOUS_IMAGE"
     docker compose up -d --no-deps "$SERVICE" && ok "version précédente rétablie"
   else
     echo "Aucune version précédente à rétablir." >&2
