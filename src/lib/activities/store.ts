@@ -82,6 +82,7 @@ async function storeOne(activity: Activity): Promise<Outcome> {
     distance_meters: Math.round(activity.distanceMeters),
     duration_seconds: Math.round(activity.durationSeconds),
     elevation_meters: Math.round(activity.elevationMeters),
+    is_manual: activity.isManual,
   });
 
   if (!error) return "stored";
@@ -96,6 +97,104 @@ async function storeOne(activity: Activity): Promise<Outcome> {
   });
 
   return "failed";
+}
+
+/**
+ * An activity corrected at the provider.
+ *
+ * Somebody renames a run, fixes a distance their watch got wrong, changes
+ * the sport. The row follows — and the challenges are offered it again,
+ * because a distance corrected upwards can complete a challenge that a
+ * moment ago it did not.
+ *
+ * **A challenge already completed is never un-completed by a correction.**
+ * The evaluation only looks at open assignments (story 4.5), so a distance
+ * corrected *downwards* leaves the points where they are. That is
+ * deliberate: taking points back automatically, on a leaderboard, over a
+ * figure somebody edited, is exactly the kind of silent decision that makes
+ * a game feel arbitrary. The arbitration screen of story 4.10 is where a
+ * human does it, with a reason.
+ */
+export async function updateActivity(activity: Activity): Promise<boolean> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("activities")
+    .update({
+      name: activity.name,
+      sport_family: activity.sportFamily,
+      started_at: activity.startedAt,
+      local_date: activity.localDate,
+      distance_meters: Math.round(activity.distanceMeters),
+      duration_seconds: Math.round(activity.durationSeconds),
+      elevation_meters: Math.round(activity.elevationMeters),
+      is_manual: activity.isManual,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("provider", activity.provider)
+    .eq("provider_activity_id", activity.id)
+    .select("id");
+
+  if (error) {
+    console.error("[activités] mise à jour impossible", {
+      provider: activity.provider,
+      code: error.code,
+    });
+    return false;
+  }
+
+  // Nothing to update means we never had it — a correction can arrive for an
+  // activity that predates the link. Storing it now is the useful answer.
+  if ((data ?? []).length === 0) {
+    const report = await recordActivities([activity]);
+    return report.stored > 0;
+  }
+
+  await applyActivity(activity);
+  return true;
+}
+
+/**
+ * An activity deleted at the provider.
+ *
+ * The row goes. **The challenges it validated stay validated**, and that is a
+ * decision rather than an oversight: deleting an activity after it completed
+ * a challenge is a plausible way to cheat, but tidying up one's own Strava is
+ * far more common — and un-completing a challenge three days later, silently,
+ * would be the worse mistake. Architecture D10 says it plainly: flag, never
+ * reject automatically. The line logged here is what a human acts on.
+ */
+export async function removeActivity(
+  provider: Activity["provider"],
+  providerActivityId: string,
+): Promise<boolean> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("activities")
+    .delete()
+    .eq("provider", provider)
+    .eq("provider_activity_id", providerActivityId)
+    .select("id, profile_id");
+
+  if (error) {
+    console.error("[activités] suppression impossible", {
+      provider,
+      code: error.code,
+    });
+    return false;
+  }
+
+  const removed = (data ?? []).length > 0;
+
+  if (removed) {
+    console.info("[activités] activité supprimée chez le fournisseur", {
+      provider,
+      activity: providerActivityId,
+    });
+  }
+
+  return removed;
 }
 
 /** How many activities a participant has, for the connection screen. */

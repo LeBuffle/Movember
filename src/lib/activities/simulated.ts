@@ -24,10 +24,15 @@ import {
  * fixture that changes shape between runs cannot be reasoned about.
  */
 
-type Sample = Omit<Activity, "profileId" | "localDate" | "startedAt"> & {
+type Sample = Omit<
+  Activity,
+  "profileId" | "localDate" | "startedAt" | "isManual"
+> & {
   /** Days from the reference date. 0 is the day itself, -1 the day before. */
   dayOffset: number;
   hour: number;
+  /** Typed in by hand rather than recorded. Absent means recorded. */
+  isManual?: boolean;
 };
 
 const SAMPLES: Sample[] = [
@@ -136,6 +141,21 @@ const SAMPLES: Sample[] = [
     hour: 7,
   },
   {
+    id: "sim-manual-entry",
+    provider: "simulated",
+    name: "Sortie saisie à la main",
+    sportFamily: "run",
+    // Generous, and typed in by hand — which is exactly the shape of a
+    // fabricated activity. Nothing filters on it yet (story 9.8 does), but
+    // the fixture exists so that story has a case to work from.
+    distanceMeters: 21_000,
+    durationSeconds: 5400,
+    elevationMeters: 0,
+    dayOffset: 0,
+    hour: 14,
+    isManual: true,
+  },
+  {
     id: "sim-hike-elevation",
     provider: "simulated",
     name: "Randonnée dans les Vosges",
@@ -158,7 +178,7 @@ export function simulatedActivities(
   referenceDate: string,
   profileId = "profil-simule",
 ): Activity[] {
-  return SAMPLES.map(({ dayOffset, hour, ...sample }) => {
+  return SAMPLES.map(({ dayOffset, hour, isManual, ...sample }) => {
     const localDate = addDays(referenceDate, dayOffset);
 
     return {
@@ -166,6 +186,7 @@ export function simulatedActivities(
       profileId,
       localDate,
       startedAt: `${localDate}T${String(hour).padStart(2, "0")}:00:00.000Z`,
+      isManual: isManual ?? false,
     };
   });
 }
@@ -230,6 +251,7 @@ export const simulatedSource: ActivitySource = {
       distanceMeters: sample.distanceMeters ?? 0,
       durationSeconds: sample.durationSeconds ?? 0,
       elevationMeters: sample.elevationMeters ?? 0,
+      isManual: sample.isManual === true,
     };
   },
 };

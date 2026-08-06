@@ -46,6 +46,7 @@ function activity(overrides: Partial<Activity> = {}): Activity {
     distanceMeters: 5000,
     durationSeconds: 1800,
     elevationMeters: 100,
+    isManual: false,
     ...overrides,
   };
 }

@@ -50,6 +50,7 @@ function activity(overrides: Partial<Activity> = {}): Activity {
     distanceMeters: 5000,
     durationSeconds: 1680,
     elevationMeters: 30,
+    isManual: false,
     ...overrides,
   };
 }
@@ -300,7 +301,11 @@ describe("les activités simulées", () => {
       )
       .map((act) => act.id);
 
-    expect(passing).toEqual(["sim-run-5k", "sim-run-long"]);
+    // `sim-manual-entry` en fait partie, et c'est la vérité du moment : une
+    // sortie saisie à la main valide aujourd'hui les défis comme une autre.
+    // Le PO a tranché qu'elles seraient écartées (point P11), mais le filtre
+    // est la story 9.8 — et ce test le dira le jour où il arrivera.
+    expect(passing).toEqual(["sim-run-5k", "sim-run-long", "sim-manual-entry"]);
   });
 
   it("n’inventent aucun hasard", () => {

@@ -364,6 +364,8 @@ export type Database = {
           distance_meters: number;
           duration_seconds: number;
           elevation_meters: number;
+          /** Typed in by hand at the provider (story 3.4). Read by story 9.8. */
+          is_manual: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -379,6 +381,7 @@ export type Database = {
           distance_meters?: number;
           duration_seconds?: number;
           elevation_meters?: number;
+          is_manual?: boolean;
           created_at?: string;
           updated_at?: string;
         };

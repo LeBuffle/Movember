@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Activity } from "@/lib/activities/activity";
-import { sportFamilyFromProvider } from "@/lib/activities/activity";
+import { parisDate, sportFamilyFromProvider } from "@/lib/activities/activity";
 import {
   sourceFailure,
   type ActivitySource,
@@ -139,6 +139,7 @@ type StravaActivity = {
   moving_time?: unknown;
   elapsed_time?: unknown;
   total_elevation_gain?: unknown;
+  manual?: unknown;
 };
 
 const positive = (value: unknown): number =>
@@ -195,11 +196,16 @@ export const stravaSource: ActivitySource = {
 
     if (source.id === undefined || source.id === null) return null;
 
-    // `start_date_local` is the athlete's own wall clock, which is exactly
-    // the question "which day does this count for?" asks. Using the UTC
-    // instant instead is how a 23:40 run ends up on the next day.
-    const started = source.start_date_local ?? source.start_date;
+    // The absolute instant, not `start_date_local`. Both answer "when", but
+    // only this one can be filed against the game's calendar: the day is
+    // computed in Paris, like the draw and like the edition (story 3.4 AC 5).
+    // `start_date_local` is the athlete's own wall clock, which drifts from
+    // the game's the moment somebody travels.
+    const started = source.start_date;
     if (typeof started !== "string" || started.length < 10) return null;
+
+    const localDate = parisDate(started);
+    if (!localDate) return null;
 
     return {
       id: String(source.id),
@@ -210,7 +216,7 @@ export const stravaSource: ActivitySource = {
         String(source.sport_type ?? source.type ?? ""),
       ),
       startedAt: started,
-      localDate: started.slice(0, 10),
+      localDate,
       distanceMeters: Math.round(positive(source.distance)),
       // Moving time, not elapsed: a challenge asking for thirty minutes of
       // effort should not be settled by a two-hour coffee stop.
@@ -218,6 +224,12 @@ export const stravaSource: ActivitySource = {
         positive(source.moving_time) || positive(source.elapsed_time),
       ),
       elevationMeters: Math.round(positive(source.total_elevation_gain)),
+      // Typed in by hand on Strava rather than recorded by a device. Kept
+      // because the PO has already decided these are excluded from
+      // evaluation (PRD point P11) — but the exclusion itself is story 9.8.
+      // Capturing it now is what makes that story possible without going
+      // back to Strava for two hundred activities.
+      isManual: source.manual === true,
     };
   },
 };

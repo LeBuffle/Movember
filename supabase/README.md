@@ -55,6 +55,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260805170000_activity_consent.sql` | `activity_consents` — le registre inaltérable des autorisations |
 | `20260806100000_activity_connections.sql` | `activity_connections` — les comptes sportifs reliés |
 | `20260806110000_connection_refresh.sql` | la réservation qui sérialise les rafraîchissements de jeton |
+| `20260806120000_activity_minimisation.sql` | l'indicateur « saisie à la main », pour le lot 9 |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

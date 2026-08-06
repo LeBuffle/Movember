@@ -202,7 +202,7 @@ async function readHistory(
   const { data, error } = await admin
     .from("activities")
     .select(
-      "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters",
+      "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters, is_manual",
     )
     .eq("profile_id", activity.profileId)
     .gte("local_date", addDays(activity.localDate, -(MAX_WINDOW_DAYS - 1)))
@@ -228,6 +228,7 @@ async function readHistory(
     distance_meters: number;
     duration_seconds: number;
     elevation_meters: number;
+    is_manual: boolean;
   };
 
   return (data as Row[]).map((row) => ({
@@ -241,6 +242,7 @@ async function readHistory(
     distanceMeters: row.distance_meters,
     durationSeconds: row.duration_seconds,
     elevationMeters: row.elevation_meters,
+    isManual: row.is_manual,
   }));
 }
 

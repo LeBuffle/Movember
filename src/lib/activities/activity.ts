@@ -43,6 +43,18 @@ export type Activity = {
   distanceMeters: number;
   durationSeconds: number;
   elevationMeters: number;
+
+  /**
+   * Typed in by hand on the provider rather than recorded by a device.
+   *
+   * Kept because the PO has decided manual entries are excluded from
+   * evaluation (PRD point P11, architecture A5) — imports from a watch stay
+   * accepted, which is the normal case for a Garmin or Polar owner. Nothing
+   * filters on it yet: that is story 9.8. It is captured now because a flag
+   * not recorded at the border cannot be recovered later without asking the
+   * provider again for every activity.
+   */
+  isManual: boolean;
 };
 
 /**
@@ -107,6 +119,37 @@ export function withinWindow(
     Number.isInteger(durationDays) && durationDays > 0 ? durationDays : 1;
 
   return activityDate <= addDays(assignedFor, days - 1);
+}
+
+/**
+ * The calendar day an instant belongs to, in Paris.
+ *
+ * **The game's calendar is Paris, everywhere.** The daily draw hands out
+ * challenges on a Paris day, the common challenge is scheduled on a Paris
+ * day, the edition starts and ends on Paris days. An activity has to be
+ * filed against the same calendar or it lands on a day whose challenge does
+ * not exist yet.
+ *
+ * That is a deliberate choice over the athlete's own local time, and it has
+ * one visible consequence: somebody running in Réunion at 1 a.m. sees their
+ * outing counted for the previous day. The alternative — each participant on
+ * their own calendar — makes "the challenge of 11 November" mean a different
+ * thing for each of them, and makes the leaderboard impossible to explain.
+ * For a French, association-run game, Paris wins.
+ *
+ * Not the server's timezone either: a VPS on UTC turns a 23:40 run into
+ * tomorrow's, and nobody notices until a participant says their challenge
+ * changed overnight.
+ */
+export function parisDate(instant: string | Date): string {
+  const date = instant instanceof Date ? instant : new Date(instant);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  // `fr-CA` formats as `AAAA-MM-JJ`, the shape everything else compares.
+  return new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+  }).format(date);
 }
 
 /** `2026-11-30` + 1 day = `2026-12-01`. */
