@@ -225,10 +225,10 @@ découvre sur un type, pas sur sept.
 | 6.2 | [Parcours d’installation guidé](6.2.parcours-installation.md) | **Review** | 1.8, 2.4 |
 | 6.3 | [Envoi de notifications push par lots](6.3.envoi-push-par-lots.md) | **Review** | 6.1 |
 | 6.4 | [Repli e-mail pour les participants sans push](6.4.repli-email.md) | **Review** | 6.1 |
-| 6.5 | [Notification du défi du jour](6.5.notification-defi-du-jour.md) | Draft | 6.3, 6.4, 4.4 |
-| 6.6 | [Notification de validation, groupée](6.6.notification-validation-groupee.md) | Draft | 6.3, 4.3, 5.3 |
+| 6.5 | [Notification du défi du jour](6.5.notification-defi-du-jour.md) | **Review** | 6.3, 6.4, 4.4 |
+| 6.6 | [Notification de validation, groupée](6.6.notification-validation-groupee.md) | **Review** | 6.3, 4.3, 5.3 |
 | 6.7 | [Préférences de notification par catégorie](6.7.preferences-notification.md) | **Review** | 6.1 |
-| 6.8 | [Envoi manuel depuis le back-office](6.8.envoi-manuel-back-office.md) | Draft | 6.3, 6.7, 1.10 |
+| 6.8 | [Envoi manuel depuis le back-office](6.8.envoi-manuel-back-office.md) | **Review** | 6.3, 6.7, 1.10 |
 
 ### Ordre d'exécution
 
@@ -255,6 +255,10 @@ premier participant ne s'inscrive, sinon il s'inscrit sans installer.
 | **Compte Resend** | 6.4 | Le push fonctionne sans. Bloque aussi la story 2.5 |
 | **Domaine d'expédition authentifié SPF/DKIM** | 6.4 en réel | ⚠️ **À préparer en septembre.** Un domaine neuf qui envoie 800 e-mails d'un coup part en indésirable |
 | Appareils de test iPhone **et** Android | 6.2 réellement | Le code se mène sans ; la vérification, non |
+
+> **Epic 6 terminé** — les huit stories sont en Review. Il reste au PO à générer les clés
+> VAPID (une commande, gratuite, immédiate), à appliquer les trois migrations, et à créer
+> le compte Resend avec son domaine authentifié — ce dernier point **en septembre**.
 
 > **Le risque de cet epic est un taux d'installation insuffisant sur iPhone** (risque T5).
 > Aucune notification web n'existe sur iPhone hors application installée, et rien dans le

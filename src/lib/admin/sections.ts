@@ -77,7 +77,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     description:
       "Les rappels quotidiens et les envois exceptionnels, push et e-mail.",
     epic: "epic 6",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "collecte",

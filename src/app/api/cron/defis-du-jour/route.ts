@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { assignDailyChallenges } from "@/lib/challenges/daily-draw";
 import { cronUnauthorised, isAuthorisedCronRequest } from "@/lib/cron/auth";
+import { notifyDailyChallenges } from "@/lib/notifications/game";
 
 /**
  * The day's challenges, handed out.
@@ -26,8 +27,17 @@ export async function GET(request: Request) {
 
   const report = await assignDailyChallenges();
 
+  /* The notification comes after the draw and never conditions it (story 6.5
+     AC 7). Whatever happens here, the challenges are handed out — a send that
+     fails must not leave somebody staring at an empty screen while their
+     challenge existed all along.
+
+     It reads the day's assignments rather than trusting the report above, so
+     a task relaunched at nine still notifies the people served at six. */
+  const notified = await notifyDailyChallenges(report.date);
+
   return NextResponse.json(
-    { status: "ok", task: "defis-du-jour", ...report },
+    { status: "ok", task: "defis-du-jour", ...report, notified },
     { status: 200, headers: { "Cache-Control": "no-store" } },
   );
 }

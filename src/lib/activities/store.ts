@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { Activity } from "@/lib/activities/activity";
-import { applyActivity } from "@/lib/challenges/completion";
+import {
+  applyActivity,
+  type CompletedChallenge,
+} from "@/lib/challenges/completion";
+import { notifyCompletions } from "@/lib/notifications/game";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -43,6 +47,15 @@ export async function recordActivities(
     failed: 0,
   };
 
+  // Gathered across the whole batch rather than announced one by one.
+  //
+  // **This is what makes the grouped notification of story 6.6 possible.** A
+  // long Sunday outing can settle a distance challenge, an elevation
+  // challenge and a cumulative one; as the participant lived it that is one
+  // event, and three notifications in a row would read as noise — which is
+  // what gets notifications switched off.
+  const completed = new Map<string, CompletedChallenge[]>();
+
   for (const activity of activities) {
     const outcome = await storeOne(activity);
 
@@ -61,6 +74,19 @@ export async function recordActivities(
     // every open challenge for every activity it has already seen.
     const completion = await applyActivity(activity);
     report.completed += completion.completed;
+
+    if (completion.completions.length > 0) {
+      const list = completed.get(activity.profileId) ?? [];
+      list.push(...completion.completions);
+      completed.set(activity.profileId, list);
+    }
+  }
+
+  // After the writes, never before, and never allowed to undo them: a
+  // notification that fails must not turn a validated challenge back into an
+  // open one. `notifyCompletions` logs its own failures and returns nothing.
+  for (const [profileId, completions] of completed) {
+    await notifyCompletions(profileId, completions);
   }
 
   return report;
@@ -150,7 +176,14 @@ export async function updateActivity(activity: Activity): Promise<boolean> {
     return report.stored > 0;
   }
 
-  await applyActivity(activity);
+  const completion = await applyActivity(activity);
+
+  // A correction can complete a challenge — a distance the watch got wrong,
+  // fixed upwards. It deserves the same announcement as a fresh activity.
+  if (completion.completions.length > 0) {
+    await notifyCompletions(activity.profileId, completion.completions);
+  }
+
   return true;
 }
 

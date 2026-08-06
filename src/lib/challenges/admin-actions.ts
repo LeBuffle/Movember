@@ -19,6 +19,7 @@ import {
   readFormValues,
 } from "@/lib/challenges/form";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { notifyDailyChallenges } from "@/lib/notifications/game";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -248,6 +249,12 @@ export async function runDailyDraw(
   if (!admin) return { message: "Cette page n’est plus accessible." };
 
   const report = await assignDailyChallenges();
+
+  // Same call as the scheduled task, for the same reason the draw itself is
+  // shared: a second, hand-rolled notification would eventually disagree with
+  // the real one, on the morning it was needed. It is replayable, so pressing
+  // this after the task already ran notifies nobody twice.
+  await notifyDailyChallenges(report.date);
 
   await logAdminAction({
     action: "challenges.drawn_manually",

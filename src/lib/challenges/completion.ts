@@ -52,6 +52,21 @@ export type CompletionReport = {
   completed: number;
   /** Assignments the evaluator could not judge yet (story 4.7). */
   unsupported: number;
+  /**
+   * What was just completed, in order.
+   *
+   * Returned rather than counted so the caller can group the notifications
+   * (story 6.6): one Sunday outing can settle three challenges at once, and
+   * three separate messages would read as noise — which is what gets
+   * notifications switched off.
+   */
+  completions: CompletedChallenge[];
+};
+
+export type CompletedChallenge = {
+  title: string;
+  /** Whether this completion also produced a card. */
+  cardGranted: boolean;
 };
 
 type OpenAssignment = {
@@ -59,6 +74,7 @@ type OpenAssignment = {
   assigned_for: string;
   edition_id: string;
   challenge: {
+    title: string;
     evaluator: string;
     config: Record<string, unknown>;
     points: number;
@@ -94,7 +110,7 @@ export async function applyActivity(
   const { data, error } = await admin
     .from("challenge_assignments")
     .select(
-      "id, assigned_for, edition_id, challenges (evaluator, config, points, duration_days)",
+      "id, assigned_for, edition_id, challenges (title, evaluator, config, points, duration_days)",
     )
     .eq("profile_id", activity.profileId)
     .eq("status", "open")
@@ -108,7 +124,7 @@ export async function applyActivity(
       profile: activity.profileId,
       code: error.code,
     });
-    return { examined: 0, completed: 0, unsupported: 0 };
+    return { examined: 0, completed: 0, unsupported: 0, completions: [] };
   }
 
   const assignments = (data ?? []) as unknown as Array<
@@ -117,8 +133,8 @@ export async function applyActivity(
     }
   >;
 
-  let completed = 0;
   let unsupported = 0;
+  const completions: CompletedChallenge[] = [];
 
   // Loaded once, lazily, and shared by every assignment that needs it.
   //
@@ -174,10 +190,20 @@ export async function applyActivity(
       verdict,
     );
 
-    if (written) completed += 1;
+    if (written.completed) {
+      completions.push({
+        title: challenge.title,
+        cardGranted: written.cardGranted,
+      });
+    }
   }
 
-  return { examined: assignments.length, completed, unsupported };
+  return {
+    examined: assignments.length,
+    completed: completions.length,
+    unsupported,
+    completions,
+  };
 }
 
 /**
@@ -250,12 +276,19 @@ async function readHistory(
   }));
 }
 
+export type CompletionOutcome = {
+  /** Whether this call is the one that completed it. */
+  completed: boolean;
+  /** Whether a card came with it. Null is normal until the visuals exist. */
+  cardGranted: boolean;
+};
+
 /**
- * @returns whether this call is the one that completed it.
+ * @returns what this call actually did.
  *
- * `false` covers two very different things — it was already done, or the
- * write failed — and the caller only needs the count. Both are logged
- * distinctly, which is where the difference matters.
+ * `completed: false` covers two very different things — it was already done,
+ * or the write failed — and both are logged distinctly, which is where the
+ * difference matters. The caller only needs to know whether to announce it.
  */
 async function recordCompletion(
   assignmentId: string,
@@ -263,7 +296,7 @@ async function recordCompletion(
   editionId: string,
   points: number,
   verdict: Extract<Verdict, { completed: true }>,
-): Promise<boolean> {
+): Promise<CompletionOutcome> {
   const admin = createAdminClient();
 
   // Drawn before the write, because the write is a transaction and must not
@@ -292,7 +325,7 @@ async function recordCompletion(
       assignment: assignmentId,
       code: error.code,
     });
-    return false;
+    return { completed: false, cardGranted: false };
   }
 
   const outcome = (data ?? [])[0];
@@ -301,8 +334,8 @@ async function recordCompletion(
     console.info("[défis] défi déjà validé, rien à faire", {
       assignment: assignmentId,
     });
-    return false;
+    return { completed: false, cardGranted: false };
   }
 
-  return true;
+  return { completed: true, cardGranted: Boolean(outcome.card_id) };
 }
