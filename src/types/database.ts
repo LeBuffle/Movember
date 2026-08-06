@@ -24,6 +24,10 @@ export type AssignmentSource =
 export type AssignmentStatus = "open" | "completed" | "missed";
 /** Where an activity came from (architecture D3). Garmin joins this list. */
 export type ActivityProviderKey = "strava" | "manual" | "simulated";
+export type CardRarity = "commune" | "rare" | "epique" | "legendaire";
+/** Only `challenge` and `daily_draw` count towards the ranking (D8). */
+export type CardGrantSource =
+  "challenge" | "daily_draw" | "pack" | "purchase" | "manual";
 
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
 import type { Difficulty, SportFamily } from "@/lib/challenges/sports";
@@ -461,6 +465,81 @@ export type Database = {
         >;
         Relationships: [];
       };
+      card_rarities: {
+        Row: {
+          slug: CardRarity;
+          label: string;
+          /** Relative, not a percentage. Tuned in SQL, never in code. */
+          weight: number;
+          rank: number;
+          created_at: string;
+        };
+        Insert: {
+          slug: CardRarity;
+          label: string;
+          weight: number;
+          rank: number;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["card_rarities"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      cards: {
+        Row: {
+          id: string;
+          edition_id: string;
+          title: string;
+          description: string;
+          rarity: CardRarity;
+          /** Empty until the visual exists. The album draws a placeholder. */
+          image_path: string;
+          /** Nothing is drawn before this is set. */
+          published_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          title: string;
+          description?: string;
+          rarity: CardRarity;
+          image_path?: string;
+          published_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["cards"]["Insert"]>;
+        Relationships: [];
+      };
+      card_grants: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          card_id: string;
+          /** Carries the integrity of the collection ranking (D8). */
+          source: CardGrantSource;
+          assignment_id: string | null;
+          granted_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          card_id: string;
+          source: CardGrantSource;
+          assignment_id?: string | null;
+          granted_at?: string;
+        };
+        /* No Update type: a grant is a fact, never a correction. */
+        Update: never;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;
@@ -501,6 +580,16 @@ export type Database = {
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      /** Completes a challenge and grants its card in one transaction. */
+      complete_challenge_with_card: {
+        Args: {
+          p_assignment_id: string;
+          p_points: number;
+          p_evidence: Record<string, unknown>;
+          p_card_id: string | null;
+        };
+        Returns: Array<{ completed: boolean; card_id: string | null }>;
       };
     };
     Enums: Record<string, never>;

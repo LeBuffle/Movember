@@ -38,6 +38,15 @@ function code(relative: string): string {
 
 const DAY = "2026-11-15";
 
+/** L'écriture de la réussite vit en base depuis la story 5.3. */
+const grantFunction = readFileSync(
+  path.join(
+    root,
+    "supabase/migrations/20260806140000_grant_card_with_completion.sql",
+  ),
+  "utf8",
+).replace(/--.*$/gm, "");
+
 function activity(overrides: Partial<Activity> = {}): Activity {
   return {
     id: "act-1",
@@ -329,21 +338,35 @@ describe("l’enregistrement d’une réussite", () => {
   it("ne revalide pas un défi déjà réussi", () => {
     // La condition est portée par l'écriture elle-même : c'est la seule qui
     // tienne quand deux activités arrivent au même instant.
-    const update = completion.slice(completion.indexOf("recordCompletion"));
-
-    expect(update).toMatch(
-      /status: "completed"[\s\S]*?\.eq\("status", "open"\)/,
+    //
+    // Depuis la story 5.3, cette écriture vit dans une fonction en base — le
+    // défi et sa carte doivent basculer dans la même transaction.
+    expect(grantFunction).toMatch(
+      /set status = 'completed'[\s\S]*?and status = 'open'/,
     );
   });
 
   it("recopie les points au moment de la réussite", () => {
     // La valeur du catalogue peut être corrigée en cours d'édition ; ce qui
     // est gagné ne doit pas bouger.
-    expect(completion).toMatch(/points_awarded: points/);
+    expect(grantFunction).toMatch(/points_awarded = p_points/);
+  });
+
+  it("attribue la carte dans la même transaction", () => {
+    // Le point d'attention de tout l'epic 5 : une erreur en cours ne peut pas
+    // laisser un participant avec un défi validé et pas de carte.
+    expect(grantFunction).toMatch(/insert into public\.card_grants/);
+    expect(grantFunction).toMatch(/on conflict \(assignment_id\)/);
+  });
+
+  it("valide le défi même sans carte disponible", () => {
+    // En septembre le catalogue est vide. Un défi sans carte est un dommage ;
+    // un défi qui ne se valide pas est un défaut.
+    expect(grantFunction).toMatch(/if p_card_id is not null then/);
   });
 
   it("garde la trace de ce qui a validé", () => {
-    expect(completion).toMatch(/evidence:/);
+    expect(completion).toMatch(/p_evidence:/);
   });
 
   it("revérifie la configuration avant de juger", () => {

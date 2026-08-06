@@ -4,7 +4,7 @@
 | --- | --- |
 | **Version** | v1 — Phase 4 BMAD (Scrum Master) |
 | **Date** | 3 août 2026 |
-| **Statut** | Epics 1, 2, 3 et 4 détaillés · epics 5 à 11 à détailler au fil de l'avancement |
+| **Statut** | Epics 1 à 5 détaillés · epics 6 à 11 à détailler au fil de l'avancement |
 
 ---
 
@@ -178,6 +178,41 @@ découvre sur un type, pas sur sept.
 
 ---
 
+## Epic 5 : Cartes et collection
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 5.1 | [Schéma des cartes, raretés et attributions](5.1.schema-cartes-raretes.md) | **Review** | 4.1 |
+| 5.2 | [Moteur de tirage pondéré par rareté](5.2.tirage-pondere-rarete.md) | **Review** | 5.1 |
+| 5.3 | [Attribution transactionnelle à la réussite d'un défi](5.3.attribution-transactionnelle.md) | **Review** | 5.2, 4.3 |
+| 5.4 | [Album de collection avec les deux compteurs](5.4.album-collection.md) | **Review** | 5.3 |
+| 5.5 | [Détail d'une carte et révélation](5.5.detail-carte-revelation.md) | Draft | 5.4 |
+| 5.6 | [Création et publication de cartes](5.6.back-office-cartes.md) | Draft | 5.1, 1.10 |
+| 5.7 | [Packs bonus du niveau 3](5.7.packs-bonus-niveau-3.md) | **Review** | 5.2, 2.4 |
+| 5.8 | [Galerie publique de la collection](5.8.galerie-publique.md) | Draft | 5.6 |
+
+### Ordre d'exécution
+
+```
+5.1 ──┬──► 5.2 ──┬──► 5.3 ──► 5.4 ──► 5.5
+      │          └──► 5.7
+      └──► 5.6 ──► 5.8
+```
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| **Visuels des cartes** *(chantier PO)* | 5.8 réellement | ⚠️ **Une cinquantaine de visuels à produire en septembre.** Des visuels de remplacement sont générés en développement, et les définitifs se substituent sans toucher au code — c'est la story 5.6 qui le permet |
+| Stockage Supabase configuré | 5.6 (téléversement) | Le reste de l'epic se mène sans |
+| **Probabilités de tirage** *(point A12)* | rien | Point de départ : commune 60 %, rare 28 %, épique 10 %, légendaire 2 %. Réglables en base, à calibrer en novembre |
+
+> **Le risque de cet epic n'est pas technique, il est graphique.** Une cinquantaine de cartes
+> à dessiner, et un album de silhouettes grises n'a jamais donné envie à personne de
+> collectionner quoi que ce soit.
+
+---
+
 ## Statuts BMAD
 
 `Draft` → `Approved` → `InProgress` → `Review` → `Done`
@@ -203,7 +238,7 @@ Une pull request par branche, squash merge dans `main` après validation du PO.
 
 ---
 
-## Stories des epics 5 à 11
+## Stories des epics 6 à 11
 
 Elles seront rédigées **au fil de l'avancement**, epic par epic, plutôt que toutes
 d'avance. Deux raisons :

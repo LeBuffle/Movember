@@ -7,6 +7,7 @@ import {
   EVALUATORS,
   type EvaluatorKey,
 } from "@/lib/challenges/evaluators/registry";
+import { pickCardForChallenge } from "@/lib/cards/grant";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -56,6 +57,7 @@ export type CompletionReport = {
 type OpenAssignment = {
   id: string;
   assigned_for: string;
+  edition_id: string;
   challenge: {
     evaluator: string;
     config: Record<string, unknown>;
@@ -92,7 +94,7 @@ export async function applyActivity(
   const { data, error } = await admin
     .from("challenge_assignments")
     .select(
-      "id, assigned_for, challenges (evaluator, config, points, duration_days)",
+      "id, assigned_for, edition_id, challenges (evaluator, config, points, duration_days)",
     )
     .eq("profile_id", activity.profileId)
     .eq("status", "open")
@@ -166,6 +168,8 @@ export async function applyActivity(
 
     const written = await recordCompletion(
       assignment.id,
+      activity.profileId,
+      assignment.edition_id,
       challenge.points,
       verdict,
     );
@@ -255,29 +259,33 @@ async function readHistory(
  */
 async function recordCompletion(
   assignmentId: string,
+  profileId: string,
+  editionId: string,
   points: number,
   verdict: Extract<Verdict, { completed: true }>,
 ): Promise<boolean> {
   const admin = createAdminClient();
 
-  const { data, error } = await admin
-    .from("challenge_assignments")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      // A copy of the points, taken now: the catalogue's value can be
-      // corrected mid-edition and what is earned must not move (D12).
-      points_awarded: points,
-      evidence: {
-        activity_ids: verdict.evidence.activityIds,
-        measured: verdict.evidence.measured,
-      },
-    })
-    .eq("id", assignmentId)
-    // The guard that makes a second activity harmless, and the only one that
-    // holds when two arrive at the same moment.
-    .eq("status", "open")
-    .select("id");
+  // Drawn before the write, because the write is a transaction and must not
+  // wait on anything. A null card is a normal answer — the catalogue is empty
+  // until the visuals arrive in September — and the challenge validates all
+  // the same. A challenge without a card is a shame; a challenge that fails
+  // to validate is a bug.
+  const cardId = await pickCardForChallenge(profileId, editionId);
+
+  // One function, one transaction: the challenge and its card switch
+  // together or not at all (story 5.3 AC 3). Two statements from here could
+  // not promise that, and the failure that matters — points awarded with no
+  // card — is the one a participant notices immediately.
+  const { data, error } = await admin.rpc("complete_challenge_with_card", {
+    p_assignment_id: assignmentId,
+    p_points: points,
+    p_evidence: {
+      activity_ids: verdict.evidence.activityIds,
+      measured: verdict.evidence.measured,
+    },
+    p_card_id: cardId,
+  });
 
   if (error) {
     console.error("[défis] réussite non enregistrée", {
@@ -287,13 +295,14 @@ async function recordCompletion(
     return false;
   }
 
-  const changed = (data ?? []).length > 0;
+  const outcome = (data ?? [])[0];
 
-  if (!changed) {
+  if (!outcome?.completed) {
     console.info("[défis] défi déjà validé, rien à faire", {
       assignment: assignmentId,
     });
+    return false;
   }
 
-  return changed;
+  return true;
 }

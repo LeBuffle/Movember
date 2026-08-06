@@ -2,6 +2,7 @@ import "server-only";
 
 import type Stripe from "stripe";
 
+import { grantBonusPacks } from "@/lib/cards/grant";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -74,6 +75,40 @@ export function readReferences(session: Stripe.Checkout.Session): {
  * considers the matter closed and never retries, so the payment is taken and
  * the participant never activated — with nothing left to notice it by.
  */
+/**
+ * The two packs that come with tier 3, if this is one.
+ *
+ * Never fails the activation. Somebody who paid must be let into the game
+ * even if their cards could not be drawn — the catalogue may simply be empty
+ * in September. The line logged here is what a human acts on.
+ */
+async function grantPacksForTier(registrationId: string): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data } = await admin
+    .from("registrations")
+    .select("profile_id, edition_id, registration_tiers (slug)")
+    .eq("id", registrationId)
+    .maybeSingle();
+
+  const row = data as unknown as {
+    profile_id: string;
+    edition_id: string;
+    registration_tiers: { slug: string } | null;
+  } | null;
+
+  if (!row || row.registration_tiers?.slug !== "legendaire") return;
+
+  const outcome = await grantBonusPacks(row.profile_id, row.edition_id);
+
+  if (outcome.granted > 0) {
+    console.info("[cartes] packs bonus attribués", {
+      registration: registrationId,
+      cards: outcome.granted,
+    });
+  }
+}
+
 export async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<ActivationResult> {
@@ -189,6 +224,15 @@ export async function handleCheckoutCompleted(
   }
 
   const changed = (activated ?? []).length > 0;
+
+  // The bonus packs of tier 3 (story 5.7). Run on every pass rather than
+  // only on the one that activated: a first delivery that died after the
+  // activation would otherwise leave somebody paid, active, and without the
+  // packs they bought — and nothing would ever come back for them.
+  //
+  // It is safe to run twice. The guard is a count of what this participant
+  // already received from packs, so a replay hands out nothing.
+  await grantPacksForTier(registrationId);
 
   console.info("[webhook] paiement traité", {
     session: session.id,

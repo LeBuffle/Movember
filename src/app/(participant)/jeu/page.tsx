@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChallengeCard } from "@/components/game/challenge-card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { ownSyncState } from "@/lib/activities/health";
 import { getParticipantChallenges } from "@/lib/challenges/assignments";
 import { todayInParis } from "@/lib/challenges/daily-draw";
@@ -103,6 +104,17 @@ export default async function GameHome() {
           </Link>
         )}
       </div>
+
+      {/* The album, reachable from the screen people open every morning. A
+          collection nobody can find is a collection nobody completes. */}
+      <p>
+        <Link
+          href="/jeu/collection"
+          className={buttonClasses({ variant: "secondary" })}
+        >
+          Ma collection de cartes
+        </Link>
+      </p>
 
       <AddressReminder context={shipping} />
 

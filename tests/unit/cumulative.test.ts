@@ -54,7 +54,53 @@ const state: FakeState = {
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
-    from() {
+    /* La validation passe désormais par une fonction en base, pour que le
+       défi et sa carte basculent ensemble (story 5.3). Le faux client la
+       joue : elle rend `completed` sauf si le défi était déjà clos. */
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      if (name !== "complete_challenge_with_card") {
+        return { data: null, error: null };
+      }
+
+      const id = String(args.p_assignment_id);
+      const closed = state.alreadyClosed.has(id);
+
+      if (!closed) {
+        state.updated.push({
+          id,
+          patch: {
+            status: "completed",
+            points_awarded: args.p_points,
+            evidence: args.p_evidence,
+          },
+        });
+      }
+
+      return {
+        data: [{ completed: !closed, card_id: null }],
+        error: null,
+      };
+    },
+    from(table: string) {
+      /* Le catalogue de cartes est vide dans ces tests : ce qu'ils vérifient,
+         c'est l'évaluation, pas le tirage. Un catalogue vide est d'ailleurs
+         l'état normal jusqu'en septembre. */
+      if (
+        table === "cards" ||
+        table === "card_rarities" ||
+        table === "card_grants"
+      ) {
+        const empty = {
+          select: () => empty,
+          eq: () => empty,
+          not: () => empty,
+          order: () => empty,
+          then: (resolve: (value: unknown) => void) =>
+            resolve({ data: [], error: null }),
+        };
+        return empty;
+      }
+
       const read = {
         eq: (column: string, value: unknown) => {
           state.filters[`eq:${column}`] = value;

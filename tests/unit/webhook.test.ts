@@ -65,6 +65,20 @@ vi.mock("@/lib/supabase/admin", () => ({
 
       if (table === "registrations") {
         return {
+          /* La lecture du niveau, pour les packs bonus de la story 5.7. Ces
+             tests portent sur le paiement ; le niveau renvoyé n'est pas
+             `legendaire`, donc aucun pack n'est attribué. */
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: {
+                  profile_id: "profil-1",
+                  edition_id: "edition-1",
+                  registration_tiers: { slug: "engage" },
+                },
+              }),
+            }),
+          }),
           update: (patch: Record<string, unknown>) => {
             state.updated.push(patch);
             return {
