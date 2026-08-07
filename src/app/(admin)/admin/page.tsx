@@ -2,10 +2,11 @@ import Link from "next/link";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { summarisePayments, type PaymentRow } from "@/lib/accounting/totals";
+import { getOverview } from "@/lib/admin/overview";
 import { ADMIN_SECTIONS } from "@/lib/admin/sections";
-import { CATALOGUE_TARGET, catalogueHealth } from "@/lib/challenges/catalogue";
 import { formatEuros } from "@/lib/registration/tiers";
 import { EDITION_MILESTONES, EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
@@ -32,15 +33,7 @@ export default async function AdminHome() {
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
 
-  // Counted here as well as on the catalogue screen, because this is the page
-  // someone opens in September to see where things stand — and a thin
-  // catalogue is the main risk of the whole game (story 4.2 AC 9).
-  const { count: activeChallenges } = await supabase
-    .from("challenges")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true);
-
-  const health = catalogueHealth(activeChallenges ?? 0);
+  const overview = await getOverview();
 
   // Same figure as the Collecte screen, computed the same way — from one
   // function, so the home page and the detail can never disagree.
@@ -61,11 +54,132 @@ export default async function AdminHome() {
           Animation de l’édition {EDITION_YEAR}
         </h1>
         <p className="text-ink-muted mt-2">
-          Le back-office se remplit au fil des développements. Les sections
-          listées ci-dessous existent déjà comme emplacements ; leurs écrans
-          arrivent avec les lots indiqués.
+          Ce qui demande votre attention aujourd’hui, puis l’état de l’édition.
         </p>
       </div>
+
+      {/* First, because it is the first question of a November morning: did
+          this morning's draw work? Each alert carries the address of the
+          screen that resolves it — an alert that leads nowhere is a worry,
+          not information. */}
+      {overview.alerts.length > 0 && (
+        <section aria-labelledby="attention" className="space-y-3">
+          <h2 id="attention" className="text-ink text-xl font-bold">
+            À traiter
+          </h2>
+
+          {overview.alerts.map((alert) => (
+            <Alert key={alert.title} tone={alert.tone} title={alert.title}>
+              <p>{alert.detail}</p>
+              <p className="mt-3">
+                <Link
+                  href={alert.href}
+                  className={buttonClasses({ size: "sm" })}
+                >
+                  {alert.action}
+                </Link>
+              </p>
+            </Alert>
+          ))}
+        </section>
+      )}
+
+      <section aria-labelledby="aujourdhui" className="space-y-4">
+        <h2 id="aujourdhui" className="text-ink text-xl font-bold">
+          Aujourd’hui
+        </h2>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card>
+            <CardTitle>Participants actifs</CardTitle>
+            <CardBody>
+              <p className="text-brand-blue text-3xl font-extrabold">
+                {overview.participants}
+              </p>
+              <p className="mt-1 text-sm">Inscriptions payées et actives.</p>
+            </CardBody>
+          </Card>
+
+          <Card accent={overview.participants > 0 && overview.assigned === 0}>
+            <CardTitle>Défis attribués</CardTitle>
+            <CardBody>
+              <p className="text-brand-blue text-3xl font-extrabold">
+                {overview.assigned}
+              </p>
+              <p className="mt-1 text-sm">
+                Pour la journée du jour.{" "}
+                <Link
+                  href="/admin/defis/attribution"
+                  className="underline underline-offset-4"
+                >
+                  L’attribution
+                </Link>
+              </p>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardTitle>Déjà réussis</CardTitle>
+            <CardBody>
+              <p className="text-brand-blue text-3xl font-extrabold">
+                {overview.completed}
+              </p>
+              <p className="mt-1 text-sm">
+                Validés par une sortie remontée, sans rien à déclarer.
+              </p>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* In days, not in a percentage. "34 défis restants" says nothing;
+            "le catalogue tient onze jours" says when to get to work. */}
+        <Card
+          accent={
+            overview.catalogue.daysLeft !== null &&
+            overview.catalogue.daysLeft <= 7
+          }
+        >
+          <CardTitle>Le catalogue</CardTitle>
+          <CardBody>
+            <p>
+              <strong className="text-ink">
+                {overview.catalogue.available} défi
+                {overview.catalogue.available > 1 ? "s" : ""} disponible
+                {overview.catalogue.available > 1 ? "s" : ""}
+              </strong>
+              {overview.catalogue.daysLeft !== null && (
+                <>
+                  {" "}
+                  — de quoi tenir environ{" "}
+                  <strong className="text-ink">
+                    {overview.catalogue.daysLeft} jour
+                    {overview.catalogue.daysLeft > 1 ? "s" : ""}
+                  </strong>{" "}
+                  au rythme de {overview.catalogue.dailyNeed} participant
+                  {overview.catalogue.dailyNeed > 1 ? "s" : ""} par jour.
+                </>
+              )}
+              {overview.catalogue.daysLeft === null && (
+                <>
+                  {" "}
+                  — aucun participant actif pour l’instant, donc rien à
+                  projeter.
+                </>
+              )}
+            </p>
+            <p className="mt-2 text-sm">
+              {overview.catalogue.used} attribution
+              {overview.catalogue.used > 1 ? "s" : ""} depuis le début.{" "}
+              <Link
+                href="/admin/defis"
+                className="underline underline-offset-4"
+              >
+                Gérer le catalogue
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+      </section>
 
       <section aria-labelledby="indicateurs" className="space-y-4">
         <h2 id="indicateurs" className="text-ink text-xl font-bold">
@@ -109,21 +223,17 @@ export default async function AdminHome() {
             </CardBody>
           </Card>
 
-          <Card accent={health.tone !== "success"}>
-            <CardTitle>Défis en jeu</CardTitle>
+          <Card>
+            <CardTitle>Journal</CardTitle>
             <CardBody>
-              <p className="text-brand-blue text-3xl font-extrabold">
-                {activeChallenges ?? 0}
-              </p>
-              <p className="mt-1 text-sm">
-                {health.tone === "success"
-                  ? "Le catalogue est assez fourni."
-                  : `Objectif ${CATALOGUE_TARGET}. `}
+              <p className="text-sm">
+                Ce que l’organisation a fait : arbitrages, remboursements,
+                publications, envois.{" "}
                 <Link
-                  href="/admin/defis"
+                  href="/admin/journal"
                   className="underline underline-offset-4"
                 >
-                  Gérer le catalogue
+                  Ouvrir le journal
                 </Link>
               </p>
             </CardBody>

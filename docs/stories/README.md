@@ -328,14 +328,14 @@ sont celles qui n'appartiennent à aucun autre epic.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 8.1 | [Tableau de bord d'accueil de l'administrateur](8.1.tableau-de-bord-admin.md) | Draft | 1.10, 4.4 |
-| 8.2 | [Liste et recherche des participants](8.2.liste-participants.md) | Draft | 1.10, 2.4 |
-| 8.3 | [Fiche détaillée d'un participant](8.3.fiche-participant.md) | Draft | 8.2 |
-| 8.4 | [État du catalogue de défis et alertes](8.4.etat-catalogue-defis.md) | Draft | 4.1, 4.4 |
+| 8.1 | [Tableau de bord d'accueil de l'administrateur](8.1.tableau-de-bord-admin.md) | **Review** | 1.10, 4.4 |
+| 8.2 | [Liste et recherche des participants](8.2.liste-participants.md) | **Review** | 1.10, 2.4 |
+| 8.3 | [Fiche détaillée d'un participant](8.3.fiche-participant.md) | **Review** | 8.2 |
+| 8.4 | [État du catalogue de défis et alertes](8.4.etat-catalogue-defis.md) | **Review** | 4.1, 4.4 |
 | 8.5 | [Prévisualisation avant publication](8.5.previsualisation.md) | Draft | 4.2, 5.6 |
 | 8.6 | [Gestion des équipes par l'administrateur](8.6.gestion-equipes-admin.md) | Draft | 7.2 |
 | 8.7 | [Suspension ou exclusion d'un participant](8.7.suspension-participant.md) | Draft | 8.3 |
-| 8.8 | [Journal des actions administratives](8.8.journal-actions-admin.md) | Draft | 1.10 |
+| 8.8 | [Journal des actions administratives](8.8.journal-actions-admin.md) | **Review** | 1.10 |
 
 ### Ordre d'exécution
 

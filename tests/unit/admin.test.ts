@@ -159,6 +159,7 @@ describe("les sections du back-office", () => {
       "collecte",
       "defis",
       "equipes",
+      "journal",
       "livraisons",
       "notifications",
       "participants",

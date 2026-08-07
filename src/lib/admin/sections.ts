@@ -54,7 +54,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     description:
       "Qui est inscrit, à quel niveau, et où en est chacun dans le défi.",
     epic: "epic 8",
-    status: "comingSoon",
+    status: "available",
   },
   {
     slug: "equipes",
@@ -88,6 +88,14 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     // what decision P2 was waiting on. The line-by-line export — the part
     // that gets reconciled against the Stripe statement — is still epic 9.
     epic: "epic 9",
+    status: "available",
+  },
+  {
+    slug: "journal",
+    label: "Journal",
+    description:
+      "Ce que l’organisation a fait : arbitrages, remboursements, publications, envois.",
+    epic: "epic 8",
     status: "available",
   },
   {
