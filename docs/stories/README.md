@@ -364,6 +364,52 @@ sont celles qui n'appartiennent à aucun autre epic.
 
 ---
 
+## Epic 9 : Collecte, comptabilité et intégrité du jeu
+
+**Deux moitiés sans rapport l'une avec l'autre.** La comptabilité est largement livrée avec
+l'epic 2 ; l'anti-triche est entièrement à faire, et c'est le vrai contenu de cet epic.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 9.1 | [Tableau de bord de collecte](9.1.tableau-collecte.md) | Draft | 2.6 |
+| 9.2 | [Ventilation par niveau](9.2.ventilation-collecte.md) | Draft | 9.1 |
+| 9.3 | [Export comptable](9.3.export-comptable.md) | Draft | 2.6 |
+| 9.4 | [Export des adresses de livraison](9.4.export-livraisons.md) | Draft | 2.7 |
+| 9.5 | [Réconciliation Stripe et rejeu](9.5.reconciliation-stripe.md) | Draft | 2.4, 2.6 |
+| 9.6 | [Signalement des activités aberrantes](9.6.signalement-activites.md) | Draft | 3.4 |
+| 9.7 | [File d'arbitrage](9.7.file-arbitrage.md) | Draft | 9.6 |
+| 9.8 | [Activités manuelles et importées](9.8.activites-manuelles.md) | Draft | 3.4 |
+| 9.9 | [Seuils paramétrables](9.9.seuils-parametrables.md) | Draft | 9.6 |
+
+### Ordre d'exécution
+
+```
+9.8 (indépendante, et la plus urgente : le drapeau existe mais rien ne l'utilise)
+
+9.6 ──┬──► 9.7
+      └──► 9.9
+
+9.2 ──► 9.3
+
+9.5 (indépendante)
+
+9.1, 9.4 : déjà livrées, à vérifier
+```
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| Des paiements réels chez Stripe | Le rapprochement de 9.3 | Le format se vérifie sur des paiements de test |
+| Des activités réelles | Le réglage des seuils de 9.6 | Les règles se mènent sur des activités simulées ; les seuils justes demandent un mois de jeu |
+
+> **Signaler, jamais rejeter** (architecture D10). Un faux positif qui invalide le défi d'un
+> participant honnête fait plus de dégâts qu'un tricheur qui passe : le premier arrête de
+> jouer et le raconte, le second gagne un classement auquel personne ne tient vraiment.
+
+
+---
+
 ## Statuts BMAD
 
 `Draft` → `Approved` → `InProgress` → `Review` → `Done`
