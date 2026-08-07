@@ -16,6 +16,9 @@ export const PARTICIPANT_PREFIXES = [
   /* Choosing a tier and accepting the terms. Protected because it records an
      acceptance under someone's name — that requires knowing whose. */
   "/participer",
+  /* Where a suspended participant lands. Behind a session because it names
+     the reason they were set aside (story 8.7). */
+  "/suspendu",
 ] as const;
 
 /** Requires a signed-in user whose role is `admin`. */

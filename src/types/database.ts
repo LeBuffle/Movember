@@ -77,6 +77,11 @@ export type Database = {
           role: ProfileRole;
           created_at: string;
           deleted_at: string | null;
+          /** Set aside by the organisation (story 8.7). */
+          suspended_at: string | null;
+          /** Required whenever `suspended_at` is set — a constraint enforces it. */
+          suspension_reason: string | null;
+          suspended_by: string | null;
         };
         Insert: {
           id: string;
@@ -86,6 +91,9 @@ export type Database = {
           role?: ProfileRole;
           created_at?: string;
           deleted_at?: string | null;
+          suspended_at?: string | null;
+          suspension_reason?: string | null;
+          suspended_by?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];

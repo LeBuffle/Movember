@@ -26,6 +26,14 @@ export type ParticipantAccess = {
   status: RegistrationStatus | null;
   /** The only field a caller should branch on. */
   isActive: boolean;
+  /**
+   * Set when the organisation has set this account aside (story 8.7).
+   *
+   * Distinct from `isActive` being false, and the distinction is the whole
+   * point: an unpaid registration is a step not yet taken, a suspension is a
+   * decision taken about somebody. They do not deserve the same screen.
+   */
+  suspension: { since: string; reason: string } | null;
 };
 
 export async function getParticipantAccess(): Promise<ParticipantAccess> {
@@ -35,7 +43,37 @@ export async function getParticipantAccess(): Promise<ParticipantAccess> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { signedIn: false, status: null, isActive: false };
+  if (!user)
+    return {
+      signedIn: false,
+      status: null,
+      isActive: false,
+      suspension: null,
+    };
+
+  // Read before the registration, and it settles the question on its own: a
+  // suspended account does not enter, whatever it paid.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("suspended_at, suspension_reason")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const suspended = profile?.suspended_at
+    ? {
+        since: profile.suspended_at,
+        reason: profile.suspension_reason ?? "",
+      }
+    : null;
+
+  if (suspended) {
+    return {
+      signedIn: true,
+      status: null,
+      isActive: false,
+      suspension: suspended,
+    };
+  }
 
   const { data: edition } = await supabase
     .from("editions")
@@ -43,7 +81,8 @@ export async function getParticipantAccess(): Promise<ParticipantAccess> {
     .eq("year", EDITION_YEAR)
     .maybeSingle();
 
-  if (!edition) return { signedIn: true, status: null, isActive: false };
+  if (!edition)
+    return { signedIn: true, status: null, isActive: false, suspension: null };
 
   const { data } = await supabase
     .from("registrations")
@@ -57,5 +96,10 @@ export async function getParticipantAccess(): Promise<ParticipantAccess> {
   // Named explicitly rather than `status !== "pending"`. A registration that
   // was refunded or cancelled is not pending either, and must not open
   // anything.
-  return { signedIn: true, status, isActive: status === "active" };
+  return {
+    signedIn: true,
+    status,
+    isActive: status === "active",
+    suspension: null,
+  };
 }

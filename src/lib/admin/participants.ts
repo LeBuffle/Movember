@@ -31,6 +31,8 @@ export type ParticipantRow = {
   registrationStatus: string | null;
   /** Whether a sporting account is linked and healthy. */
   connection: "none" | "linked" | "broken";
+  /** Set when the organisation has set this account aside (story 8.7). */
+  suspendedAt: string | null;
 };
 
 export type ParticipantsPage = {
@@ -55,6 +57,8 @@ type ProfileRow = {
   id: string;
   display_name: string;
   email: string;
+  suspended_at: string | null;
+  suspension_reason: string | null;
 };
 
 /**
@@ -75,7 +79,9 @@ export async function listParticipants(
 
   let request = supabase
     .from("profiles")
-    .select("id, display_name, email", { count: "exact" })
+    .select("id, display_name, email, suspended_at, suspension_reason", {
+      count: "exact",
+    })
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .range(from, from + PAGE_SIZE - 1);
@@ -116,6 +122,7 @@ export async function listParticipants(
       tier: registrations.get(row.id)?.tier ?? null,
       registrationStatus: registrations.get(row.id)?.status ?? null,
       connection: connections.get(row.id) ?? "none",
+      suspendedAt: row.suspended_at,
     })),
     total,
     page: Math.max(1, page),
@@ -224,6 +231,7 @@ export type ParticipantDetail = {
   cards: Array<{ title: string; source: string; grantedAt: string }>;
   team: { name: string; role: string } | null;
   shipping: { city: string; country: string } | null;
+  suspension: { since: string; reason: string } | null;
 };
 
 /**
@@ -243,7 +251,7 @@ export async function getParticipant(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, email")
+    .select("id, display_name, email, suspended_at, suspension_reason")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -276,7 +284,11 @@ export async function getParticipant(
           ? "broken"
           : "linked"
         : "none",
+      suspendedAt: row.suspended_at,
     },
+    suspension: row.suspended_at
+      ? { since: row.suspended_at, reason: row.suspension_reason ?? "" }
+      : null,
     registration,
     connection,
     challenges,

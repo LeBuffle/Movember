@@ -37,6 +37,10 @@ export default async function GameLayout({
 
   if (!access.signedIn) redirect(ROUTES.signIn);
 
+  // A suspension is not an unfinished registration, and sending somebody
+  // there would tell them to pay again for something they already paid for.
+  if (access.suspension) redirect("/suspendu");
+
   if (!access.isActive) {
     // `/participer` reads the registration and says where things stand —
     // choice not made, payment interrupted, or confirmation pending.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { SuspensionForm } from "@/components/admin/suspension-form";
 import { Badge } from "@/components/ui/badge";
 import { getParticipant } from "@/lib/admin/participants";
 import { formatEuros } from "@/lib/registration/tiers";
@@ -42,6 +43,7 @@ export default async function ParticipantPage({
     cards,
     team,
     shipping,
+    suspension,
   } = participant;
 
   const succeeded = challenges.filter(
@@ -62,6 +64,11 @@ export default async function ParticipantPage({
         <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
           {profile.displayName}
         </h1>
+        {suspension && (
+          <p className="mt-2">
+            <Badge tone="danger">Suspendu</Badge>
+          </p>
+        )}
         <p className="text-ink-muted mt-1 text-sm break-all">{profile.email}</p>
       </div>
 
@@ -198,6 +205,15 @@ export default async function ParticipantPage({
             réclamer avant décembre.
           </Empty>
         )}
+      </Section>
+
+      {/* Last, and behind a first press. The rest of this screen is read a
+          dozen times a day; this is used once a season, if ever. */}
+      <Section title="Suspension">
+        <SuspensionForm
+          participantId={profile.id}
+          suspended={suspension ? { ...suspension, by: null } : null}
+        />
       </Section>
     </div>
   );

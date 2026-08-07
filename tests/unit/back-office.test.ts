@@ -183,3 +183,146 @@ describe("les sections annoncées existent", () => {
     }
   });
 });
+
+/* =========================================================================
+ * Suspendre un participant (story 8.7)
+ *
+ * Une fonction qu'on espère ne jamais utiliser. Cela ne la rend pas
+ * facultative, et cela impose sa conception : difficile à déclencher par
+ * accident, facile à annuler.
+ * ====================================================================== */
+
+const suspensionMigration = read(
+  "supabase/migrations/20260806250000_participant_suspension.sql",
+).replace(/--.*$/gm, "");
+const suspension = code(read("src/lib/admin/suspension.ts"));
+const suspensionForm = code(read("src/components/admin/suspension-form.tsx"));
+const suspendedPage = code(read("src/app/(participant)/suspendu/page.tsx"));
+const gameLayout = code(read("src/app/(participant)/jeu/layout.tsx"));
+const access = code(read("src/lib/registration/access.ts"));
+
+describe("suspendre n'est pas rembourser", () => {
+  it("aucune écriture ne touche à l'inscription ni au paiement", () => {
+    // Confondre les deux dans un seul geste, c'est prendre la seconde
+    // décision sans l'avoir voulu.
+    expect(suspension).not.toMatch(/from\("registrations"\)/);
+    expect(suspension).not.toMatch(/from\("payments"\)/);
+    expect(suspension).not.toMatch(/refund/i);
+  });
+
+  it("et l'écran le dit", () => {
+    expect(suspensionForm).toMatch(/paiement restent intacts/);
+    expect(suspensionForm).toMatch(/remboursement est une décision/);
+  });
+});
+
+describe("le motif est obligatoire", () => {
+  it("la base refuse une suspension sans motif", () => {
+    // La garde est en base plutôt que dans le formulaire : un formulaire se
+    // contourne, une contrainte non.
+    expect(suspensionMigration).toMatch(
+      /constraint profiles_suspension_needs_reason/,
+    );
+    expect(suspensionMigration).toMatch(
+      /suspended_at is not null and suspension_reason is not null/,
+    );
+  });
+
+  it("et le code le vérifie avant d'écrire", () => {
+    expect(suspension).toMatch(/reason\.length < 3 \|\| reason\.length > 500/);
+  });
+});
+
+describe("la suspension ne se pose que par l'organisation", () => {
+  it("un déclencheur l'impose, la politique de ligne ne le pourrait pas", () => {
+    // La sécurité au niveau des lignes filtre des LIGNES, pas des COLONNES :
+    // sans ce déclencheur, un participant pourrait lever la sienne.
+    expect(suspensionMigration).toMatch(
+      /create trigger profiles_suspension_is_admin_only/,
+    );
+    expect(suspensionMigration).toMatch(/not public\.is_admin\(\)/);
+  });
+
+  it("et un administrateur ne peut pas se suspendre lui-même", () => {
+    // L'écran qui lève une suspension est derrière la même porte.
+    expect(suspension).toMatch(/id === admin\.id/);
+  });
+});
+
+describe("elle est réversible, et les deux gestes sont tracés", () => {
+  it("poser et lever écrivent chacun au journal", () => {
+    expect(suspension).toMatch(/participant\.suspended/);
+    expect(suspension).toMatch(/participant\.reinstated/);
+  });
+
+  it("la garde est portée par l'écriture", () => {
+    // Deux bénévoles sur deux téléphones ne peuvent pas écraser le premier
+    // motif par un second.
+    expect(suspension).toMatch(/\.is\("suspended_at", null\)/);
+    expect(suspension).toMatch(/\.not\("suspended_at", "is", null\)/);
+  });
+
+  it("et lever est plus simple que poser", () => {
+    // Défaire ne doit jamais être plus difficile que faire : la pose demande
+    // deux appuis et un motif, la levée un seul appui.
+    expect(suspensionForm).toMatch(/setOpen\(true\)/);
+    expect(suspensionForm).toMatch(/Lever la suspension/);
+  });
+});
+
+describe("un suspendu disparaît des classements", () => {
+  it("la vue les exclut à la source", () => {
+    // Un filtre applicatif serait à répéter dans les classements individuels,
+    // le classement d'équipe et les compteurs collectifs : le premier oublié
+    // annulerait la mesure.
+    expect(suspensionMigration).toMatch(/pr\.suspended_at is null/);
+    expect(suspensionMigration).toMatch(
+      /create materialized view public\.leaderboard_entries/,
+    );
+  });
+
+  it("et la vue est repeuplée par la migration elle-même", () => {
+    // Une vue matérialisée est vide tant qu'elle n'a pas été rafraîchie.
+    expect(suspensionMigration).toMatch(
+      /refresh materialized view public\.leaderboard_entries;/,
+    );
+  });
+
+  it("son index unique survit à la recréation", () => {
+    // Sans lui, le rafraîchissement `concurrently` devient impossible et le
+    // classement se vide pour tout le monde quatre fois par heure.
+    expect(suspensionMigration).toMatch(
+      /create unique index leaderboard_entries_profile/,
+    );
+  });
+});
+
+describe("ce que voit le participant", () => {
+  it("une explication, pas une page d'erreur", () => {
+    expect(gameLayout).toMatch(/access\.suspension/);
+    expect(suspendedPage).toMatch(/Votre accès a été suspendu/);
+    expect(suspendedPage).not.toMatch(/notFound\(\)/);
+  });
+
+  it("le motif lui est donné", () => {
+    // Quelqu'un qui ne sait pas pourquoi ne peut pas répondre — et la
+    // première chose qu'il fera est de créer un second compte.
+    expect(suspendedPage).toMatch(/access\.suspension\.reason/);
+  });
+
+  it("et on lui dit que son paiement n'est pas annulé", () => {
+    expect(suspendedPage).toMatch(/paiement ne sont pas annulés/);
+  });
+
+  it("sans barre d'onglets, qui le renverrait ici", () => {
+    expect(suspendedPage).toMatch(/tabs=\{false\}/);
+  });
+
+  it("une suspension n'est pas une inscription inachevée", () => {
+    // L'y renvoyer lui dirait de payer de nouveau ce qu'il a déjà payé.
+    expect(access).toMatch(
+      /suspension: \{ since: string; reason: string \} \| null/,
+    );
+    expect(gameLayout).toMatch(/redirect\("\/suspendu"\)/);
+  });
+});
