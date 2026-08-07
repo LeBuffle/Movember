@@ -319,6 +319,51 @@ les quatre stories qui la lisent sont des écrans.
 
 ---
 
+## Epic 8 : Back-office d'animation
+
+**Epic transversal.** Quatre de ses tranches ont déjà été livrées avec les epics qui les
+utilisent : la coquille et le rôle administrateur (1.10), le catalogue de défis (4.2), les
+cartes (5.6), le fil d'actualité (7.8) et les notifications (6.8). Les stories ci-dessous
+sont celles qui n'appartiennent à aucun autre epic.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 8.1 | [Tableau de bord d'accueil de l'administrateur](8.1.tableau-de-bord-admin.md) | Draft | 1.10, 4.4 |
+| 8.2 | [Liste et recherche des participants](8.2.liste-participants.md) | Draft | 1.10, 2.4 |
+| 8.3 | [Fiche détaillée d'un participant](8.3.fiche-participant.md) | Draft | 8.2 |
+| 8.4 | [État du catalogue de défis et alertes](8.4.etat-catalogue-defis.md) | Draft | 4.1, 4.4 |
+| 8.5 | [Prévisualisation avant publication](8.5.previsualisation.md) | Draft | 4.2, 5.6 |
+| 8.6 | [Gestion des équipes par l'administrateur](8.6.gestion-equipes-admin.md) | Draft | 7.2 |
+| 8.7 | [Suspension ou exclusion d'un participant](8.7.suspension-participant.md) | Draft | 8.3 |
+| 8.8 | [Journal des actions administratives](8.8.journal-actions-admin.md) | Draft | 1.10 |
+
+### Ordre d'exécution
+
+```
+8.2 ──► 8.3 ──► 8.7
+
+8.1 (indépendante)
+8.4 (indépendante)
+8.8 (indépendante)
+
+8.5, 8.6 : déjà livrées, à vérifier
+```
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| Des participants réels | La vérification de 8.1 à 8.4 | Les écrans se mènent sur des comptes de test |
+| Un catalogue rempli | La projection de rupture (8.4) | La projection se vérifie sur trois défis |
+
+> **Le critère de sortie de cet epic n'est pas technique** : un bénévole non technique doit
+> pouvoir créer un défi, publier une carte et envoyer une notification depuis son
+> téléphone, sans aide et sans documentation. Il se vérifie avec le PO, sur son téléphone,
+> avant le gel des fonctionnalités.
+
+
+---
+
 ## Statuts BMAD
 
 `Draft` → `Approved` → `InProgress` → `Review` → `Done`
