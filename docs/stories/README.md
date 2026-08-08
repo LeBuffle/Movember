@@ -376,10 +376,10 @@ l'epic 2 ; l'anti-triche est entièrement à faire, et c'est le vrai contenu de 
 | 9.3 | [Export comptable](9.3.export-comptable.md) | Draft | 2.6 |
 | 9.4 | [Export des adresses de livraison](9.4.export-livraisons.md) | Draft | 2.7 |
 | 9.5 | [Réconciliation Stripe et rejeu](9.5.reconciliation-stripe.md) | Draft | 2.4, 2.6 |
-| 9.6 | [Signalement des activités aberrantes](9.6.signalement-activites.md) | Draft | 3.4 |
-| 9.7 | [File d'arbitrage](9.7.file-arbitrage.md) | Draft | 9.6 |
-| 9.8 | [Activités manuelles et importées](9.8.activites-manuelles.md) | Draft | 3.4 |
-| 9.9 | [Seuils paramétrables](9.9.seuils-parametrables.md) | Draft | 9.6 |
+| 9.6 | [Signalement des activités aberrantes](9.6.signalement-activites.md) | **Review** | 3.4 |
+| 9.7 | [File d'arbitrage](9.7.file-arbitrage.md) | **Review** | 9.6 |
+| 9.8 | [Activités manuelles et importées](9.8.activites-manuelles.md) | **Review** | 3.4 |
+| 9.9 | [Seuils paramétrables](9.9.seuils-parametrables.md) | **Review** | 9.6 |
 
 ### Ordre d'exécution
 

@@ -733,6 +733,63 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["news_posts"]["Insert"]>;
         Relationships: [];
       };
+      integrity_settings: {
+        Row: {
+          id: boolean;
+          max_run_speed_kmh: number;
+          max_bike_speed_kmh: number;
+          max_duration_hours: number;
+          max_elevation_per_km: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          max_run_speed_kmh?: number;
+          max_bike_speed_kmh?: number;
+          max_duration_hours?: number;
+          max_elevation_per_km?: number;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["integrity_settings"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      activity_flags: {
+        Row: {
+          id: string;
+          activity_id: string;
+          profile_id: string;
+          /** The rule that tripped, in French: it is read in the queue. */
+          rule: string;
+          observed: number;
+          threshold: number;
+          unit: string;
+          status: "pending" | "accepted" | "dismissed";
+          resolution_reason: string | null;
+          resolved_by: string | null;
+          resolved_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          activity_id: string;
+          profile_id: string;
+          rule: string;
+          observed: number;
+          threshold: number;
+          unit: string;
+          status?: "pending" | "accepted" | "dismissed";
+          resolution_reason?: string | null;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["activity_flags"]["Insert"]
+        >;
+        Relationships: [];
+      };
       admin_audit_log: {
         Row: {
           id: string;

@@ -13,6 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { getOwnConnection } from "@/lib/activities/connection";
+import { ownManualCount } from "@/lib/activities/own";
 import {
   CONSENT_COLLECTED,
   CONSENT_NEVER_COLLECTED,
@@ -60,24 +61,15 @@ export default async function ActivityConsentPage({
   const raw = query.erreur;
   const failure = Array.isArray(raw) ? raw[0] : raw;
 
-  const [consent, connection] = await Promise.all([
+  const [consent, connection, manual] = await Promise.all([
     getConsent(),
     getOwnConnection(),
+    ownManualCount(),
   ]);
 
   return (
     <ParticipantShell title="Mes activités sportives" eyebrow="Mon compte">
-      <p className="text-ink-muted text-sm">
-        <Link href={ROUTES.account} className="underline underline-offset-4">
-          Mon compte
-        </Link>
-      </p>
-
-      <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-        Mes activités sportives
-      </h1>
-
-      <p className="text-ink-muted mt-3">
+      <p className="text-ink-muted">
         Le jeu valide vos défis à partir de vos sorties enregistrées sur Strava.
         Voici exactement ce que cela veut dire.
       </p>
@@ -91,6 +83,30 @@ export default async function ActivityConsentPage({
                 <li key={item}>{item}</li>
               ))}
             </ul>
+          </CardBody>
+        </Card>
+
+        {/* Said here rather than nowhere. An outing that comes through and
+            validates nothing, with no explanation, is a message to support —
+            and the participant is right to send it: from where they stand,
+            the game simply did not react. */}
+        <Card>
+          <CardTitle>Les sorties saisies à la main</CardTitle>
+          <CardBody>
+            <p className="text-ink text-sm">
+              Une sortie <strong>tapée à la main</strong> dans Strava ne valide
+              aucun défi : le jeu repose sur ce qui a été enregistré. Une sortie{" "}
+              <strong>importée depuis une montre</strong> — Garmin, Polar, Coros
+              — compte normalement, c’est le cas le plus courant.
+            </p>
+            {manual > 0 && (
+              <p className="text-ink-muted mt-2 text-sm">
+                {manual} de vos sorties {manual > 1 ? "ont" : "a"} été saisie
+                {manual > 1 ? "s" : ""} à la main. Elle{manual > 1 ? "s" : ""}{" "}
+                figure{manual > 1 ? "nt" : ""} dans vos totaux personnels, mais
+                n’{manual > 1 ? "ont" : "a"} validé aucun défi.
+              </p>
+            )}
           </CardBody>
         </Card>
 

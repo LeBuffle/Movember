@@ -103,8 +103,8 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Arbitrage",
     description:
       "Les activités douteuses signalées automatiquement, à valider ou à écarter.",
-    epic: "epic 10",
-    status: "comingSoon",
+    epic: "epic 9",
+    status: "available",
   },
 ];
 

@@ -61,6 +61,11 @@ export type CompletionReport = {
    * notifications switched off.
    */
   completions: CompletedChallenge[];
+  /**
+   * Set when the activity was typed in by hand rather than recorded (story
+   * 9.8). Nothing was evaluated, and that is not a failure to report as one.
+   */
+  skippedManual?: boolean;
 };
 
 export type CompletedChallenge = {
@@ -105,6 +110,27 @@ type OpenAssignment = {
 export async function applyActivity(
   activity: Activity,
 ): Promise<CompletionReport> {
+  // **A hand-typed outing validates nothing** (story 9.8, architecture D10).
+  // Strava lets anyone declare a 42 km run without moving; the game rests on
+  // what was recorded, not on what was claimed.
+  //
+  // The distinction is manual versus imported, not GPS versus not-GPS.
+  // Refusing everything that did not come straight from a phone's sensor
+  // would exclude Garmin, Polar and Coros users — that is, the most committed
+  // participants.
+  //
+  // Checked once, here, rather than in each of the seven evaluators. A rule
+  // repeated seven times is a rule that will hold in six places.
+  if (activity.isManual) {
+    return {
+      examined: 0,
+      completed: 0,
+      unsupported: 0,
+      completions: [],
+      skippedManual: true,
+    };
+  }
+
   const admin = createAdminClient();
 
   const { data, error } = await admin
@@ -235,6 +261,10 @@ async function readHistory(
       "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters, is_manual",
     )
     .eq("profile_id", activity.profileId)
+    // Same rule as above, and it has to be here too: a cumulative challenge
+    // adds up several outings, and a hand-typed one would slip into the total
+    // without ever having been judged on its own.
+    .eq("is_manual", false)
     .gte("local_date", addDays(activity.localDate, -(MAX_WINDOW_DAYS - 1)))
     .lte("local_date", addDays(activity.localDate, MAX_WINDOW_DAYS - 1))
     .order("local_date", { ascending: true })

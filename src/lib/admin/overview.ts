@@ -1,6 +1,7 @@
 import "server-only";
 
 import { todayInParis } from "@/lib/challenges/daily-draw";
+import { pendingFlagCount } from "@/lib/integrity/queue";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { createClient } from "@/lib/supabase/server";
 
@@ -81,14 +82,21 @@ export async function getOverview(): Promise<Overview> {
 
   if (!edition) return { ...EMPTY, today };
 
-  const [participants, todays, catalogue, unpublishedCards, brokenLinks] =
-    await Promise.all([
-      countActiveRegistrations(edition.id),
-      countTodaysAssignments(edition.id, today),
-      catalogueState(edition.id),
-      countUnpublishedCards(edition.id),
-      countBrokenConnections(),
-    ]);
+  const [
+    participants,
+    todays,
+    catalogue,
+    unpublishedCards,
+    brokenLinks,
+    flagged,
+  ] = await Promise.all([
+    countActiveRegistrations(edition.id),
+    countTodaysAssignments(edition.id, today),
+    catalogueState(edition.id),
+    countUnpublishedCards(edition.id),
+    countBrokenConnections(),
+    pendingFlagCount(),
+  ]);
 
   const state: CatalogueState = {
     ...catalogue,
@@ -109,6 +117,7 @@ export async function getOverview(): Promise<Overview> {
       catalogue: state,
       unpublishedCards,
       brokenLinks,
+      flagged,
     }),
   };
 }
@@ -126,6 +135,7 @@ function buildAlerts(input: {
   catalogue: CatalogueState;
   unpublishedCards: number;
   brokenLinks: number;
+  flagged: number;
 }): Alert[] {
   const alerts: Alert[] = [];
 
@@ -163,6 +173,17 @@ function buildAlerts(input: {
         "Aucun défi disponible au tirage. Tant qu’il en manque, tout le monde reçoit le défi de rattrapage.",
       href: "/admin/defis",
       action: "Écrire des défis",
+    });
+  }
+
+  if (input.flagged > 0) {
+    alerts.push({
+      tone: "warning",
+      title: `${input.flagged} activité${input.flagged > 1 ? "s" : ""} à arbitrer`,
+      detail:
+        "Elles ont validé leur défi normalement — signaler n’est pas rejeter. Une file qu’on laisse grossir est une file qu’on n’ouvre plus.",
+      href: "/admin/arbitrage",
+      action: "Ouvrir la file",
     });
   }
 

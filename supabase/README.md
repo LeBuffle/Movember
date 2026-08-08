@@ -69,6 +69,7 @@ Pour une première mise en place, ou une correction ponctuelle :
 | `20260806230000_display_name_is_final.sql` | le pseudonyme est fixé à l'inscription ; seule l'organisation peut le corriger |
 | `20260806240000_card_image_size.sql` | le seau `cartes` accepte des visuels jusqu'à 8 Mo |
 | `20260806250000_participant_suspension.sql` | suspension d'un participant ; la vue des classements l'exclut |
+| `20260806260000_activity_flags.sql` | `activity_flags`, `integrity_settings` — signalement et file d'arbitrage |
 
 Aucun outil à installer. La contrepartie : c'est manuel, donc à réserver au démarrage.
 

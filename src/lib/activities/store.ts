@@ -5,6 +5,7 @@ import {
   applyActivity,
   type CompletedChallenge,
 } from "@/lib/challenges/completion";
+import { flagActivity, readThresholds } from "@/lib/integrity/flags";
 import { notifyCompletions } from "@/lib/notifications/game";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -30,6 +31,8 @@ export type IngestReport = {
   stored: number;
   /** Challenges completed by these activities. */
   completed: number;
+  /** Consistency flags opened for arbitration (story 9.6). Usually zero. */
+  flagged: number;
   failed: number;
 };
 
@@ -44,6 +47,7 @@ export async function recordActivities(
     received: activities.length,
     stored: 0,
     completed: 0,
+    flagged: 0,
     failed: 0,
   };
 
@@ -56,8 +60,12 @@ export async function recordActivities(
   // what gets notifications switched off.
   const completed = new Map<string, CompletedChallenge[]>();
 
+  // The thresholds once for the whole batch: a hundred activities must not
+  // mean a hundred reads of a single settings row.
+  const thresholds = await readThresholds();
+
   for (const activity of activities) {
-    const outcome = await storeOne(activity);
+    const { outcome, id } = await storeOne(activity);
 
     if (outcome === "failed") {
       report.failed += 1;
@@ -80,6 +88,14 @@ export async function recordActivities(
       list.push(...completion.completions);
       completed.set(activity.profileId, list);
     }
+
+    // **After the evaluation, and it changes nothing about it** (architecture
+    // D10). The challenge is validated, the points are awarded, the card is
+    // given; flagging opens a file for a human, it does not pronounce a
+    // sentence. Placed last so that a failure here can cost nothing.
+    if (id) {
+      report.flagged += await flagActivity(id, activity, thresholds);
+    }
   }
 
   // After the writes, never before, and never allowed to undo them: a
@@ -94,35 +110,42 @@ export async function recordActivities(
 
 type Outcome = "stored" | "duplicate" | "failed";
 
-async function storeOne(activity: Activity): Promise<Outcome> {
+/** The stored row's identifier, needed to open a flag against it. */
+type StoreResult = { outcome: Outcome; id: string | null };
+
+async function storeOne(activity: Activity): Promise<StoreResult> {
   const admin = createAdminClient();
 
-  const { error } = await admin.from("activities").insert({
-    profile_id: activity.profileId,
-    provider: activity.provider,
-    provider_activity_id: activity.id,
-    name: activity.name,
-    sport_family: activity.sportFamily,
-    started_at: activity.startedAt,
-    local_date: activity.localDate,
-    distance_meters: Math.round(activity.distanceMeters),
-    duration_seconds: Math.round(activity.durationSeconds),
-    elevation_meters: Math.round(activity.elevationMeters),
-    is_manual: activity.isManual,
-  });
+  const { data, error } = await admin
+    .from("activities")
+    .insert({
+      profile_id: activity.profileId,
+      provider: activity.provider,
+      provider_activity_id: activity.id,
+      name: activity.name,
+      sport_family: activity.sportFamily,
+      started_at: activity.startedAt,
+      local_date: activity.localDate,
+      distance_meters: Math.round(activity.distanceMeters),
+      duration_seconds: Math.round(activity.durationSeconds),
+      elevation_meters: Math.round(activity.elevationMeters),
+      is_manual: activity.isManual,
+    })
+    .select("id")
+    .maybeSingle();
 
-  if (!error) return "stored";
+  if (!error) return { outcome: "stored", id: data?.id ?? null };
 
   // Somebody got there first — a replayed webhook, a catch-up overlapping an
   // initial import. The activity is in the game, which is all that matters.
-  if (error.code === "23505") return "duplicate";
+  if (error.code === "23505") return { outcome: "duplicate", id: null };
 
   console.error("[activités] enregistrement impossible", {
     provider: activity.provider,
     code: error.code,
   });
 
-  return "failed";
+  return { outcome: "failed", id: null };
 }
 
 /**
@@ -241,6 +264,35 @@ export async function countActivities(profileId: string): Promise<number> {
 
   if (error) {
     console.error("[activités] comptage impossible", { code: error.code });
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * How many of somebody's outings were typed in rather than recorded.
+ *
+ * Used to say so on their own screen (story 9.8 AC 3). An outing that comes
+ * through and validates nothing, with no explanation, is a message to
+ * support — and the participant is right to send it: from where they stand,
+ * the game simply did not react.
+ */
+export async function countManualActivities(
+  profileId: string,
+): Promise<number> {
+  const admin = createAdminClient();
+
+  const { count, error } = await admin
+    .from("activities")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", profileId)
+    .eq("is_manual", true);
+
+  if (error) {
+    console.error("[activités] comptage des saisies manuelles impossible", {
+      code: error.code,
+    });
     return 0;
   }
 
