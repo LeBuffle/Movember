@@ -97,7 +97,7 @@ export default async function PaymentReturnPage({
     <>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-2xl px-4 py-12">
+      <main id="contenu" className="mx-auto w-full max-w-2xl px-4 py-12">
         <h1 className="text-ink text-3xl font-bold tracking-tight">
           {isActive ? "Votre inscription est confirmée" : "Votre inscription"}
         </h1>

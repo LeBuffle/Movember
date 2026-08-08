@@ -31,7 +31,7 @@ export function LegalPage({
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-12">
+      <main id="contenu" className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-ink text-3xl font-bold tracking-tight">{title}</h1>
 
         <p className="text-ink-muted mt-2 text-sm">

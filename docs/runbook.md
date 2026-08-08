@@ -385,15 +385,79 @@ C'est vrai, et c'est la première question que les participants se poseront.
 
 ---
 
+## 13. Restaurer une sauvegarde de la base
+
+> **La procédure la plus grave du document.** Une restauration écrase des données. À ne
+> lancer que sur une base dont on est certain, et jamais dans la précipitation.
+
+### Ce qui existe comme sauvegardes
+
+Deux choses, complémentaires :
+
+| Source | Ce qu'elle couvre | Ce qu'elle ne couvre pas |
+| --- | --- | --- |
+| Supabase (tableau de bord) | une panne de Supabase, une restauration à un instant donné | une erreur de notre part, effacée aussitôt dans leur copie |
+| `deploy/scripts/backup-database.sh` | **nos** erreurs : une migration qui supprime la mauvaise colonne, une purge à la mauvaise date | une perte du VPS lui-même |
+
+La seconde est celle qui permet de **répéter** une restauration — la première ne se
+restaure que dans le projet Supabase lui-même.
+
+### Voir ce qu'on a
+
+```bash
+sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh --check
+```
+
+Sept copies quotidiennes, la plus récente datée du matin même. Si la liste est vide ou
+ancienne, **s'arrêter là** et lire §11 : la tâche planifiée ne tourne pas.
+
+### La répétition (à faire une fois, en octobre)
+
+**Ne jamais répéter sur la base de production.** Créer un projet Supabase gratuit
+temporaire, ou une base Postgres locale, et restaurer dedans :
+
+```bash
+# 1. Choisir une sauvegarde
+ls -lh /var/backups/defi-movember/
+
+# 2. La restaurer dans la base D'ESSAI (jamais celle de production)
+gunzip -c /var/backups/defi-movember/defi-movember-2026-10-15.sql.gz \
+  | psql "$URL_DE_LA_BASE_D_ESSAI"
+
+# 3. Vérifier qu'on a bien récupéré quelque chose
+psql "$URL_DE_LA_BASE_D_ESSAI" -c "select count(*) from public.profiles;"
+psql "$URL_DE_LA_BASE_D_ESSAI" -c "select count(*) from public.payments;"
+```
+
+Le dump est fait avec `--clean --if-exists` : il supprime avant de recréer, donc il
+s'applique sur une base déjà peuplée sans erreur de doublon. C'est aussi pourquoi il est
+dangereux : appliqué à la bonne base, il fait exactement ce qu'on lui demande.
+
+### La vraie restauration, le jour où
+
+1. **Arrêter l'application** pour que rien n'écrive pendant l'opération :
+   `docker compose -f /opt/defi-movember/deploy/docker-compose.yml stop app`
+2. **Sauvegarder l'état actuel**, même s'il est cassé :
+   `sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh`
+   (une restauration qui se révèle être la mauvaise décision doit pouvoir se défaire)
+3. Restaurer, comme ci-dessus, vers l'URL de production
+4. **Relancer** : `docker compose -f .../docker-compose.yml start app`
+5. Vérifier : `curl -s https://defi-movember.fr/api/health`
+
+### Après une restauration
+
+- Les classements sont recalculés au quart d'heure suivant. Pour ne pas attendre,
+  déclencher la tâche `classements` à la main (§11).
+- **Vérifier la comptabilité contre Stripe** : une restauration à un instant antérieur
+  peut avoir perdu des paiements. La tâche `rapprochement` les rattrape toute seule à
+  l'heure suivante, et l'écran Collecte doit reboucler.
+
+---
+
 ## Ce qui n'est PAS dans ce document
 
-**La restauration d'une sauvegarde de la base.** Elle relève de la story 11.5, qui
-l'outille et l'éprouve. En attendant, une restauration passe par le tableau de bord
-Supabase, et la formule payante est ce qui donne accès aux sauvegardes automatiques
-quotidiennes.
-
-**Les procédures de l'epic 10** (activité douteuse, litige de paiement) : elles arrivent
-avec ces lots.
+**La création d'un projet Supabase de secours.** Elle relève d'une décision du PO, pas
+d'une procédure d'urgence.
 
 ---
 
@@ -411,6 +475,8 @@ avec ces lots.
 | §9 Disque plein | commandes vérifiées, situation non provoquée |
 | §11 Script d'alertes | oui, exécuté avec seuils abaissés et webhook réel |
 | §11 Tâches planifiées | fichier versionné et installé par le déploiement ; **l'appel réel reste à vérifier par le PO** |
+| §13 Restaurer une sauvegarde | script vérifié sur ses refus (dump vide, configuration absente) ; **la restauration elle-même reste à répéter par le PO** — c'est le critère de sortie de l'epic 11 |
+| Durcissement du serveur | `check-hardening.sh` écrit et vérifié syntaxiquement ; **à lancer sur le serveur par le PO** |
 
 > **Une procédure écrite mais jamais exécutée est une procédure fausse.** Les lignes
 > marquées « à faire par le PO » doivent être passées au moins une fois, calmement, avant

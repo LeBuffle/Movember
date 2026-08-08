@@ -66,7 +66,7 @@ export default async function Home() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="contenu">
         {/* --- Accroche : la seule chose que cette page a à faire ------- */}
         <section className="bg-brand-blue-soft border-line border-b">
           <div className="mx-auto max-w-3xl px-4 pt-12 pb-14 sm:pt-16">

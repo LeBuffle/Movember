@@ -90,7 +90,28 @@ export default function RootLayout({
         href="/manifest.webmanifest"
         crossOrigin="use-credentials"
       />
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {/*
+          The skip link (story 11.7).
+
+          First thing in the DOM, invisible until focused. Every participant
+          screen puts a tinted band and a title before its content, and the
+          game screen puts a tab bar after it — somebody on a keyboard or a
+          screen reader otherwise walks through the same header on all thirty
+          days of November before reaching the day's challenge.
+
+          `sr-only focus:not-sr-only` is the pattern: no visual cost, and it
+          appears the moment it is needed. The target is the `<main>` every
+          shell renders.
+        */}
+        <a
+          href="#contenu"
+          className="focus:bg-surface focus:text-brand-blue focus:outline-brand-blue sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:px-4 focus:py-2 focus:font-semibold focus:shadow-lg focus:outline-2"
+        >
+          Aller au contenu
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

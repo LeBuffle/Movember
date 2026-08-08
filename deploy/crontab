@@ -111,5 +111,31 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # first. Two of these piling up is how a small delay becomes an outage.
 3,18,33,48 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/classements >> /var/log/defi-movember-cron.log 2>&1
 
-# Business tasks arrive with their epics:
-#   - backups ............................. epic 11
+# Retention policy (story 11.4). Once a day, at 4:34.
+#
+# **Its ordinary answer is "rien à faire", and that is by design.** Every
+# delay is counted in months from the end of the edition; the first rule falls
+# due one month after 30 November. Until then this line reports zero every
+# night, which is what makes it believable in April when it finally deletes
+# something.
+#
+# What it removes, and when, is in `src/lib/privacy/retention.ts` — one list,
+# in French, which the privacy policy must match word for word. Never in the
+# crontab: a duration written in two places is a duration that will disagree
+# with itself.
+#
+# Re-running it is harmless: it deletes what is due and nothing else, and what
+# is already gone cannot be deleted twice.
+34 4 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/purge >> /var/log/defi-movember-cron.log 2>&1
+
+# Database backup (story 11.5). Every day at 3:12, before the purge.
+#
+# **In that order, and it matters.** A backup taken after the purge would be a
+# backup of the already-purged state — so a purge that deleted the wrong thing
+# would be unrecoverable from the very backup meant to cover it.
+#
+# The script keeps seven daily copies and refuses to overwrite the last good
+# one with an empty dump. Restoring is documented in `docs/runbook.md`, and
+# the restore has been rehearsed — a backup nobody has restored is a hope,
+# not a backup.
+12 3 * * * bash /opt/defi-movember/deploy/scripts/backup-database.sh >> /var/log/defi-movember-backup.log 2>&1

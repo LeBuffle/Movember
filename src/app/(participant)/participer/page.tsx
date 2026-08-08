@@ -39,7 +39,7 @@ export default async function ParticipatePage() {
     <>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-4xl px-4 py-12">
+      <main id="contenu" className="mx-auto w-full max-w-4xl px-4 py-12">
         <h1 className="text-ink text-3xl font-bold tracking-tight">
           Participer au défi
         </h1>

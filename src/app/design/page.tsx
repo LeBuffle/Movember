@@ -57,7 +57,7 @@ export default function DesignPage() {
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl space-y-12 px-4 py-10">
+      <main id="contenu" className="mx-auto max-w-3xl space-y-12 px-4 py-10">
         <div>
           <h1 className="text-ink text-3xl font-bold">Charte et composants</h1>
           <p className="text-ink-muted mt-2">

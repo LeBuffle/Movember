@@ -39,7 +39,10 @@ export default async function AccessPage({
   const next = Array.isArray(raw) ? raw[0] : raw;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-12">
+    <main
+      id="contenu"
+      className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-12"
+    >
       <div className="text-center">
         <span className="text-brand-blue text-2xl font-extrabold tracking-tight">
           DEFI

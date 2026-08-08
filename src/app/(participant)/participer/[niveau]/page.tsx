@@ -67,7 +67,7 @@ export default async function ParticipatePage({
     <>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-2xl px-4 py-12">
+      <main id="contenu" className="mx-auto w-full max-w-2xl px-4 py-12">
         <p className="text-ink-muted text-sm">
           <Link href="/" className="underline underline-offset-4">
             ← Changer de niveau

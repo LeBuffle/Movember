@@ -168,6 +168,28 @@ export default async function AccountPage() {
           </CardBody>
         </Card>
 
+        {/* Placed last, and deliberately not hidden behind a footer link. The
+            two rights the GDPR gives a participant have to be reachable
+            without writing to anybody (stories 11.1 et 11.2) — a privacy
+            promise nobody can act on is a promise nobody believes. */}
+        <Card>
+          <CardTitle>Mes données</CardTitle>
+          <CardBody>
+            <p>
+              Récupérer tout ce que nous conservons sur vous, ou effacer votre
+              compte.
+            </p>
+            <p className="mt-3">
+              <Link
+                href="/mon-compte/donnees"
+                className="text-brand-blue underline underline-offset-4"
+              >
+                Télécharger mes données ou effacer mon compte
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+
         {profile?.role === "admin" && (
           <Card accent>
             <CardTitle>Compte administrateur</CardTitle>

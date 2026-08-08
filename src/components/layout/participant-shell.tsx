@@ -71,6 +71,7 @@ export function ParticipantShell({
           bottom padding clears the floating tab bar — content hidden behind
           it is the classic failure of this pattern. */}
       <main
+        id="contenu"
         className={cn(
           "mx-auto w-full max-w-3xl px-4",
           tabs ? "pb-32" : "pb-16",

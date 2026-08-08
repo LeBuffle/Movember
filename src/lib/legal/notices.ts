@@ -21,7 +21,7 @@
  * **Bump this whenever the terms change in substance.** A wording fix does
  * not count; a change to what the association owes does.
  */
-export const TERMS_VERSION = "2026-08-04-brouillon";
+export const TERMS_VERSION = "2026-08-08-brouillon";
 
 /**
  * The tax notice.

@@ -465,6 +465,57 @@ Une pull request par branche, squash merge dans `main` après validation du PO.
 
 ---
 
+## Epic 11 : Conformité, durcissement et lancement
+
+**L'epic qui fait la différence entre « ça marche sur mon écran » et « on peut ouvrir les
+inscriptions ».** C'est aussi celui qu'on sacrifie par manque de temps sur les projets qui
+échouent le jour du lancement — d'où son jalon **avant** le gel du 1ᵉʳ octobre, pas après.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 11.1 | [Export des données personnelles](11.1.export-donnees.md) | **Review** | 1.7 |
+| 11.2 | [Suppression de compte et révocation](11.2.suppression-compte.md) | **Review** | 3.8 |
+| 11.3 | [Déconnexion de Strava](11.3.deconnexion-strava.md) | **Review** | 3.2, 3.8 |
+| 11.4 | [Conservation et purge automatique](11.4.conservation-purge.md) | **Review** | 2.7 |
+| 11.5 | [Sauvegardes et restauration testée](11.5.sauvegardes-restauration.md) | **Review** | 1.3 |
+| 11.6 | [Pages légales](11.6.pages-legales.md) | **Review** | 11.4 |
+| 11.7 | [Revue d'accessibilité](11.7.revue-accessibilite.md) | **Review** | 1.5 |
+| 11.8 | [Durcissement du serveur](11.8.durcissement-serveur.md) | **Review** | 1.3 |
+| 11.9 | [Répétition générale](11.9.repetition-generale.md) | Draft — **action PO** | tous |
+| 11.10 | [Procédure d'exploitation](11.10.runbook.md) | **Review** | 11.5 |
+
+### Ordre d'exécution
+
+```
+11.1, 11.3, 11.7, 11.8  (indépendantes)
+
+11.2  (lève deux obstacles de schéma)
+
+11.4 ──► 11.6   (la politique de confidentialité lit la politique de purge)
+
+11.5 ──► 11.10  (le runbook documente le script)
+
+11.9  ◄── tout le reste, une semaine avant l'ouverture
+```
+
+### Ce qui reste au PO, et ne peut pas être fait autrement
+
+| Point | Pourquoi c'est lui |
+| --- | --- |
+| **Restaurer une sauvegarde** | Critère de sortie de l'epic. Demande un accès à la base et une décision. |
+| **Lancer le durcissement** | Les commandes peuvent couper l'accès SSH ; personne ne doit les lancer à sa place. |
+| **Remplir les mentions légales** | Des faits sur l'association qu'aucun agent ne peut deviner sans les inventer. |
+| **Trancher la politique de remboursement** | Point P6, engagement de l'association. |
+| **La répétition générale** | Elle cherche ce qu'aucun test ne voit : un enchaînement qui n'a de sens que pour celui qui l'a écrit. |
+| **Un parcours au lecteur d'écran** | Une demi-heure sur un vrai téléphone vaut tous les tests structurels. |
+
+> **Une procédure écrite mais jamais exécutée est une procédure fausse.** C'est vrai du
+> runbook, du durcissement et de la restauration. Les trois sont outillés ; aucun n'est
+> vérifié tant qu'il n'a pas été passé une fois, calmement, avant le 1ᵉʳ novembre.
+
+
+---
+
 ## Stories des epics 6 à 11
 
 Elles seront rédigées **au fil de l'avancement**, epic par epic, plutôt que toutes

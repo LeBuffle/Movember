@@ -26,7 +26,7 @@ export default function NotFound() {
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl px-4 py-20">
+      <main id="contenu" className="mx-auto max-w-2xl px-4 py-20">
         <p className="text-brand-orange-ink text-sm font-semibold tracking-widest uppercase">
           Erreur 404
         </p>

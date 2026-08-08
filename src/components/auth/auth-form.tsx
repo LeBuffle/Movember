@@ -76,7 +76,7 @@ export function AuthForm({
   const errors = state.errors ?? {};
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-12">
+    <main id="contenu" className="mx-auto w-full max-w-md px-4 py-12">
       {/* Above the title, because it is context rather than content: it
           answers "am I still doing what I set out to do?" before the form
           asks anything. */}

@@ -54,7 +54,7 @@ export default async function GalleryPage() {
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-5xl space-y-10 px-4 py-12">
+      <main id="contenu" className="mx-auto max-w-5xl space-y-10 px-4 py-12">
         <div>
           <h1 className="text-ink text-3xl font-extrabold tracking-tight sm:text-4xl">
             Les cartes à collectionner

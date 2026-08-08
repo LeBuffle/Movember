@@ -37,7 +37,7 @@ export default async function UnsubscribePage({
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-12">
+      <main id="contenu" className="mx-auto max-w-2xl space-y-6 px-4 py-12">
         <h1 className="text-ink text-3xl font-bold tracking-tight">
           Ne plus recevoir d’e-mails
         </h1>

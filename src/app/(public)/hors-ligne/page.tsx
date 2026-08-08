@@ -25,7 +25,10 @@ export const metadata = {
  */
 export default function OfflinePage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-12">
+    <main
+      id="contenu"
+      className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-12"
+    >
       <p className="flex items-baseline gap-1.5">
         <span className="text-brand-blue text-xl font-extrabold tracking-tight">
           DEFI

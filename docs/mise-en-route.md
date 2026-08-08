@@ -26,7 +26,8 @@ La liste attendue une fois **toutes** les migrations passées :
 `common_challenges`, `editions`, `leaderboard_settings`, `news_posts`,
 `notification_deliveries`, `notification_preferences`, `payments`, `profiles`,
 `push_subscriptions`, `registration_tiers`, `registrations`, `shipping_addresses`,
-`team_members`, `teams`.
+`team_members`, `teams`, `activity_flags`, `integrity_settings`, `card_packs`,
+`pack_purchases`.
 
 Ce qui manque dans cette liste indique par où reprendre.
 
@@ -65,9 +66,18 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 24 | `20260806200000_teams.sql` | 7.1 |
 | 25 | `20260806210000_leaderboards.sql` | 7.3 |
 | 26 | `20260806220000_news_posts.sql` | 7.8 |
+| 27 | `20260806230000_display_name_is_final.sql` | 1.13 |
+| 28 | `20260806240000_card_image_size.sql` | 5.6 |
+| 29 | `20260806250000_participant_suspension.sql` | 8.7 |
+| 30 | `20260806260000_activity_flags.sql` | 9.6 |
+| 31 | `20260806270000_card_packs.sql` | 10.1 |
+| 32 | `20260806280000_account_deletion.sql` | 11.2 |
+
+⚠️ **La 29 reconstruit la vue des classements** : quelques secondes sans classement pendant
+qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.
 
 Puis, **en dernier**, rejouer `seed.sql`. Il est rejouable sans risque et crée l'édition
-2026 et les trois niveaux d'inscription.
+2026, les trois niveaux d'inscription et les deux packs de cartes.
 
 Deux commandes à passer **une seule fois**, après la migration 25 :
 
@@ -185,6 +195,17 @@ curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/
 | `rattrapage` | :17 | Récupère les sorties que le webhook a perdues | 3.6 |
 | `rapprochement` | :23 | Complète les frais Stripe réels | 2.6 |
 | `classements` | :03, :18, :33, :48 | Rafraîchit les huit classements | 7.3 |
+| `purge` | 4:34 | Applique la politique de conservation. **Répond « rien à faire » onze mois par an** | 11.4 |
+
+Et une tâche qui n'est pas un appel HTTP mais un script :
+
+| Script | Quand | Ce qu'il fait | Story |
+| --- | --- | --- | --- |
+| `backup-database.sh` | 3:12 | Sauvegarde la base, sept copies conservées | 11.5 |
+| `check-resources.sh` | toutes les 10 min | Surveille disque et mémoire | 1.11 |
+
+⚠️ La sauvegarde passe **avant** la purge, et cet ordre est vérifié par un test : une
+sauvegarde prise après la purge serait la sauvegarde de l'état déjà purgé.
 
 ---
 
@@ -325,6 +346,43 @@ Aucune ne bloque le code aujourd'hui, toutes changent le contenu de septembre.
 
 ---
 
+## Étape 8 — La conformité et le lancement (epic 11)
+
+Ces points ne peuvent pas être faits à votre place. Les trois premiers sont les critères de
+sortie de l'epic 11.
+
+1. **Installer le client Postgres** sur le VPS : `apt install -y postgresql-client`. *(11.5)*
+2. **Renseigner `DATABASE_URL`** dans `deploy/.env`, en `chmod 600`.
+   Supabase → Project Settings → Database → Connection string → **URI**, connexion
+   **directe** et non le pooler.
+   ⚠️ Cette chaîne contient le mot de passe de la base : **elle ne se colle que sur le
+   serveur**, jamais dans une conversation ni dans un e-mail. *(11.5)*
+3. **Lancer une première sauvegarde** :
+   `sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh` *(11.5)*
+4. **⭐ Restaurer une sauvegarde** dans une base d'essai, en suivant `docs/runbook.md` §13.
+   ⚠️ Jamais sur la base de production. **C'est le critère de sortie de l'epic.** *(11.5)*
+5. **⭐ Auditer le durcissement du serveur** :
+   `sudo bash /opt/defi-movember/deploy/scripts/check-hardening.sh`
+   Corriger les lignes rouges, en gardant une session SSH de secours ouverte pour les deux
+   qui touchent SSH. Puis le relancer jusqu'au tout-vert. *(11.8)*
+6. **Remplir les mentions légales** : dénomination, siège, numéro RNA, directeur de
+   publication, contact, hébergeur. Elles affichent « à compléter » — visiblement, plutôt
+   que d'inventer des valeurs que personne ne remarquerait fausses. *(11.6)*
+7. **Trancher la politique de remboursement** (point P6). La section 9 des CGV porte une
+   proposition, marquée en italique. *(11.6)*
+8. **Relire les trois pages légales** de bout en bout. Ce sont les seuls textes qui engagent
+   l'association devant chaque participant. *(11.6)*
+9. **Effacer un compte de test relié à Strava**, puis vérifier dans les réglages Strava que
+   l'autorisation a disparu, et dans l'écran Collecte que la ligne comptable subsiste sans
+   désigner personne. *(11.2)*
+10. **Télécharger l'export de ses données** et l'ouvrir. *(11.1)*
+11. **Un parcours au clavier** (Tab uniquement) et **un parcours au lecteur d'écran** sur
+    téléphone. Une demi-heure, et elle vaut tous les tests structurels. *(11.7)*
+12. **⭐ La répétition générale**, autour du 8 octobre : `docs/repetition-generale.md`, de
+    bout en bout, en cochant. C'est la story la plus importante de tout le projet. *(11.9)*
+
+---
+
 ## Le travail de contenu — septembre
 
 Rien de technique, et c'est ce qui prend le plus de temps.
@@ -335,6 +393,12 @@ Rien de technique, et c'est ce qui prend le plus de temps.
   dans `src/lib/legal/notices.ts` — c'est ce qui distingue les acceptations d'avant et
   d'après. Même chose pour `CONSENT_VERSION` si le texte du consentement change sur le
   fond. *(2.2, 3.2)*
+- **Confirmer les durées de conservation** annoncées dans la politique de confidentialité :
+  trois mois pour les adresses postales, six pour les activités. Elles sont générées depuis
+  `src/lib/privacy/retention.ts`, donc exactes — mais ce sont des décisions, pas des
+  contraintes techniques. *(11.4)*
+- **Confirmer le prix des packs** (point P3) : deux packs proposés à 3 € et 6 €. Ils vivent
+  en base : les changer prend une instruction SQL. *(10.1)*
 
 ---
 
