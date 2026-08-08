@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Alert } from "@/components/ui/alert";
+import { buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import {
@@ -8,6 +9,7 @@ import {
   summarisePayments,
   type PaymentRow,
 } from "@/lib/accounting/totals";
+import { getBreakdown } from "@/lib/accounting/breakdown";
 import { listPayments } from "@/lib/accounting/payments";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { formatEuros } from "@/lib/registration/tiers";
@@ -69,6 +71,7 @@ export default async function CollectionPage({
 
   const totals = summarisePayments((data ?? []) as PaymentRow[]);
   const payments = await listPayments();
+  const breakdown = await getBreakdown();
 
   return (
     <div className="space-y-6">
@@ -199,6 +202,82 @@ export default async function CollectionPage({
               netCents={totals.netCents}
               complete={totals.complete}
             />
+          </section>
+
+          <section aria-labelledby="ventilation" className="space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="ventilation" className="text-ink text-xl font-bold">
+                Par niveau d’inscription
+              </h2>
+
+              {/* A plain anchor, not a `<Link>`: this address returns a file,
+                  and Next's router would try to navigate to it. */}
+              <a
+                href="/admin/collecte/export"
+                download
+                className={buttonClasses({ size: "sm" })}
+              >
+                Export comptable (CSV)
+              </a>
+            </div>
+
+            {breakdown.tiers.length === 0 ? (
+              <p className="text-ink-muted">
+                Aucun encaissement pour le moment. La ventilation apparaîtra dès
+                la première inscription.
+              </p>
+            ) : (
+              <>
+                <ul className="border-line divide-line divide-y rounded-xl border">
+                  {breakdown.tiers.map((tier) => (
+                    <li key={tier.slug} className="p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-ink font-semibold">
+                          {tier.name}
+                        </span>
+                        <span className="text-ink text-lg font-bold">
+                          {formatEuros(tier.grossCents)}
+                        </span>
+                      </div>
+
+                      <p className="text-ink-muted mt-1 text-sm">
+                        {tier.count} inscription{tier.count > 1 ? "s" : ""} ·{" "}
+                        {formatEuros(tier.donationCents)} engagés auprès de la
+                        fondation
+                        {tier.refundCount > 0 && (
+                          <>
+                            {" · "}
+                            {tier.refundCount} remboursement
+                            {tier.refundCount > 1 ? "s" : ""} pour{" "}
+                            {formatEuros(tier.refundedCents)}
+                          </>
+                        )}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* The reconciliation, said out loud. Two figures that ought
+                    to be equal and are not, on an accounting screen, ruin
+                    trust in the whole screen — including in the figures that
+                    are right. */}
+                {breakdown.reconciles ? (
+                  <p className="text-ink-muted text-sm">
+                    Le total des niveaux correspond au total général :{" "}
+                    {formatEuros(breakdown.totals.grossCents)}.
+                  </p>
+                ) : (
+                  <Alert tone="warning" title="La ventilation ne boucle pas">
+                    {breakdown.unattributed.count} encaissement
+                    {breakdown.unattributed.count > 1 ? "s" : ""} pour{" "}
+                    {formatEuros(breakdown.unattributed.grossCents)} n’
+                    {breakdown.unattributed.count > 1 ? "ont" : "a"} pas de
+                    niveau rattaché. Le total général reste juste ; c’est la
+                    répartition qui est incomplète.
+                  </Alert>
+                )}
+              </>
+            )}
           </section>
 
           <section aria-labelledby="remboursements" className="space-y-3">

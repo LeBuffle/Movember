@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sweepPendingFees } from "@/lib/accounting/fees";
+import { reconcileCheckouts } from "@/lib/accounting/reconcile";
 import { cronUnauthorised, isAuthorisedCronRequest } from "@/lib/cron/auth";
 
 /**
@@ -27,13 +28,21 @@ export async function GET(request: Request) {
     return cronUnauthorised();
   }
 
-  const report = await sweepPendingFees();
+  // Two passes, and they answer two different questions. The fees are the
+  // ordinary one: a balance transaction Stripe had not produced yet. The
+  // reconciliation is the rare and serious one: a payment Stripe took that
+  // never reached us at all (story 9.5).
+  const [fees, reconciliation] = await Promise.all([
+    sweepPendingFees(),
+    reconcileCheckouts(),
+  ]);
 
   return NextResponse.json(
     {
       status: "ok",
       task: "rapprochement",
-      ...report,
+      frais: fees,
+      reconciliation,
       timestamp: new Date().toISOString(),
     },
     { status: 200, headers: { "Cache-Control": "no-store" } },
