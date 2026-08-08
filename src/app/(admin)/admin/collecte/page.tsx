@@ -121,10 +121,21 @@ export default async function CollectionPage({
                   <p className="text-brand-blue text-3xl font-extrabold">
                     {formatEuros(totals.grossCents)}
                   </p>
+                  {/* "Encaissements" rather than "inscriptions": since
+                      epic 10 the count also holds the packs, and calling the
+                      lot "inscriptions" would overstate how many people are
+                      playing. */}
                   <p className="mt-1 text-sm">
-                    {totals.incomeCount} inscription
-                    {totals.incomeCount > 1 ? "s" : ""} payée
-                    {totals.incomeCount > 1 ? "s" : ""}.
+                    {totals.incomeCount} encaissement
+                    {totals.incomeCount > 1 ? "s" : ""}
+                    {breakdown.packs.count > 0 && (
+                      <>
+                        {" "}
+                        dont {breakdown.packs.count} pack
+                        {breakdown.packs.count > 1 ? "s" : ""}
+                      </>
+                    )}
+                    .
                   </p>
                 </CardBody>
               </Card>
@@ -221,7 +232,7 @@ export default async function CollectionPage({
               </a>
             </div>
 
-            {breakdown.tiers.length === 0 ? (
+            {breakdown.tiers.length === 0 && breakdown.packs.count === 0 ? (
               <p className="text-ink-muted">
                 Aucun encaissement pour le moment. La ventilation apparaîtra dès
                 la première inscription.
@@ -255,6 +266,31 @@ export default async function CollectionPage({
                       </p>
                     </li>
                   ))}
+
+                  {/* Packs on their own line (epic 10). Their revenue is
+                      handed over in full — there is nothing to post and
+                      nothing to print — so "engagés" equals "encaissé", and
+                      the line says so rather than leaving it to be assumed. */}
+                  {breakdown.packs.count > 0 && (
+                    <li className="p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-ink font-semibold">
+                          Packs de cartes
+                        </span>
+                        <span className="text-ink text-lg font-bold">
+                          {formatEuros(breakdown.packs.grossCents)}
+                        </span>
+                      </div>
+
+                      <p className="text-ink-muted mt-1 text-sm">
+                        {breakdown.packs.count} pack
+                        {breakdown.packs.count > 1 ? "s" : ""} vendu
+                        {breakdown.packs.count > 1 ? "s" : ""} ·{" "}
+                        {formatEuros(breakdown.packs.donationCents)} engagés
+                        auprès de la fondation, soit l’intégralité
+                      </p>
+                    </li>
+                  )}
                 </ul>
 
                 {/* The reconciliation, said out loud. Two figures that ought

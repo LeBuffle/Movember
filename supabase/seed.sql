@@ -135,3 +135,47 @@ cross join (values
        requires_shipping)
 where e.year = 2026
 on conflict (edition_id, slug) do nothing;
+
+-- -------------------------------------------------------------------------
+-- Les packs achetables (story 10.1)
+--
+-- **Les prix ci-dessous sont une proposition, pas une décision.** Le prix des
+-- packs est la décision P3 du PRD, encore ouverte. C'est précisément pour
+-- cela qu'ils vivent en base : les changer prend une instruction SQL, jamais
+-- un déploiement.
+--
+-- Le montant versé est intégralement reversable — un pack n'expédie rien et
+-- n'imprime rien — et la contrainte `card_packs_fully_donated` l'impose.
+--
+-- Rejouable sans risque.
+-- -------------------------------------------------------------------------
+
+insert into public.card_packs (
+  edition_id, slug, name, tagline, price_cents, donated_cents, card_count,
+  guaranteed_rarity, position
+)
+select
+  e.id, v.slug, v.name, v.tagline, v.price_cents, v.donated_cents,
+  v.card_count, v.guaranteed_rarity, v.position
+from public.editions e
+cross join (values
+  (
+    'moustache',
+    'Pack Moustache',
+    '5 cartes tirées au sort.',
+    300, 300, 5,
+    null,
+    1
+  ),
+  (
+    'guidon',
+    'Pack Guidon',
+    '5 cartes, dont une épique au minimum.',
+    600, 600, 5,
+    'epique',
+    2
+  )
+) as v(slug, name, tagline, price_cents, donated_cents, card_count,
+       guaranteed_rarity, position)
+where e.year = 2026
+on conflict (edition_id, slug) do nothing;

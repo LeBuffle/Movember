@@ -102,6 +102,19 @@ export default async function CollectionPage() {
             </Card>
           </div>
 
+          {/* The shop, reached from here and from nowhere else (story 10.2).
+              It belongs next to the album — the only place where a hole in a
+              collection is visible — and not in the tab bar, where a sixth
+              tab would put buying on the same footing as playing. */}
+          <p>
+            <Link
+              href="/jeu/boutique"
+              className={buttonClasses({ variant: "secondary", size: "sm" })}
+            >
+              Compléter avec un pack
+            </Link>
+          </p>
+
           {album.groups.map((group) => (
             <section key={group.rarity} className="space-y-3">
               <h2 className="text-ink text-xl font-bold">

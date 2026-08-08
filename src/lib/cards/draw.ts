@@ -129,11 +129,16 @@ function chooseWithin(
  * The guarantee is a *floor*, not a ceiling: the other four are drawn
  * normally, so a pack can hold two legendaries. Forcing the rest to be
  * common would make the guarantee feel like a consolation prize.
+ *
+ * `guaranteed` is optional because a bought pack may carry no guarantee at
+ * all (story 10.1) — that is a legitimate pack, and a cheaper one. Omitting
+ * it makes the whole pack ordinary draws, which is exactly what happens
+ * anyway when the catalogue holds none of the guaranteed rarity.
  */
 export function drawPack(
   input: Omit<DrawInput, "roll" | "pick"> & {
     rolls: readonly number[];
-    guaranteed: Rarity;
+    guaranteed?: Rarity | null;
     size?: number;
   },
 ): DrawableCard[] {
@@ -141,9 +146,9 @@ export function drawPack(
   const drawn: DrawableCard[] = [];
   const owned = new Set(input.owned);
 
-  const guaranteedPool = input.cards.filter(
-    (card) => card.rarity === input.guaranteed,
-  );
+  const guaranteedPool = input.guaranteed
+    ? input.cards.filter((card) => card.rarity === input.guaranteed)
+    : [];
 
   // The guaranteed one first, so the rest of the pack can avoid duplicating
   // it. If the catalogue has none of that rarity yet, the pack is simply five

@@ -31,6 +31,15 @@ export type TierBreakdown = {
 
 export type Breakdown = {
   tiers: TierBreakdown[];
+  /**
+   * Packs bought in the shop (epic 10), counted apart from the tiers.
+   *
+   * They carry no tier and never will — a pack is not a registration level.
+   * Without their own line they would land in `unattributed`, which is the
+   * line that means "something is wrong", and every pack sold would look like
+   * an anomaly to chase.
+   */
+  packs: { count: number; grossCents: number; donationCents: number };
   /** Payments whose tier could not be established. Normally none. */
   unattributed: { count: number; grossCents: number };
   totals: { grossCents: number; refundedCents: number; donationCents: number };
@@ -45,6 +54,7 @@ export type Breakdown = {
 
 const EMPTY: Breakdown = {
   tiers: [],
+  packs: { count: 0, grossCents: 0, donationCents: 0 },
   unattributed: { count: 0, grossCents: 0 },
   totals: { grossCents: 0, refundedCents: 0, donationCents: 0 },
   reconciles: true,
@@ -85,6 +95,7 @@ export async function getBreakdown(): Promise<Breakdown> {
   const rows = (data ?? []) as unknown as Row[];
 
   const byTier = new Map<string, TierBreakdown>();
+  const packs = { count: 0, grossCents: 0, donationCents: 0 };
   const unattributed = { count: 0, grossCents: 0 };
   const totals = { grossCents: 0, refundedCents: 0, donationCents: 0 };
 
@@ -101,6 +112,16 @@ export async function getBreakdown(): Promise<Breakdown> {
     } else {
       totals.grossCents += row.gross_cents;
       totals.donationCents += row.donation_cents;
+    }
+
+    // A pack has its own line (epic 10). It carries no tier and never will,
+    // so counting it as unattributed would make every sale look like a
+    // problem.
+    if (row.kind === "pack") {
+      packs.count += 1;
+      packs.grossCents += row.gross_cents;
+      packs.donationCents += row.donation_cents;
+      continue;
     }
 
     if (!tier) {
@@ -142,10 +163,12 @@ export async function getBreakdown(): Promise<Breakdown> {
 
   const summedGross =
     tiers.reduce((sum, tier) => sum + tier.grossCents, 0) +
+    packs.grossCents +
     unattributed.grossCents;
 
   return {
     tiers,
+    packs,
     unattributed,
     totals,
     reconciles: summedGross === totals.grossCents,

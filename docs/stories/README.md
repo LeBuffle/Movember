@@ -410,6 +410,36 @@ l'epic 2 ; l'anti-triche est entièrement à faire, et c'est le vrai contenu de 
 
 ---
 
+## Epic 10 : Packs achetables
+
+**Le seul epic qui peut glisser après le 1ᵉʳ novembre.** Le jeu est intégralement jouable
+sans lui : les trente défis du mois se relèvent avec la seule inscription de niveau 1, et
+les deux packs bonus du niveau 3 sont attribués par l'epic 5.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 10.1 | [Schéma des packs et règles de composition](10.1.schema-packs.md) | **Review** | 5.1 |
+| 10.2 | [Boutique de packs](10.2.boutique-packs.md) | **Review** | 10.1 |
+| 10.3 | [Paiement d'un pack via Stripe](10.3.paiement-pack.md) | **Review** | 10.1, 2.4 |
+| 10.4 | [Ouverture d'un pack et révélation](10.4.ouverture-pack.md) | **Review** | 10.3, 5.5 |
+| 10.5 | [Comptabilisation du revenu des packs](10.5.comptabilisation-packs.md) | **Review** | 10.3, 9.2 |
+
+### Ordre d'exécution
+
+```
+10.1 ──┬──► 10.2
+       └──► 10.3 ──┬──► 10.4
+                   └──► 10.5
+```
+
+> **Rien de ce qui s'achète ici ne fait gagner une place** (PRD D2, FR72). Les cartes
+> issues d'un achat portent `source = 'purchase'` et le classement collection ne compte
+> que `challenge` et `daily_draw` — vérifié au niveau de la vue matérialisée, pas de
+> l'application. C'est la seule raison pour laquelle une boutique peut exister dans ce jeu.
+
+
+---
+
 ## Statuts BMAD
 
 `Draft` → `Approved` → `InProgress` → `Review` → `Done`

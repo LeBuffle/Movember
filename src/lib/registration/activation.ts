@@ -3,6 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 
 import { grantBonusPacks } from "@/lib/cards/grant";
+import { handlePackPurchase } from "@/lib/packs/purchase";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -20,7 +21,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 
 export type ActivationResult =
-  | { ok: true; outcome: "activated" | "already-processed" | "ignored" }
+  | {
+      ok: true;
+      outcome:
+        | "activated"
+        /** A pack bought in the shop, settled (story 10.3). */
+        | "settled"
+        | "already-processed"
+        | "ignored";
+    }
   | { ok: false; reason: string };
 
 /** Postgres' unique-violation code — what a replayed webhook runs into. */
@@ -112,6 +121,17 @@ async function grantPacksForTier(registrationId: string): Promise<void> {
 export async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<ActivationResult> {
+  /* A pack bought in the shop (story 10.3). Routed on the `kind` we wrote on
+     the session ourselves, never inferred from the amount — two products can
+     perfectly well cost the same.
+
+     The branch lives here rather than in the webhook route so that the
+     reconciliation of story 9.5, which comes through this same door, catches
+     a lost pack payment exactly as it catches a lost registration. */
+  if ((session.metadata ?? {}).kind === "pack") {
+    return handlePackPurchase(session);
+  }
+
   // A session can complete without being paid — delayed payment methods do
   // exactly that. Only `paid` opens anything.
   if (session.payment_status !== "paid") {

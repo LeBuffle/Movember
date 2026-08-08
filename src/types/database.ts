@@ -28,6 +28,8 @@ export type CardRarity = "commune" | "rare" | "epique" | "legendaire";
 /** Only `challenge` and `daily_draw` count towards the ranking (D8). */
 export type CardGrantSource =
   "challenge" | "daily_draw" | "pack" | "purchase" | "manual";
+/** A pack bought in the shop, before and after the webhook (story 10.3). */
+export type PackPurchaseStatus = "pending" | "paid" | "abandoned";
 
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
 import type { Difficulty, SportFamily } from "@/lib/challenges/sports";
@@ -536,6 +538,8 @@ export type Database = {
           granted_at: string;
           /** Null while the card is still waiting to be discovered. */
           revealed_at: string | null;
+          /** Which purchase produced it. Null for everything earned. */
+          pack_purchase_id: string | null;
         };
         Insert: {
           id?: string;
@@ -546,12 +550,80 @@ export type Database = {
           assignment_id?: string | null;
           granted_at?: string;
           revealed_at?: string | null;
+          pack_purchase_id?: string | null;
         };
         /* One column, and one only. A grant is a fact, never a correction —
            but "has been looked at" is a second fact about it, not a rewrite
            of the first. Narrowing the type here is what stops a stray
            `source` from ever being written by the reveal path. */
         Update: { revealed_at?: string | null };
+        Relationships: [];
+      };
+      card_packs: {
+        Row: {
+          id: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline: string;
+          price_cents: number;
+          /** Equal to the price by constraint: a pack has no counterpart. */
+          donated_cents: number;
+          card_count: number;
+          /** A floor, not a ceiling. Null means no guarantee. */
+          guaranteed_rarity: CardRarity | null;
+          position: number;
+          available: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline?: string;
+          price_cents: number;
+          donated_cents: number;
+          card_count?: number;
+          guaranteed_rarity?: CardRarity | null;
+          position?: number;
+          available?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["card_packs"]["Insert"]>;
+        Relationships: [];
+      };
+      pack_purchases: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          pack_id: string;
+          status: PackPurchaseStatus;
+          /** The promise, frozen at the moment of sale. */
+          price_cents: number;
+          card_count: number;
+          guaranteed_rarity: CardRarity | null;
+          stripe_session_id: string | null;
+          created_at: string;
+          paid_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          pack_id: string;
+          status?: PackPurchaseStatus;
+          price_cents: number;
+          card_count: number;
+          guaranteed_rarity?: CardRarity | null;
+          stripe_session_id?: string | null;
+          created_at?: string;
+          paid_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["pack_purchases"]["Insert"]
+        >;
         Relationships: [];
       };
       push_subscriptions: {

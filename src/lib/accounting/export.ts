@@ -32,6 +32,13 @@ const COLUMNS = [
   "Identifiant interne",
 ] as const;
 
+/** How each kind of line is named in the file the treasurer opens. */
+const KINDS: Record<string, string> = {
+  registration: "Inscription",
+  pack: "Pack",
+  refund: "Remboursement",
+};
+
 type Row = {
   id: string;
   kind: string;
@@ -89,7 +96,9 @@ export async function getAccountingLines(): Promise<AccountingLine[]> {
 
   return rows.map((row) => ({
     date: row.created_at,
-    kind: row.kind === "refund" ? "Remboursement" : "Encaissement",
+    // Three words rather than two: a pack is money in like a registration,
+    // but the treasurer has to be able to split the two without a formula.
+    kind: KINDS[row.kind] ?? "Encaissement",
     displayName: names.get(row.profile_id) ?? "—",
     tierName: row.registrations?.registration_tiers?.name ?? "—",
     grossCents: row.gross_cents,
