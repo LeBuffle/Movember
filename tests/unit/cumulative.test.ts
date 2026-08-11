@@ -101,6 +101,21 @@ vi.mock("@/lib/supabase/admin", () => ({
         return empty;
       }
 
+      /* Le début d'édition, plancher de toute fenêtre rétroactive depuis la
+         décision du PO du 11 août. Sans lui, un fil rouge remonterait avant
+         le 1er novembre. */
+      if (table === "editions") {
+        const edition = {
+          select: () => edition,
+          eq: () => edition,
+          maybeSingle: async () => ({
+            data: { starts_on: "2026-11-01" },
+            error: null,
+          }),
+        };
+        return edition;
+      }
+
       const read = {
         eq: (column: string, value: unknown) => {
           state.filters[`eq:${column}`] = value;

@@ -22,6 +22,15 @@
 --   duration_scope 'day' = à faire dans la journée. 'multi_day' = fil rouge.
 --   config         les paramètres que le moteur évalue.
 --
+-- **Un fil rouge est rétroactif : il regarde le mois, pas le tirage.** Tiré le
+-- 28 novembre, « 20 jours d'activité » est validé par vingt journées déjà
+-- faites — ce qu'il mesure est une habitude, et l'habitude n'a pas commencé le
+-- matin du tirage. Deux bornes tiennent la règle : la fenêtre ne remonte
+-- jamais avant le 1er novembre, et jamais au-delà de la sortie évaluée.
+--
+-- Conséquence directe : aucun fil rouge n'est un piège en fin de mois, et il
+-- n'y a rien à désactiver le 20 novembre.
+--
 -- **Les points sont proportionnels à l'effort, pas à la difficulté
 -- ressentie.** C'est ce qui rend le tirage supportable : recevoir un 30 km
 -- plutôt qu'un 5 km n'est pas une malchance, c'est cinq fois plus d'effort
@@ -107,7 +116,7 @@ cross join (values
  'any', 'moyen', 65, 'multi_day', 10),
 
 ('10 heures d’activité en 20 jours',
- 'Le gros morceau du mois. Toutes sorties confondues.',
+ 'Le gros morceau du mois. Toutes sorties confondues, y compris celles déjà faites.',
  'duration', '{"min_duration_seconds": 36000, "sport_types": ["any"], "window": "multi_day", "effort": "cumulative"}',
  'any', 'difficile', 110, 'multi_day', 20),
 
@@ -136,6 +145,9 @@ cross join (values
 -- presque complet. La tolérance est ce qui les rend humains — une série sans
 -- tolérance s’arrête au troisième jour pour la plupart des gens, et cesse
 -- alors de motiver qui que ce soit.
+--
+-- Rétroactifs, comme tous les défis sur plusieurs jours : les journées déjà
+-- faites comptent.
 ('Fil rouge : 3 jours d’affilée',
  '20 minutes d’activité par jour, trois jours de suite.',
  'streak', '{"days": 3, "sport_types": ["any"], "allowed_gaps": 0, "min_duration_seconds_per_day": 1200}',
@@ -172,7 +184,7 @@ cross join (values
  'any', 'difficile', 95, 'multi_day', 15),
 
 ('Fil rouge : 20 jours sur 25',
- 'Vingt journées actives en vingt-cinq jours. Le fil rouge du mois.',
+ 'Vingt journées actives en vingt-cinq jours. Les journées déjà faites comptent.',
  'streak', '{"days": 25, "sport_types": ["any"], "allowed_gaps": 5, "min_duration_seconds_per_day": 1200}',
  'any', 'difficile', 130, 'multi_day', 25),
 
@@ -330,7 +342,7 @@ cross join (values
  'bike', 'difficile', 95, 'multi_day', 15),
 
 ('Vélo : 500 km cumulés en 25 jours',
- 'Le grand rouleur du mois. Vingt kilomètres par jour, presque tout novembre.',
+ 'Le grand rouleur du mois. Les kilomètres déjà parcourus comptent.',
  'distance', '{"min_distance_meters": 500000, "sport_types": ["bike"], "window": "multi_day", "effort": "cumulative"}',
  'bike', 'difficile', 140, 'multi_day', 25),
 

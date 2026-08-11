@@ -18,6 +18,8 @@ import {
   evaluate,
   evaluateDistance,
   isEvaluable,
+  judgedWindow,
+  type EvaluationContext,
 } from "@/lib/challenges/evaluators/evaluate";
 
 const root = path.resolve(import.meta.dirname, "../..");
@@ -70,12 +72,12 @@ const CONFIG = {
   window: "day",
 };
 
-const CONTEXT = { assignedFor: DAY, durationDays: 1 };
+const CONTEXT: EvaluationContext = { assignedFor: DAY, durationDays: 1 };
 
 const judge = (
   act: Partial<Activity> = {},
   config: Record<string, unknown> = CONFIG,
-  context = CONTEXT,
+  context: EvaluationContext = CONTEXT,
 ) => evaluateDistance({ activity: activity(act), config, context });
 
 describe("le défi de distance", () => {
@@ -148,14 +150,70 @@ describe("le défi de distance", () => {
     ).toBe(true);
   });
 
-  it("refuse au-delà de la fenêtre, même en plusieurs jours", () => {
+  it("accepte aussi une sortie antérieure au tirage : un fil rouge est rétroactif", () => {
+    // Décision du PO du 11 août. Un défi sur plusieurs jours mesure une
+    // habitude, et l'habitude n'a pas commencé le matin du tirage. Sans cela,
+    // tout fil rouge long devenait impossible dans la dernière semaine du
+    // mois, et en recevoir un était une punition pour malchance.
     expect(
       judge(
-        { localDate: addDays(DAY, 3) },
+        { localDate: addDays(DAY, -2) },
         { ...CONFIG, window: "multi_day" },
-        { assignedFor: DAY, durationDays: 3 },
+        { assignedFor: DAY, durationDays: 3, editionStartsOn: "2026-11-01" },
+      ).completed,
+    ).toBe(true);
+  });
+
+  it("mais jamais avant le premier jour de l’édition", () => {
+    // L'entraînement d'octobre ne valide rien : le premier classement du mois
+    // se déciderait avant que le mois n'ait commencé.
+    expect(
+      judge(
+        { localDate: "2026-10-31" },
+        { ...CONFIG, window: "multi_day" },
+        {
+          assignedFor: "2026-11-02",
+          durationDays: 10,
+          editionStartsOn: "2026-11-01",
+        },
       ).completed,
     ).toBe(false);
+  });
+
+  it("et la fenêtre glisse avec l’activité jugée, sans jamais la dépasser", () => {
+    // Elle se termine sur le jour de la sortie évaluée : un défi n'est jamais
+    // validé sur des journées qui n'ont pas encore eu lieu.
+    const window = judgedWindow(
+      {
+        activity: activity({ localDate: addDays(DAY, 5) }),
+        config: { ...CONFIG, window: "multi_day" },
+        context: {
+          assignedFor: DAY,
+          durationDays: 3,
+          editionStartsOn: "2026-11-01",
+        },
+      },
+      3,
+    );
+
+    expect(window.to).toBe(addDays(DAY, 5));
+    expect(window.from).toBe(addDays(DAY, 3));
+  });
+
+  it("un défi de la journée, lui, reste celui du jour où il a été donné", () => {
+    // Le rendre rétroactif offrirait un défi déjà réussi avant d'ouvrir
+    // l'application.
+    const window = judgedWindow(
+      {
+        activity: activity({ localDate: addDays(DAY, -1) }),
+        config: CONFIG,
+        context: { assignedFor: DAY, durationDays: 1 },
+      },
+      1,
+    );
+
+    expect(window.from).toBe(DAY);
+    expect(window.to).toBe(DAY);
   });
 
   it("refuse une activité sans distance", () => {

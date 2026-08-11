@@ -66,7 +66,7 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # Re-running it is harmless, at any hour: participants who already have a
 # challenge are skipped, the draw is deterministic, and the database refuses a
 # second one. If a morning goes wrong, run this line by hand and move on.
-4 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/defis-du-jour >> /var/log/defi-movember-cron.log 2>&1
+4 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/defis-du-jour >> /var/log/defi-movember-cron.log 2>&1
 
 # Provider token renewal (story 3.7). Every hour, at 41 past.
 #

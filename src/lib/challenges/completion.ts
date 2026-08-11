@@ -172,6 +172,15 @@ export async function applyActivity(
   let history: Activity[] | undefined;
   let historyLoaded = false;
 
+  /* The edition's first day, read once and only if a fil rouge needs it.
+     **It is the floor under every retroactive window** (décision PO du
+     11 août) : without it, a multi-day challenge handed out on 2 November
+     would be settled by October's training. Read lazily because most days
+     nobody receives a fil rouge, and this would then be a query for
+     nothing. */
+  let editionStartsOn: string | undefined;
+  let editionLoaded = false;
+
   for (const assignment of assignments) {
     const challenge = assignment.challenges;
     if (!challenge) continue;
@@ -193,13 +202,21 @@ export async function applyActivity(
       historyLoaded = true;
     }
 
+    const days = challenge.duration_days ?? 1;
+
+    if (days > 1 && !editionLoaded) {
+      editionStartsOn = await readEditionStart(assignment.edition_id);
+      editionLoaded = true;
+    }
+
     const verdict = evaluate(challenge.evaluator, {
       activity,
       history,
       config,
       context: {
         assignedFor: assignment.assigned_for,
-        durationDays: challenge.duration_days ?? 1,
+        durationDays: days,
+        editionStartsOn,
       },
     });
 
@@ -230,6 +247,34 @@ export async function applyActivity(
     unsupported,
     completions,
   };
+}
+
+/**
+ * The edition's first day.
+ *
+ * @returns `undefined` when it cannot be read — and the retroactive window
+ *   then has no floor. That is the safe direction of the two: a window
+ *   reaching a few days too far back completes a challenge slightly early,
+ *   while refusing to judge would leave every fil rouge of the month open.
+ *   The activity history itself never predates the sporting account anyway.
+ */
+async function readEditionStart(
+  editionId: string,
+): Promise<string | undefined> {
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("editions")
+    .select("starts_on")
+    .eq("id", editionId)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("[défis] début d’édition illisible", { code: error?.code });
+    return undefined;
+  }
+
+  return data.starts_on;
 }
 
 /**

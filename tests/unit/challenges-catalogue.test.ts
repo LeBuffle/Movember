@@ -219,6 +219,23 @@ describe("les fils rouges sont cohérents avec leur fenêtre", () => {
   });
 });
 
+describe("aucun fil rouge n’est un piège en fin de mois", () => {
+  it("le plus long tient dans l’édition", () => {
+    // Trente jours de jeu. Un fil rouge plus long qu'eux ne serait réussi par
+    // personne, même rétroactif.
+    const longest = Math.max(...rows.map((row) => row.durationDays ?? 1));
+
+    expect(longest).toBeLessThanOrEqual(30);
+  });
+
+  it("et le catalogue annonce la règle rétroactive", () => {
+    // Elle change ce qu'un participant peut espérer d'un défi tiré le 28 :
+    // écrite dans le fichier, elle est relisible par qui reprend le dossier.
+    expect(source).toMatch(/rétroactif/i);
+    expect(source).toMatch(/jamais avant le 1er novembre/);
+  });
+});
+
 describe("le catalogue est jouable par tout le monde", () => {
   const byFamily = (family: string) =>
     rows.filter((row) => row.sportFamily === family);

@@ -214,8 +214,11 @@ describe("le défi de régularité", () => {
   });
 
   it("ignore les activités hors sport et hors fenêtre", () => {
+    // La fenêtre d'un fil rouge se termine sur la sortie jugée et remonte de
+    // sa durée — trois jours ici. Le 10 novembre est donc dehors, la natation
+    // n'est pas le sport demandé, et il ne reste qu'une journée qualifiante.
     const history = [
-      activity({ id: "a", localDate: addDays(DAY, -1) }),
+      activity({ id: "a", localDate: addDays(DAY, -10) }),
       activity({ id: "b", localDate: DAY, sportFamily: "swim" }),
       activity({ id: "c", localDate: addDays(DAY, 1) }),
     ];
@@ -229,6 +232,17 @@ describe("le défi de régularité", () => {
     if (!verdict.completed && "measured" in verdict) {
       expect(verdict.measured).toBe(1);
     }
+  });
+
+  it("et compte les journées antérieures au tirage : un fil rouge est rétroactif", () => {
+    // Décision du PO du 11 août. Trois journées de course déjà faites valident
+    // le défi le jour où il est tiré — ce qu'il mesure est une habitude, pas
+    // une obéissance au tirage.
+    const history = runs([addDays(DAY, -2), addDays(DAY, -1), DAY]);
+
+    expect(
+      judge("streak", config, { history, activity: history[2]! }).completed,
+    ).toBe(true);
   });
 
   it("refuse un défi sans nombre de jours", () => {

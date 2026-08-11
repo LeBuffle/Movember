@@ -1,5 +1,5 @@
 import type { Activity } from "@/lib/activities/activity";
-import { matchesSport, withinWindow } from "@/lib/activities/activity";
+import { addDays, matchesSport } from "@/lib/activities/activity";
 import type { SportFamily } from "@/lib/challenges/sports";
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
 
@@ -30,6 +30,14 @@ export type EvaluationContext = {
   assignedFor: string;
   /** How many days it runs. 1 for a single-day challenge. */
   durationDays: number;
+  /**
+   * The edition's first day, `YYYY-MM-DD`.
+   *
+   * The floor under every retroactive window. Without it, a fil rouge handed
+   * out on 2 November would be settled by October's training — and the first
+   * ranking of the month would be decided before the month began.
+   */
+  editionStartsOn?: string;
 };
 
 export type Verdict =
@@ -107,18 +115,65 @@ function windowDays(
   return config.window === "multi_day" ? context.durationDays : 1;
 }
 
+export type JudgedWindow = { from: string; to: string };
+
+/**
+ * The days a challenge is judged over.
+ *
+ * **Un fil rouge est rétroactif : il regarde le mois, pas le tirage.** A
+ * twenty-five-day challenge drawn on the 28th is settled by twenty-five days
+ * of activity that have already happened — because what it measures is a
+ * habit, and the habit did not start the morning the draw ran. Without that,
+ * every long challenge became unwinnable in the last week of the month, and
+ * receiving one was a punishment for being unlucky.
+ *
+ * So the window ends on the day of the activity being judged and reaches
+ * back over the challenge's length, with two bounds that matter as much as
+ * the rule itself:
+ *
+ * - **It never reaches before the edition's first day.** October's training
+ *   settles nothing.
+ * - **It never reaches past the activity being judged.** A challenge is never
+ *   completed on the strength of days that have not happened yet.
+ *
+ * A single-day challenge is untouched: it is the day it was handed out, and
+ * nothing else. Making it retroactive would hand somebody a challenge they
+ * had already completed before opening the application.
+ */
+export function judgedWindow(
+  input: EvaluationInput,
+  days: number,
+): JudgedWindow {
+  const { activity, context } = input;
+
+  if (days <= 1) {
+    return { from: context.assignedFor, to: context.assignedFor };
+  }
+
+  const to = activity.localDate;
+  const reach = addDays(to, -(days - 1));
+  const floor = context.editionStartsOn;
+
+  return { from: floor && floor > reach ? floor : reach, to };
+}
+
 /** The activities that count: right sport, right days. */
 function eligible(
   activities: readonly Activity[],
   sports: string[],
-  assignedFor: string,
-  days: number,
+  window: JudgedWindow,
 ): Activity[] {
   return activities.filter(
     (activity) =>
       matchesSport(activity, sports) &&
-      withinWindow(activity.localDate, assignedFor, days),
+      activity.localDate >= window.from &&
+      activity.localDate <= window.to,
   );
+}
+
+/** Whether one activity falls inside the window. */
+function inWindow(activity: Activity, window: JudgedWindow): boolean {
+  return activity.localDate >= window.from && activity.localDate <= window.to;
 }
 
 /* -------------------------------------------------------------------------
@@ -148,11 +203,12 @@ function threshold(
 
   const sports = list(config.sport_types);
   const days = windowDays(config, context);
+  const window = judgedWindow(input, days);
 
   if (config.effort === "cumulative") {
     if (!history) return noHistory;
 
-    const counted = eligible(history, sports, context.assignedFor, days);
+    const counted = eligible(history, sports, window);
     const measured = counted.reduce((total, one) => total + measure(one), 0);
 
     if (measured >= target) {
@@ -178,7 +234,7 @@ function threshold(
     return { completed: false, reason: WRONG_SPORT, measured, target };
   }
 
-  if (!withinWindow(activity.localDate, context.assignedFor, days)) {
+  if (!inWindow(activity, window)) {
     return { completed: false, reason: OUT_OF_WINDOW, measured, target };
   }
 
@@ -251,11 +307,9 @@ export function evaluateStreak(input: EvaluationInput): Verdict {
   const required = Math.max(1, days - tolerance);
 
   const qualifying = new Set(
-    eligible(history, list(config.sport_types), context.assignedFor, days)
+    eligible(history, list(config.sport_types), judgedWindow(input, days))
       .filter(
-        (candidate) =>
-          candidate.localDate <= activity.localDate &&
-          (perDay === 0 || candidate.durationSeconds >= perDay),
+        (candidate) => perDay === 0 || candidate.durationSeconds >= perDay,
       )
       .map((candidate) => candidate.localDate),
   );
@@ -289,8 +343,7 @@ export function evaluateMultisport(input: EvaluationInput): Verdict {
   const days = Math.max(1, number(config.window_days) || 1);
 
   const families = new Set<SportFamily>(
-    eligible(history, list(config.sport_types), context.assignedFor, days)
-      .filter((candidate) => candidate.localDate <= activity.localDate)
+    eligible(history, list(config.sport_types), judgedWindow(input, days))
       // An activity the provider could not classify tells us nothing about
       // which sport was practised, so it cannot count towards a count of
       // *different* sports.
