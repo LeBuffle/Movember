@@ -44,11 +44,54 @@ const boundedInteger = (max: number, tooLarge: string) =>
     .positive("La valeur doit être supérieure à zéro.")
     .max(max, tooLarge);
 
-const TOO_FAR = "Au-delà de 200 km, il s’agit presque sûrement d’une erreur.";
+/* -------------------------------------------------------------------------
+ * Les plafonds dépendent de la façon d'atteindre l'objectif
+ *
+ * **Un seuil est absurde ou raisonnable selon qu'il se joue en une sortie ou
+ * sur un mois.** 200 km bornent un effort unique plausible : au-delà, c'est
+ * presque toujours quelqu'un qui a tapé des kilomètres dans un champ qui
+ * compte des mètres. Mais 500 km cumulés sur vingt-cinq jours, c'est vingt
+ * kilomètres par jour — un défi de fil rouge parfaitement ordinaire, et
+ * exactement ce que le PO a demandé.
+ *
+ * Un plafond unique se serait donc trompé dans un sens ou dans l'autre : soit
+ * il laissait passer la faute de frappe, soit il interdisait le défi. Deux
+ * plafonds, choisis par le réglage `effort`, ne se trompent dans aucun des
+ * deux.
+ * ---------------------------------------------------------------------- */
+
+/** En une seule sortie. Au-delà, c'est une erreur de saisie. */
+const SINGLE_MAX_DISTANCE = 200_000;
+const SINGLE_MAX_DURATION = 86_400;
+const SINGLE_MAX_ELEVATION = 9_000;
+
+/** Cumulé sur la fenêtre du défi. Généreux, et toujours borné. */
+const CUMULATIVE_MAX_DISTANCE = 2_000_000;
+const CUMULATIVE_MAX_DURATION = 720_000;
+const CUMULATIVE_MAX_ELEVATION = 50_000;
+
+const TOO_FAR = "Au-delà de 2 000 km, il s’agit presque sûrement d’une erreur.";
+const TOO_FAR_SINGLE =
+  "Au-delà de 200 km en une seule sortie, il s’agit presque sûrement d’une erreur. Pour un objectif plus grand, choisissez « en cumulant plusieurs sorties ».";
 const TOO_LONG =
-  "Au-delà de 24 heures, il s’agit presque sûrement d’une erreur.";
-const TOO_HIGH = "Au-delà de 9 000 m de dénivelé, il s’agit d’une erreur.";
+  "Au-delà de 200 heures, il s’agit presque sûrement d’une erreur.";
+const TOO_LONG_SINGLE =
+  "Au-delà de 24 heures en une seule sortie, il s’agit presque sûrement d’une erreur. Pour un objectif plus grand, choisissez « en cumulant plusieurs sorties ».";
+const TOO_HIGH = "Au-delà de 50 000 m de dénivelé, il s’agit d’une erreur.";
+const TOO_HIGH_SINGLE =
+  "Au-delà de 9 000 m de dénivelé en une seule sortie, il s’agit d’une erreur. Pour un objectif plus grand, choisissez « en cumulant plusieurs sorties ».";
 const TOO_MANY_DAYS = "Une édition dure trente jours.";
+
+/**
+ * Le second plafond, celui qui ne s'applique qu'à l'effort unique.
+ *
+ * Posé sur l'objet plutôt que sur le champ, parce qu'il dépend d'un autre
+ * champ. Zod garde la forme de l'objet à travers un `refine`, donc le
+ * formulaire du back-office continue d'être piloté par le registre.
+ */
+const cappedForSingleEffort =
+  (key: string, max: number) => (config: Record<string, unknown>) =>
+    config.effort === "cumulative" || Number(config[key]) <= max;
 
 const sportList = z
   .array(sportFamilySchema)
@@ -109,14 +152,17 @@ const effortField: ConfigField = {
  * Configuration per evaluator
  * ---------------------------------------------------------------------- */
 
-const distanceConfig = z.object({
-  /* 200 km caps a plausible single effort. Above that, it is a typo — most
-     likely someone meaning kilometres in a field that counts metres. */
-  min_distance_meters: boundedInteger(200_000, TOO_FAR),
-  sport_types: sportList,
-  window: windowSchema.default("day"),
-  effort: effortSchema.default("single"),
-});
+const distanceConfig = z
+  .object({
+    min_distance_meters: boundedInteger(CUMULATIVE_MAX_DISTANCE, TOO_FAR),
+    sport_types: sportList,
+    window: windowSchema.default("day"),
+    effort: effortSchema.default("single"),
+  })
+  .refine(cappedForSingleEffort("min_distance_meters", SINGLE_MAX_DISTANCE), {
+    error: TOO_FAR_SINGLE,
+    path: ["min_distance_meters"],
+  });
 
 const distanceFields: ConfigField[] = [
   {
@@ -132,13 +178,17 @@ const distanceFields: ConfigField[] = [
   effortField,
 ];
 
-const durationConfig = z.object({
-  /* 24 hours. */
-  min_duration_seconds: boundedInteger(86_400, TOO_LONG),
-  sport_types: sportList,
-  window: windowSchema.default("day"),
-  effort: effortSchema.default("single"),
-});
+const durationConfig = z
+  .object({
+    min_duration_seconds: boundedInteger(CUMULATIVE_MAX_DURATION, TOO_LONG),
+    sport_types: sportList,
+    window: windowSchema.default("day"),
+    effort: effortSchema.default("single"),
+  })
+  .refine(cappedForSingleEffort("min_duration_seconds", SINGLE_MAX_DURATION), {
+    error: TOO_LONG_SINGLE,
+    path: ["min_duration_seconds"],
+  });
 
 const durationFields: ConfigField[] = [
   {
@@ -154,12 +204,17 @@ const durationFields: ConfigField[] = [
   effortField,
 ];
 
-const elevationConfig = z.object({
-  min_elevation_meters: boundedInteger(9_000, TOO_HIGH),
-  sport_types: sportList,
-  window: windowSchema.default("day"),
-  effort: effortSchema.default("single"),
-});
+const elevationConfig = z
+  .object({
+    min_elevation_meters: boundedInteger(CUMULATIVE_MAX_ELEVATION, TOO_HIGH),
+    sport_types: sportList,
+    window: windowSchema.default("day"),
+    effort: effortSchema.default("single"),
+  })
+  .refine(cappedForSingleEffort("min_elevation_meters", SINGLE_MAX_ELEVATION), {
+    error: TOO_HIGH_SINGLE,
+    path: ["min_elevation_meters"],
+  });
 
 const elevationFields: ConfigField[] = [
   {

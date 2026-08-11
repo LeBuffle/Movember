@@ -94,6 +94,21 @@ Ce n'est pas une erreur du seed : c'est la migration correspondante qui n'a pas 
 appliquée. Appliquer les migrations manquantes, puis relancer le seed en entier — il
 reprend tout depuis le début sans rien dupliquer.
 
+### Le catalogue de défis
+
+Une fois le seed passé, importer `supabase/challenges-2026.sql` : **70 défis**, répartis
+sur les six familles de sport, du 3 km au fil rouge de vingt-cinq jours.
+
+Il est rejouable — un défi déjà présent sous le même titre n'est pas réinséré — et il se
+termine par un contrôle qui affiche la répartition obtenue. Le total attendu est 70.
+
+Un seuil se change en une instruction SQL. Un défi se retire du tirage avec
+`is_active = false`, **jamais avec un DELETE** : la suppression emporterait les
+attributions et les résultats qui le référencent.
+
+⚠️ **Sans catalogue, le tirage du matin n'attribue rien** et personne n'a de défi. En
+dessous de 30 défis actifs, il tourne mais se répète ; l'écran du back-office le signale.
+
 Deux commandes à passer **une seule fois**, après la migration 25 :
 
 ```sql
