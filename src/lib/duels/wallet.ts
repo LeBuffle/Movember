@@ -107,6 +107,46 @@ export async function ownWallet(limit = 30): Promise<Wallet> {
 }
 
 /**
+ * The signed-in participant's balance, and nothing else.
+ *
+ * Separate from `ownWallet` because the account page shows one figure and no
+ * history: reading thirty movements to display a single number is thirty rows
+ * fetched on a screen that opens on a phone.
+ *
+ * @returns `null` when there is no session or no edition — which the screen
+ *   turns into no card at all, rather than into a misleading zero.
+ */
+export async function ownBalance(): Promise<number | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: edition } = await supabase
+    .from("editions")
+    .select("id")
+    .eq("year", EDITION_YEAR)
+    .maybeSingle();
+
+  if (!edition) return null;
+
+  const { data, error } = await supabase.rpc("duel_credit_balance", {
+    p_profile: user.id,
+    p_edition: edition.id,
+  });
+
+  if (error) {
+    console.error("[défis-joueurs] solde illisible", { code: error.code });
+    return null;
+  }
+
+  return Number(data ?? 0);
+}
+
+/**
  * A participant's balance, from a task with no session.
  *
  * Used by the send path, which runs with the service key because it also

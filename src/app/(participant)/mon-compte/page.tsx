@@ -10,6 +10,7 @@ import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { ROUTES } from "@/lib/auth/routes";
 import { setDuelOptOut } from "@/lib/duels/actions";
+import { ownBalance } from "@/lib/duels/wallet";
 import { getParticipantAccess } from "@/lib/registration/access";
 import { getShippingContext } from "@/lib/shipping/address";
 import { createClient } from "@/lib/supabase/server";
@@ -36,9 +37,10 @@ export default async function AccountPage() {
     .single();
 
   // Only asks of those who actually have something coming (story 2.7).
-  const [shipping, access] = await Promise.all([
+  const [shipping, access, credits] = await Promise.all([
     getShippingContext(),
     getParticipantAccess(),
+    ownBalance(),
   ]);
 
   return (
@@ -161,6 +163,38 @@ export default async function AccountPage() {
               dans les 24 h. Cinq au maximum par jour, sans aucune pénalité si
               vous n’en relevez aucun.
             </p>
+            {/* The balance, here as well as on the wallet screen. Somebody
+                who wants to know how many duels they have left looks at their
+                account, not at the page for challenging one person — and a
+                figure only visible at the moment of spending is a figure
+                found too late. */}
+            {credits !== null && (
+              <div className="border-line mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+                <span className="text-ink">
+                  <strong className="text-brand-blue text-2xl font-extrabold">
+                    {credits}
+                  </strong>{" "}
+                  crédit{credits > 1 ? "s" : ""} de défi
+                  {credits > 1 ? "s" : ""}
+                  <span className="text-ink-muted block text-sm">
+                    {credits === 0
+                      ? "Recevoir et relever des défis reste gratuit."
+                      : "Un crédit vaut un défi envoyé."}
+                  </span>
+                </span>
+
+                <Link
+                  href="/jeu/defis-joueurs/credits"
+                  className={buttonClasses({
+                    size: "sm",
+                    variant: "secondary",
+                  })}
+                >
+                  {credits === 0 ? "En acheter" : "Voir mes crédits"}
+                </Link>
+              </div>
+            )}
+
             <div className="mt-3">
               <DuelOptOutForm
                 action={setDuelOptOut}
