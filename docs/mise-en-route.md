@@ -121,6 +121,10 @@ continuent d'être rejetés, et rien ne dit pourquoi.
 
 ## Étape 3 — Les services extérieurs
 
+> **Resend a sa propre fiche : [`resend.md`](resend.md).** C'est le dernier bloquant
+> d'ouverture — vérification du domaine, réglage SMTP de Supabase, variables de
+> l'application, et le calcul de quota à faire avant novembre.
+
 ### Stripe (mode test)
 
 1. Développeurs → Webhooks → **Ajouter un point de terminaison**

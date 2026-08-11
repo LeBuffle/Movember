@@ -59,7 +59,7 @@ l'ordre qui arrange.
 | 2.2 | [Parcours de choix du niveau](2.2.parcours-choix-niveau.md) | **Review** | 2.1, 1.9 |
 | 2.3 | [Création de la session de paiement Stripe](2.3.session-paiement-stripe.md) | **Review** | 2.2 |
 | 2.4 | [Webhook de paiement et activation du participant](2.4.webhook-activation.md) | **Review** | 2.3 |
-| 2.5 | [Page de confirmation et e-mail de bienvenue](2.5.confirmation-et-bienvenue.md) | Draft | 2.4 |
+| 2.5 | [Page de confirmation et e-mail de bienvenue](2.5.confirmation-et-bienvenue.md) | **Review** | 2.4 |
 | 2.6 | [Ligne comptable avec les frais réels](2.6.ligne-comptable-frais-reels.md) | **Review** | 2.4 |
 | 2.7 | [Adresse de livraison des contreparties](2.7.adresse-de-livraison.md) | **Review** | 2.4 |
 | 2.8 | [Remboursement depuis le back-office](2.8.remboursement.md) | **Review** | 2.6, 1.10 |

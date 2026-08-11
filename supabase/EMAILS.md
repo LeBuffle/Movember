@@ -110,10 +110,12 @@ prévu pour du développement, **pas pour 600 inscriptions en quelques jours**.
 > créent alors sans e-mail. **À réactiver avant la production** — sans confirmation,
 > n'importe qui peut créer un compte avec l'adresse de quelqu'un d'autre.
 
-Il faudra donc, **avant l'ouverture des inscriptions**, brancher Supabase sur un service
+Il faut donc, **avant l'ouverture des inscriptions**, brancher Supabase sur un service
 d'envoi réel — Resend est prévu par l'architecture — dans
-**Authentication → Emails → SMTP Settings**.
+**Project Settings → Authentication → SMTP Settings**.
 
-C'est un point à traiter avec l'epic 6 (notifications), qui met déjà en place ce service
-pour le repli des notifications push. Les deux usages partageront le même domaine
-d'expédition authentifié.
+👉 **La marche à suivre complète est dans [`docs/resend.md`](../docs/resend.md)** :
+vérification du domaine, réglage SMTP, variables de l'application, quotas et vérifications.
+
+Les deux usages — les e-mails d'authentification de Supabase et les envois de
+l'application — partagent le même domaine d'expédition authentifié et la même clé.

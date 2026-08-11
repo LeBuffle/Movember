@@ -81,16 +81,24 @@ vi.mock("@/lib/supabase/admin", () => ({
           }),
           update: (patch: Record<string, unknown>) => {
             state.updated.push(patch);
-            return {
-              eq: () => ({
-                eq: () => ({
-                  select: async () => ({
-                    data: state.activatedRows,
-                    error: state.activationError,
-                  }),
-                }),
+
+            /* Deux écritures passent par ici. L'activation —
+               `.eq().eq().select()` — et la réclamation de l'e-mail de
+               bienvenue (story 2.5), qui ajoute un `.is()`. Cette dernière ne
+               trouve rien : ces tests portent sur le paiement, pas sur
+               l'envoi, et rendre une liste vide fait s'arrêter l'e-mail sur
+               « déjà envoyé » sans rien changer au reste. */
+            const activation = {
+              select: async () => ({
+                data: state.activatedRows,
+                error: state.activationError,
+              }),
+              is: () => ({
+                select: async () => ({ data: [], error: null }),
               }),
             };
+
+            return { eq: () => ({ eq: () => activation, ...activation }) };
           },
         };
       }
@@ -105,6 +113,11 @@ const { handleCheckoutCompleted, readReferences, splitAmounts } =
 const { verifyStripeSignature } = await import("@/lib/stripe/webhook");
 
 type Session = Parameters<typeof handleCheckoutCompleted>[0];
+
+/** Les écritures d'activation, distinguées de la réclamation de l'e-mail. */
+function activations() {
+  return state.updated.filter((patch) => "status" in patch);
+}
 
 function session(overrides: Record<string, unknown> = {}): Session {
   return {
@@ -301,7 +314,8 @@ describe("le traitement d’un paiement confirmé", () => {
       counterpart_cents: 1500,
       kind: "registration",
     });
-    expect(state.updated[0]).toMatchObject({ status: "active" });
+    expect(activations()).toHaveLength(1);
+    expect(activations()[0]).toMatchObject({ status: "active" });
   });
 
   it("laisse les frais inconnus plutôt que de les inventer", () => {
@@ -323,7 +337,7 @@ describe("le traitement d’un paiement confirmé", () => {
     const result = await handleCheckoutCompleted(session());
 
     expect(result).toEqual({ ok: true, outcome: "already-processed" });
-    expect(state.updated).toHaveLength(1);
+    expect(activations()).toHaveLength(1);
   });
 
   it("active quand même après une première livraison morte en chemin", async () => {
@@ -347,7 +361,7 @@ describe("le traitement d’un paiement confirmé", () => {
     const result = await handleCheckoutCompleted(session());
 
     expect(result.ok).toBe(false);
-    expect(state.updated).toHaveLength(0);
+    expect(activations()).toHaveLength(0);
   });
 
   it("demande à réessayer quand l’activation échoue", async () => {

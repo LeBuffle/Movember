@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 
 import { grantBonusPacks } from "@/lib/cards/grant";
 import { handlePackPurchase } from "@/lib/packs/purchase";
+import { sendWelcomeEmail } from "@/lib/registration/welcome";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -253,6 +254,14 @@ export async function handleCheckoutCompleted(
   // It is safe to run twice. The guard is a count of what this participant
   // already received from packs, so a replay hands out nothing.
   await grantPacksForTier(registrationId);
+
+  /* The welcome e-mail (story 2.5). Run on every pass for the same reason as
+     the packs: a first delivery that died after the activation would otherwise
+     leave somebody paid, active, and never told what to do next.
+
+     It is safe to run twice — the claim is a conditional update in the
+     database — and its failure is never allowed to fail the activation. */
+  await sendWelcomeEmail(registrationId);
 
   console.info("[webhook] paiement traité", {
     session: session.id,

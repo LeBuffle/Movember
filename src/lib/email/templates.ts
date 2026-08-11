@@ -80,6 +80,119 @@ export function notificationEmail(input: NotificationEmailInput): EmailContent {
 }
 
 /**
+ * The welcome e-mail, sent once a payment is confirmed (story 2.5).
+ *
+ * **It is the document the participant will look for in April**, when they go
+ * hunting for a tax receipt. So it answers that question itself, in as many
+ * words: this was a purchase with a consideration, not a deductible donation,
+ * and no receipt will be issued (`CLAUDE.md` §6, FR13). Saying it here rather
+ * than only in the terms is the difference between a rule that was published
+ * and a rule that was read.
+ *
+ * It also carries the one thing the participant has to do next — link Strava —
+ * because a confirmation that only confirms leaves somebody registered and
+ * unable to play.
+ *
+ * No unsubscribe link, and that is correct: this is a transactional message
+ * about a payment, not a mailing. Offering to unsubscribe from a receipt makes
+ * no sense, and mail providers do not expect one on this kind of message.
+ */
+export type WelcomeEmailInput = {
+  tierName: string;
+  grossCents: number;
+  donationCents: number;
+  /** Where to go to link Strava. Absolute. */
+  gameUrl: string;
+};
+
+const TAX_LINE =
+  "Votre inscription est un achat avec contrepartie, pas un don au sens " +
+  "fiscal. Aucun reçu fiscal ni CERFA ne sera émis, et ce montant n’ouvre " +
+  "droit à aucune réduction d’impôt.";
+
+export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
+  const subject = "Votre inscription est confirmée — DEFI Movember";
+
+  const amount = euros(input.grossCents);
+  const donation = euros(input.donationCents);
+
+  const text = [
+    "Votre inscription est confirmée.",
+    "",
+    `Niveau : ${input.tierName}`,
+    `Montant payé : ${amount}`,
+    `Montant reversé à la fondation Movember : ${donation}`,
+    "",
+    TAX_LINE,
+    "",
+    "La suite, en deux minutes :",
+    "1. Reliez votre compte Strava — sans lui, aucun défi ne peut se valider.",
+    "2. Installez l’application sur votre écran d’accueil pour recevoir votre",
+    "   défi du jour.",
+    "",
+    `Commencer : ${input.gameUrl}`,
+    "",
+    "—",
+    "DEFI Movember — projet indépendant porté par une association loi 1901,",
+    "sans lien avec la fondation Movember.",
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html lang="fr">
+<body style="margin:0;padding:24px;background:#fafafa;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#171717">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;padding:24px">
+    <p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:600">DEFI Movember</p>
+    <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">Votre inscription est confirmée</h1>
+
+    <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 20px">
+      <tr>
+        <td style="padding:6px 0;color:#525252">Niveau</td>
+        <td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(input.tierName)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#525252">Montant payé</td>
+        <td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(amount)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#525252">Reversé à la fondation</td>
+        <td style="padding:6px 0;text-align:right;font-weight:600">${escapeHtml(donation)}</td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 20px;padding:12px;background:#fff7ed;border-left:4px solid #c2410c;color:#525252;line-height:1.5;font-size:14px">
+      ${escapeHtml(TAX_LINE)}
+    </p>
+
+    <h2 style="margin:0 0 8px;font-size:16px">La suite, en deux minutes</h2>
+    <ol style="margin:0 0 20px;padding-left:20px;color:#525252;line-height:1.6">
+      <li><strong>Reliez votre compte Strava.</strong> Sans lui, aucun défi ne peut se valider.</li>
+      <li><strong>Installez l’application</strong> sur votre écran d’accueil, pour recevoir votre défi du jour.</li>
+    </ol>
+
+    <p style="margin:0">
+      <a href="${escapeAttribute(input.gameUrl)}" style="display:inline-block;background:#c2410c;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Commencer</a>
+    </p>
+  </div>
+
+  <div style="max-width:560px;margin:16px auto 0;font-size:12px;color:#525252;line-height:1.5">
+    <p style="margin:0">Projet indépendant porté par une association loi 1901, sans lien avec la fondation Movember.</p>
+  </div>
+</body>
+</html>`;
+
+  return { subject, html, text };
+}
+
+/** `12,00 €` — la virgule, parce que le message est lu en français. */
+function euros(cents: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+  }).format(cents / 100);
+}
+
+/**
  * Escaping, by hand and on purpose.
  *
  * A challenge title is written by a volunteer in a back-office form. It is
