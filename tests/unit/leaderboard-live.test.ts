@@ -280,6 +280,53 @@ describe("les cartes", () => {
   });
 });
 
+describe("le pseudonyme est l’information essentielle", () => {
+  it("une colonne annexe illisible ne l’efface pas", () => {
+    // Arrivé pour de vrai le 11 août : `duels_opt_out` est apparu avec l'epic
+    // 12, et entre le déploiement du code et l'application de sa migration, la
+    // requête enrichie échouait — chaque pseudonyme du classement devenait
+    // « Participant ». Un classement anonyme est un écran cassé ; un
+    // classement sans bouton « Défier » est un écran sans commodité.
+    const body = reader.slice(
+      reader.indexOf("async function displayNames"),
+      reader.indexOf("export async function getLeaderboard"),
+    );
+
+    // La requête enrichie, puis un repli qui ne demande que l'indispensable.
+    expect(body).toMatch(/select\("id, display_name, duels_opt_out"\)/);
+    expect(body).toMatch(/select\("id, display_name"\)/);
+  });
+
+  it("et l’échec est journalisé, jamais avalé", () => {
+    // La lecture ne renvoyait rien, en silence, pendant tout un déploiement :
+    // c'est ainsi que le défaut est arrivé au PO avant d'arriver dans un
+    // journal.
+    const body = reader.slice(
+      reader.indexOf("async function displayNames"),
+      reader.indexOf("export async function getLeaderboard"),
+    );
+
+    expect(body).toMatch(/console\.error/);
+    expect(body).not.toMatch(/const \{ data \} = await supabase/);
+  });
+
+  it("la recherche applique la même règle", () => {
+    const body = reader.slice(
+      reader.indexOf("export async function searchLeaderboard"),
+    );
+
+    expect(body).toMatch(/challengeableKnown/);
+    expect(body).toMatch(/select\("id, display_name"\)/);
+  });
+
+  it("sans repère, on n’affiche pas de bouton plutôt qu’un mauvais", () => {
+    // On ignore si ce participant accepte les défis : ne rien proposer est la
+    // seule réponse honnête.
+    expect(reader).toMatch(/challengeable: false/);
+    expect(reader).toMatch(/challengeableKnown && row\.duels_opt_out !== true/);
+  });
+});
+
 describe("aucun calcul n’a bougé", () => {
   it("l’écran ne calcule toujours aucun rang", () => {
     // Tout vient de la vue matérialisée. C'est la garantie de l'epic 7, et

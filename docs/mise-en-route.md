@@ -80,7 +80,19 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.
 
 Puis, **en dernier**, rejouer `seed.sql`. Il est rejouable sans risque et crée l'édition
-2026, les trois niveaux d'inscription et les deux packs de cartes.
+2026, les trois niveaux d'inscription, les deux packs de cartes, les trois défis entre
+joueurs et les deux lots de crédits.
+
+⚠️ **Le seed après les migrations, jamais avant.** Il remplit des tables que les migrations
+créent. Lancé trop tôt, il s'arrête sur un message de ce genre :
+
+```
+ERROR: 42P01: relation "public.duel_types" does not exist
+```
+
+Ce n'est pas une erreur du seed : c'est la migration correspondante qui n'a pas encore été
+appliquée. Appliquer les migrations manquantes, puis relancer le seed en entier — il
+reprend tout depuis le début sans rien dupliquer.
 
 Deux commandes à passer **une seule fois**, après la migration 25 :
 

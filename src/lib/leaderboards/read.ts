@@ -99,11 +99,23 @@ async function sessionProfile(): Promise<string | null> {
 }
 
 /**
- * Pseudonym and duel availability, for a set of identifiers, in one query.
+ * Pseudonym and duel availability, for a set of identifiers.
  *
  * The two travel together because they are shown together: a card carries a
  * name and, next to it, a button whose presence depends on the second field.
- * Two queries would let them disagree for one render.
+ *
+ * **The name is essential, the button is a bonus, and the bonus may never take
+ * the name down with it.** That is not a hypothetical: `duels_opt_out` arrived
+ * with epic 12, and between the deployment of the code and the application of
+ * its migration the enriched query fails — which turned every pseudonym in
+ * every ranking into "Participant" until somebody noticed. A ranking full of
+ * anonymous rows is a broken screen; a ranking with no "Défier" button is a
+ * screen missing a convenience.
+ *
+ * So: the enriched query, and on failure a second one asking only for what the
+ * screen cannot do without. The fallback also covers the reverse case — a
+ * column removed or renamed later — and it costs one extra round trip on a
+ * path that is already broken.
  */
 type PublicProfile = { name: string; challengeable: boolean };
 
@@ -115,15 +127,45 @@ async function displayNames(
   const supabase = createAnonClient();
   if (!supabase) return new Map();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("public_profiles")
     .select("id, display_name, duels_opt_out")
     .in("id", ids);
 
+  if (!error) {
+    return new Map(
+      (data ?? []).map((row) => [
+        row.id,
+        { name: row.display_name, challengeable: row.duels_opt_out !== true },
+      ]),
+    );
+  }
+
+  // Logged rather than swallowed. Reading the names and getting nothing back
+  // was silent for a whole deployment, which is how it reached the Product
+  // Owner before it reached a log.
+  console.error("[classements] pseudonymes enrichis illisibles, repli", {
+    code: error.code,
+  });
+
+  const { data: names, error: fallbackError } = await supabase
+    .from("public_profiles")
+    .select("id, display_name")
+    .in("id", ids);
+
+  if (fallbackError) {
+    console.error("[classements] pseudonymes illisibles", {
+      code: fallbackError.code,
+    });
+    return new Map();
+  }
+
   return new Map(
-    (data ?? []).map((row) => [
+    (names ?? []).map((row) => [
       row.id,
-      { name: row.display_name, challengeable: row.duels_opt_out !== true },
+      // No duel button rather than a wrong one: we do not know whether this
+      // participant accepts them.
+      { name: row.display_name, challengeable: false },
     ]),
   );
 }
@@ -338,18 +380,47 @@ export async function searchLeaderboard(
   const safe = term.replace(/[,()*%]/g, " ").trim();
   if (safe.length < 2) return [];
 
-  const { data: matches, error } = await supabase
+  /* Same rule as `displayNames`: the pseudonym is what the search is for, the
+     duel button is a bonus, and the bonus may not take the search down. The
+     enriched column arrived with epic 12 and is missing until its migration is
+     applied — without this fallback, searching answered "aucun résultat" for
+     participants who exist. */
+  const enriched = await supabase
     .from("public_profiles")
     .select("id, display_name, duels_opt_out")
     .ilike("display_name", `%${safe}%`)
     .limit(limit);
 
-  if (error) {
-    console.error("[classements] recherche impossible", { code: error.code });
-    return [];
+  let challengeableKnown = true;
+  let found: Array<{
+    id: string;
+    display_name: string;
+    duels_opt_out?: boolean;
+  }> = enriched.data ?? [];
+
+  if (enriched.error) {
+    console.error("[classements] recherche enrichie impossible, repli", {
+      code: enriched.error.code,
+    });
+
+    challengeableKnown = false;
+
+    const plain = await supabase
+      .from("public_profiles")
+      .select("id, display_name")
+      .ilike("display_name", `%${safe}%`)
+      .limit(limit);
+
+    if (plain.error) {
+      console.error("[classements] recherche impossible", {
+        code: plain.error.code,
+      });
+      return [];
+    }
+
+    found = plain.data ?? [];
   }
 
-  const found = matches ?? [];
   if (found.length === 0) return [];
 
   const [ranked, previous, self] = await Promise.all([
@@ -370,7 +441,12 @@ export async function searchLeaderboard(
   const names = new Map(
     found.map((row) => [
       row.id,
-      { name: row.display_name, challengeable: row.duels_opt_out !== true },
+      {
+        name: row.display_name,
+        // No duel button rather than a wrong one when the column was
+        // unreadable: we do not know whether they accept them.
+        challengeable: challengeableKnown && row.duels_opt_out !== true,
+      },
     ]),
   );
 
