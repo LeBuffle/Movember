@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -91,5 +94,69 @@ describe("GET /api/health?deep=1 — état réel", () => {
       );
       expect(JSON.stringify(body)).not.toMatch(/postgres|supabase\.co|jwt/i);
     });
+  });
+});
+
+describe("GET /api/health?deep=1 — le service d’envoi", () => {
+  /* Une seule question, et c'est celle qu'on se pose après avoir collé trois
+     lignes dans un fichier sur le VPS : est-ce que le serveur les a vues ? */
+  async function deep() {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+
+    return (await GET(request("?deep=1"))).json();
+  }
+
+  it("dit ce que le serveur a vu, sans jamais dire quoi", async () => {
+    // Ni la clé — évidemment — ni l'adresse d'expédition : le point d'entrée
+    // est public, et une adresse publiée sur un contrôle de santé est une
+    // adresse qui se fait moissonner.
+    vi.stubEnv("RESEND_API_KEY", "re_secret_a_ne_jamais_publier");
+    vi.stubEnv("RESEND_FROM_ADDRESS", "DEFI Movember <bonjour@exemple.fr>");
+    vi.stubEnv("RESEND_REPLY_TO", "contact@exemple.fr");
+
+    const body = await deep();
+
+    expect(body.checks.email).toEqual({
+      apiKey: true,
+      fromAddress: true,
+      replyTo: true,
+    });
+
+    expect(JSON.stringify(body)).not.toMatch(/re_secret|bonjour@|contact@/);
+  });
+
+  it("une variable vide compte comme absente", async () => {
+    // Une ligne `RESEND_API_KEY=` dans le fichier est le cas le plus fréquent,
+    // et « présente mais vide » n'apprendrait rien à personne.
+    vi.stubEnv("RESEND_API_KEY", "   ");
+    vi.stubEnv("RESEND_FROM_ADDRESS", "");
+    vi.stubEnv("RESEND_REPLY_TO", "");
+
+    expect((await deep()).checks.email).toEqual({
+      apiKey: false,
+      fromAddress: false,
+      replyTo: false,
+    });
+  });
+
+  it("et un service absent ne dégrade jamais le site", async () => {
+    // Personne n'est empêché de s'inscrire ni de jouer par là. Rapporter
+    // « dégradé » réveillerait quelqu'un la nuit pour une variable
+    // volontairement vide depuis des mois.
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://exemple.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "cle-de-test");
+    vi.stubEnv("RESEND_API_KEY", "");
+
+    const code = readFileSync(
+      path.join(import.meta.dirname, "../../src/app/api/health/route.ts"),
+      "utf8",
+    );
+
+    // La lecture du fichier plutôt qu'un appel : provoquer une vraie réponse
+    // saine demanderait une base joignable. Ce qui compte est que le statut
+    // ne dépende que de la base.
+    expect(code).toMatch(/status: database\.ok \? "ok" : "degraded"/);
+    expect(code).not.toMatch(/email[^\n]*\?\s*"ok"\s*:\s*"degraded"/);
   });
 });

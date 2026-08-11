@@ -165,6 +165,24 @@ chmod 600 /opt/defi-movember/deploy/.env.staging
 
 Et redéployer, ou redémarrer le conteneur.
 
+### Vérifier que le serveur a bien pris les variables
+
+Sans envoyer un seul e-mail :
+
+```bash
+curl -s 'https://staging.defi-movember.fr/api/health?deep=1' | grep -o '"email":{[^}]*}'
+```
+
+Attendu :
+
+```json
+"email":{"apiKey":true,"fromAddress":true,"replyTo":true}
+```
+
+Un `false` veut dire que la ligne est absente du fichier, vide, ou que le conteneur n'a pas
+été relancé depuis. **Le contrôle ne publie jamais les valeurs** — ni la clé, ni l'adresse :
+la réponse est publique.
+
 **Tant que la clé et l'adresse d'expédition sont absentes, l'application n'envoie rien et le dit dans ses
 journaux — sans jamais tomber en panne.** C'est l'état actuel, et c'est volontaire : un
 service d'envoi manquant ne doit pas empêcher quelqu'un de s'inscrire ou de jouer.

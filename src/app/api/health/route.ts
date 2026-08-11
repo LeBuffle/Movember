@@ -83,6 +83,32 @@ async function checkDatabase(): Promise<CheckResult> {
   }
 }
 
+/**
+ * Whether the server picked up the e-mail configuration (story 2.5).
+ *
+ * **Three booleans, and never a value.** Not the key — obviously — but not the
+ * sending address either: this endpoint is public, and an address published on
+ * a health check is an address that gets harvested. What is answered is
+ * "did the server see them", which is the one question somebody has after
+ * pasting them into a file on the VPS.
+ *
+ * It never changes the status. A missing e-mail service is not a degraded
+ * site: nobody is stopped from registering or playing by it, and reporting
+ * `degraded` would have the external monitor wake somebody at night over a
+ * variable that has been empty for months on purpose.
+ */
+function checkEmail(): {
+  apiKey: boolean;
+  fromAddress: boolean;
+  replyTo: boolean;
+} {
+  return {
+    apiKey: Boolean(process.env.RESEND_API_KEY?.trim()),
+    fromAddress: Boolean(process.env.RESEND_FROM_ADDRESS?.trim()),
+    replyTo: Boolean(process.env.RESEND_REPLY_TO?.trim()),
+  };
+}
+
 export async function GET(request: NextRequest) {
   const deep = request.nextUrl.searchParams.get("deep") === "1";
 
@@ -107,7 +133,7 @@ export async function GET(request: NextRequest) {
     {
       status: database.ok ? "ok" : "degraded",
       ...base,
-      checks: { database },
+      checks: { database, email: checkEmail() },
     },
     // 503 rather than 500: the application is not broken, it is unable to
     // serve. It is also the status monitors treat as "down" without
