@@ -28,6 +28,21 @@ livre un incrément déployable et vérifiable sur la préproduction.
 | [10](epic-10-packs.md) | **Packs achetables** | Achat de packs en cours de jeu, sans impact sur le classement | S | après le 1ᵉʳ nov. si besoin |
 | [11](epic-11-conformite-lancement.md) | **Conformité, durcissement et lancement** | RGPD, CGV, accessibilité, répétition générale | M | **avant le 1ᵉʳ octobre** |
 
+### Ajouts de périmètre — après la clôture du développement
+
+Demandés par le PO le 11 août, une fois les onze epics livrés. **Les deux sont en
+brouillon et attendent une validation avant toute ligne de code** (`CLAUDE.md` §2).
+
+| # | Epic | Objectif en une phrase | Prio | Jalon visé |
+| --- | --- | --- | --- | --- |
+| [12](epic-12-defis-entre-joueurs.md) | **Défis entre joueurs et portefeuille** | Un participant défie un autre participant, contre des crédits achetés à l'avance | C | à trancher |
+| [13](epic-13-classements-vivants.md) | **Classements vivants** | Cartes, médailles, podium, progression et recherche | S | avant le 1ᵉʳ novembre |
+
+> **Ces deux epics ne sont pas sur le chemin critique.** L'epic 11 et le travail de contenu
+> de septembre passent avant : sans eux il n'y a pas de lancement, alors que sans les
+> epics 12 et 13 il y a un jeu complet. L'epic 12 est explicitement conçu pour être
+> **livré fermé et ouvert en cours de novembre**, ce qui en fait une animation en soi.
+
 ---
 
 ## Chemin critique
