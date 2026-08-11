@@ -73,6 +73,8 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 31 | `20260806270000_card_packs.sql` | 10.1 |
 | 32 | `20260806280000_account_deletion.sql` | 11.2 |
 | 33 | `20260806290000_leaderboard_snapshots.sql` | 13.1 |
+| 34 | `20260806300000_player_duels.sql` | 12.1 |
+| 35 | `20260806310000_duel_notifications.sql` | 12.7 |
 
 ⚠️ **La 29 reconstruit la vue des classements** : quelques secondes sans classement pendant
 qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.
@@ -234,6 +236,7 @@ curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/
 | `classements` | :03, :18, :33, :48 | Rafraîchit les huit classements | 7.3 |
 | `purge` | 4:34 | Applique la politique de conservation. **Répond « rien à faire » onze mois par an** | 11.4 |
 | `photographie` | 5:02 | Enregistre les rangs du jour, repère du « +3 places » | 13.1 |
+| `defis-joueurs` | :19, de 8 h à 22 h | Clôt les défis entre joueurs échus, rappelle ceux qui courent encore | 12.5, 12.7 |
 
 Et une tâche qui n'est pas un appel HTTP mais un script :
 

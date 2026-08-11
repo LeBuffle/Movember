@@ -5,6 +5,7 @@ import {
   applyActivity,
   type CompletedChallenge,
 } from "@/lib/challenges/completion";
+import { applyActivityToDuels } from "@/lib/duels/evaluate";
 import { flagActivity, readThresholds } from "@/lib/integrity/flags";
 import { notifyCompletions } from "@/lib/notifications/game";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -82,6 +83,12 @@ export async function recordActivities(
     // every open challenge for every activity it has already seen.
     const completion = await applyActivity(activity);
     report.completed += completion.completed;
+
+    /* And the duels received from other participants (story 12.5). Called
+       alongside the challenge engine rather than from inside it: the two
+       share evaluators and nothing else, and one outing may legitimately
+       settle the day's challenge and a received duel at once. */
+    await applyActivityToDuels(activity);
 
     if (completion.completions.length > 0) {
       const list = completed.get(activity.profileId) ?? [];
@@ -200,6 +207,7 @@ export async function updateActivity(activity: Activity): Promise<boolean> {
   }
 
   const completion = await applyActivity(activity);
+  await applyActivityToDuels(activity);
 
   // A correction can complete a challenge — a distance the watch got wrong,
   // fixed upwards. It deserves the same announcement as a fresh activity.

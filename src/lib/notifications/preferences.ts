@@ -33,6 +33,7 @@ export const ALL_ON: Preferences = {
     carte: true,
     annonce: true,
     relance: true,
+    defi_joueur: true,
   },
 };
 
@@ -49,10 +50,11 @@ const COLUMNS = {
   carte: "cat_carte",
   annonce: "cat_annonce",
   relance: "cat_relance",
+  defi_joueur: "cat_defi_joueur",
 } as const satisfies Record<NotificationCategory, string>;
 
 const SELECTION =
-  "profile_id, channel_push, channel_email, cat_defi_du_jour, cat_resultat, cat_carte, cat_annonce, cat_relance";
+  "profile_id, channel_push, channel_email, cat_defi_du_jour, cat_resultat, cat_carte, cat_annonce, cat_relance, cat_defi_joueur";
 
 type Row = {
   profile_id: string;
@@ -63,6 +65,7 @@ type Row = {
   cat_carte: boolean;
   cat_annonce: boolean;
   cat_relance: boolean;
+  cat_defi_joueur: boolean;
 };
 
 function toPreferences(row: Row | null | undefined): Preferences {
@@ -80,6 +83,7 @@ function toPreferences(row: Row | null | undefined): Preferences {
       carte: row.cat_carte !== false,
       annonce: row.cat_annonce !== false,
       relance: row.cat_relance !== false,
+      defi_joueur: row.cat_defi_joueur !== false,
     },
   };
 }

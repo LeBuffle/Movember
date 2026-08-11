@@ -179,3 +179,85 @@ cross join (values
        guaranteed_rarity, position)
 where e.year = 2026
 on conflict (edition_id, slug) do nothing;
+
+
+-- -------------------------------------------------------------------------
+-- Les trois défis entre joueurs (epic 12)
+--
+-- Catalogue fixe, voulu fixe : un défi vise quelqu'un nommément, ce n'est
+-- donc pas l'endroit d'un texte libre. Ce qui vit en base, c'est le seuil et
+-- le délai — modifiables en une instruction SQL le 3 novembre.
+--
+-- `effort: single` et `window: day` : le défi se relève en une sortie, et la
+-- vraie fenêtre temporelle — après l'envoi, dans les 24 h — est vérifiée à la
+-- minute par l'application, pas par l'évaluateur.
+--
+-- Rejouable sans risque.
+-- -------------------------------------------------------------------------
+
+insert into public.duel_types (
+  edition_id, slug, name, tagline, evaluator, config, hours, position
+)
+select e.id, v.slug, v.name, v.tagline, v.evaluator, v.config::jsonb, 24, v.position
+from public.editions e
+cross join (values
+  (
+    'course-2km',
+    'Courir 2 km',
+    'Une sortie de 2 km au minimum, à partir de maintenant.',
+    'distance',
+    '{"min_distance_meters": 2000, "sport_types": ["run"], "window": "day", "effort": "single"}',
+    1
+  ),
+  (
+    'velo-10km',
+    'Rouler 10 km',
+    'Une sortie de 10 km au minimum, à partir de maintenant.',
+    'distance',
+    '{"min_distance_meters": 10000, "sport_types": ["bike"], "window": "day", "effort": "single"}',
+    2
+  ),
+  (
+    'activite',
+    'Faire une activité',
+    'N''importe quel sport, au moins dix minutes, à partir de maintenant.',
+    'duration',
+    '{"min_duration_seconds": 600, "sport_types": ["any"], "window": "day", "effort": "single"}',
+    3
+  )
+) as v(slug, name, tagline, evaluator, config, position)
+where e.year = 2026
+on conflict (edition_id, slug) do nothing;
+
+
+-- -------------------------------------------------------------------------
+-- Les lots de crédits (décision P10)
+--
+-- Prix unitaire identique dans les deux lots : la remise n'est pas le sujet.
+-- Le lot existe pour amortir les frais Stripe — 14 % sur un paiement de 2 €,
+-- 3,9 % sur un lot à 10 €.
+-- -------------------------------------------------------------------------
+
+insert into public.duel_credit_lots (
+  edition_id, slug, name, tagline, credits, price_cents, donated_cents, position
+)
+select e.id, v.slug, v.name, v.tagline, v.credits, v.price_cents, v.donated_cents, v.position
+from public.editions e
+cross join (values
+  (
+    'lot-5',
+    '5 défis',
+    'De quoi provoquer cinq collègues.',
+    5, 1000, 1000,
+    1
+  ),
+  (
+    'lot-10',
+    '10 défis',
+    'Pour tenir tout le mois.',
+    10, 2000, 2000,
+    2
+  )
+) as v(slug, name, tagline, credits, price_cents, donated_cents, position)
+where e.year = 2026
+on conflict (edition_id, slug) do nothing;

@@ -16,8 +16,8 @@ import type { Preferences } from "@/lib/notifications/preferences";
 /**
  * Choosing what to be told about.
  *
- * **Five categories rather than one switch, and that is the point of the
- * story.** Somebody annoyed by one kind of message will otherwise switch off
+ * **One category per kind of message rather than one switch, and that is the
+ * point of the story.** Somebody annoyed by one kind of message will otherwise switch off
  * everything — including the daily challenge, which is the one message the
  * whole game depends on. Being able to cut precisely is what stops a small
  * annoyance from costing a participant.
@@ -34,6 +34,8 @@ const CATEGORY_HINTS: Record<NotificationCategory, string> = {
   carte: "Quand une carte vous revient.",
   annonce: "Les messages de l’organisation pendant le mois.",
   relance: "Un rappel si vous n’avez rien joué depuis plusieurs jours.",
+  defi_joueur:
+    "Quand un autre participant vous défie, et ce qu’il advient de vos défis.",
 };
 
 const ORDER: NotificationCategory[] = [
@@ -42,6 +44,7 @@ const ORDER: NotificationCategory[] = [
   "carte",
   "annonce",
   "relance",
+  "defi_joueur",
 ];
 
 function SaveButton() {

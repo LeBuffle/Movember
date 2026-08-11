@@ -39,6 +39,15 @@ export type LeaderboardRow = {
   movement: number | null;
   /** True when they appear today and did not yesterday. Never a fall. */
   isNew: boolean;
+  /**
+   * Whether a "Défier" button is worth offering (story 12.3 AC 1).
+   *
+   * False for the reader themselves and for anybody who has switched duels
+   * off. **It is not a protection** — `send_duel` checks the same things at
+   * every send — it is what stops the screen from offering a button that will
+   * always be refused.
+   */
+  challengeable: boolean;
 };
 
 export type LeaderboardView = {
@@ -89,8 +98,18 @@ async function sessionProfile(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-/** Pseudonyms for a set of identifiers, in one query. */
-async function displayNames(ids: string[]): Promise<Map<string, string>> {
+/**
+ * Pseudonym and duel availability, for a set of identifiers, in one query.
+ *
+ * The two travel together because they are shown together: a card carries a
+ * name and, next to it, a button whose presence depends on the second field.
+ * Two queries would let them disagree for one render.
+ */
+type PublicProfile = { name: string; challengeable: boolean };
+
+async function displayNames(
+  ids: string[],
+): Promise<Map<string, PublicProfile>> {
   if (ids.length === 0) return new Map();
 
   const supabase = createAnonClient();
@@ -98,10 +117,15 @@ async function displayNames(ids: string[]): Promise<Map<string, string>> {
 
   const { data } = await supabase
     .from("public_profiles")
-    .select("id, display_name")
+    .select("id, display_name, duels_opt_out")
     .in("id", ids);
 
-  return new Map((data ?? []).map((row) => [row.id, row.display_name]));
+  return new Map(
+    (data ?? []).map((row) => [
+      row.id,
+      { name: row.display_name, challengeable: row.duels_opt_out !== true },
+    ]),
+  );
 }
 
 /**
@@ -238,7 +262,7 @@ export async function getLeaderboard(
 function buildRow(
   row: Record<string, unknown>,
   definition: ReturnType<typeof categoryOf>,
-  names: Map<string, string>,
+  names: Map<string, PublicProfile>,
   self: string | null,
   previous: { ranks: Map<string, number>; takenOn: string | null },
 ): LeaderboardRow {
@@ -258,14 +282,20 @@ function buildRow(
   const movement =
     previous.takenOn === null || before === undefined ? null : before - rank;
 
+  const known = names.get(profileId);
+  const isSelf = profileId === self;
+
   return {
     profileId,
-    displayName: names.get(profileId) ?? "Participant",
+    displayName: known?.name ?? "Participant",
     rank,
     value: Number(row[definition.column] ?? 0),
-    isSelf: profileId === self,
+    isSelf,
     movement,
     isNew: previous.takenOn !== null && before === undefined,
+    // Never yourself: a "Défier" button on your own line is a refusal waiting
+    // to happen.
+    challengeable: !isSelf && known?.challengeable === true,
   };
 }
 
@@ -310,7 +340,7 @@ export async function searchLeaderboard(
 
   const { data: matches, error } = await supabase
     .from("public_profiles")
-    .select("id, display_name")
+    .select("id, display_name, duels_opt_out")
     .ilike("display_name", `%${safe}%`)
     .limit(limit);
 
@@ -337,7 +367,12 @@ export async function searchLeaderboard(
     sessionProfile(),
   ]);
 
-  const names = new Map(found.map((row) => [row.id, row.display_name]));
+  const names = new Map(
+    found.map((row) => [
+      row.id,
+      { name: row.display_name, challengeable: row.duels_opt_out !== true },
+    ]),
+  );
 
   const rows = (ranked.data ?? []) as unknown as Array<Record<string, unknown>>;
 

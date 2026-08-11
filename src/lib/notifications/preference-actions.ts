@@ -26,6 +26,7 @@ const CATEGORIES: NotificationCategory[] = [
   "carte",
   "annonce",
   "relance",
+  "defi_joueur",
 ];
 
 export async function saveNotificationPreferences(

@@ -232,7 +232,9 @@ export default async function CollectionPage({
               </a>
             </div>
 
-            {breakdown.tiers.length === 0 && breakdown.packs.count === 0 ? (
+            {breakdown.tiers.length === 0 &&
+            breakdown.packs.count === 0 &&
+            breakdown.credits.count === 0 ? (
               <p className="text-ink-muted">
                 Aucun encaissement pour le moment. La ventilation apparaîtra dès
                 la première inscription.
@@ -288,6 +290,50 @@ export default async function CollectionPage({
                         {breakdown.packs.count > 1 ? "s" : ""} ·{" "}
                         {formatEuros(breakdown.packs.donationCents)} engagés
                         auprès de la fondation, soit l’intégralité
+                      </p>
+                    </li>
+                  )}
+                  {/* Duel credits, on their own line for the same reason
+                      (story 12.8). The two figures under the amount are
+                      credits and not money: the gap between them is what
+                      decision P8 hands to the foundation on 30 November
+                      without a duel ever having been sent. */}
+                  {breakdown.credits.count > 0 && (
+                    <li className="p-4">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-ink font-semibold">
+                          Crédits de défis
+                        </span>
+                        <span className="text-ink text-lg font-bold">
+                          {formatEuros(breakdown.credits.grossCents)}
+                        </span>
+                      </div>
+
+                      <p className="text-ink-muted mt-1 text-sm">
+                        {breakdown.credits.count} lot
+                        {breakdown.credits.count > 1 ? "s" : ""} vendu
+                        {breakdown.credits.count > 1 ? "s" : ""} ·{" "}
+                        {formatEuros(breakdown.credits.donationCents)} engagés
+                        auprès de la fondation, soit l’intégralité
+                      </p>
+
+                      <p className="text-ink-muted mt-1 text-sm">
+                        {breakdown.credits.bought} crédit
+                        {breakdown.credits.bought > 1 ? "s" : ""} acheté
+                        {breakdown.credits.bought > 1 ? "s" : ""} ·{" "}
+                        {breakdown.credits.spent} dépensé
+                        {breakdown.credits.spent > 1 ? "s" : ""} ·{" "}
+                        <strong>
+                          {Math.max(
+                            0,
+                            breakdown.credits.bought - breakdown.credits.spent,
+                          )}{" "}
+                          non utilisé
+                          {breakdown.credits.bought - breakdown.credits.spent >
+                          1
+                            ? "s"
+                            : ""}
+                        </strong>
                       </p>
                     </li>
                   )}

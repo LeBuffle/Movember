@@ -125,6 +125,22 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # A missing photograph costs a line of information; a wrong one costs trust.
 2 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/photographie >> /var/log/defi-movember-cron.log 2>&1
 
+# Duels between players (stories 12.5, 12.7). Every hour, from 8 to 22.
+#
+# Two jobs in one pass, and the order matters: close what has run out of
+# time, then remind whoever has a few hours left. Reminding somebody about a
+# duel that expired four minutes ago is the most irritating message this
+# application could send.
+#
+# **Waking hours only.** A duel lasts 24 h and the reminder goes out four
+# hours before the deadline; running at three in the morning would wake
+# somebody up to tell them to go running. The hour window is the whole
+# protection, and it lives here rather than in the code because it is a
+# schedule, not a condition.
+#
+# Nothing to do is the ordinary answer, and it answers 200.
+19 8-22 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/defis-joueurs >> /var/log/defi-movember-cron.log 2>&1
+
 # Retention policy (story 11.4). Once a day, at 4:34.
 #
 # **Its ordinary answer is "rien à faire", and that is by design.** Every

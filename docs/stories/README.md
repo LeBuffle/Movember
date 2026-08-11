@@ -523,14 +523,14 @@ gel du 1ᵉʳ octobre.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 12.1 | [Schéma du portefeuille et des défis](12.1.schema-defis-joueurs.md) | Draft | 1.6 |
-| 12.2 | [Achat de crédits par lots](12.2.achat-credits.md) | Draft | 12.1, 2.4 |
-| 12.3 | [Envoi d'un défi depuis le classement](12.3.envoi-defi.md) | Draft | 12.1, 7.4 |
-| 12.4 | [Protection du destinataire](12.4.protection-destinataire.md) | Draft | 12.3 |
-| 12.5 | [Validation d'un défi reçu](12.5.validation-defi-recu.md) | Draft | 12.3, 4.3 |
-| 12.6 | [Riposte gratuite et message d'échec](12.6.riposte-et-message.md) | Draft | 12.5 |
-| 12.7 | [Notifications des défis](12.7.notifications-defis.md) | Draft | 12.5, 6.7 |
-| 12.8 | [Comptabilisation des crédits](12.8.comptabilisation-credits.md) | Draft | 12.2, 9.2 |
+| 12.1 | [Schéma du portefeuille et des défis](12.1.schema-defis-joueurs.md) | Review | 1.6 |
+| 12.2 | [Achat de crédits par lots](12.2.achat-credits.md) | Review | 12.1, 2.4 |
+| 12.3 | [Envoi d'un défi depuis le classement](12.3.envoi-defi.md) | Review | 12.1, 7.4 |
+| 12.4 | [Protection du destinataire](12.4.protection-destinataire.md) | Review | 12.3 |
+| 12.5 | [Validation d'un défi reçu](12.5.validation-defi-recu.md) | Review | 12.3, 4.3 |
+| 12.6 | [Riposte gratuite et message d'échec](12.6.riposte-et-message.md) | Review | 12.5 |
+| 12.7 | [Notifications des défis](12.7.notifications-defis.md) | Review | 12.5, 6.7 |
+| 12.8 | [Comptabilisation des crédits](12.8.comptabilisation-credits.md) | Review | 12.2, 9.2 |
 
 ### Ordre d'exécution
 

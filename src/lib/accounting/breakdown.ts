@@ -40,6 +40,24 @@ export type Breakdown = {
    * an anomaly to chase.
    */
   packs: { count: number; grossCents: number; donationCents: number };
+  /**
+   * Duel credits bought by participants (epic 12), counted apart again.
+   *
+   * Same trap as the packs, same answer: without their own line every lot
+   * sold would land in `unattributed` — the line that means *something is
+   * wrong* — and every sale would look like an anomaly to chase.
+   *
+   * `bought` and `spent` are credits, not money. They are here because the
+   * difference between them is what decision P8 hands to the foundation on
+   * 30 November, and without them that share is worked out by hand.
+   */
+  credits: {
+    count: number;
+    grossCents: number;
+    donationCents: number;
+    bought: number;
+    spent: number;
+  };
   /** Payments whose tier could not be established. Normally none. */
   unattributed: { count: number; grossCents: number };
   totals: { grossCents: number; refundedCents: number; donationCents: number };
@@ -55,6 +73,7 @@ export type Breakdown = {
 const EMPTY: Breakdown = {
   tiers: [],
   packs: { count: 0, grossCents: 0, donationCents: 0 },
+  credits: { count: 0, grossCents: 0, donationCents: 0, bought: 0, spent: 0 },
   unattributed: { count: 0, grossCents: 0 },
   totals: { grossCents: 0, refundedCents: 0, donationCents: 0 },
   reconciles: true,
@@ -96,6 +115,13 @@ export async function getBreakdown(): Promise<Breakdown> {
 
   const byTier = new Map<string, TierBreakdown>();
   const packs = { count: 0, grossCents: 0, donationCents: 0 };
+  const credits = {
+    count: 0,
+    grossCents: 0,
+    donationCents: 0,
+    bought: 0,
+    spent: 0,
+  };
   const unattributed = { count: 0, grossCents: 0 };
   const totals = { grossCents: 0, refundedCents: 0, donationCents: 0 };
 
@@ -121,6 +147,14 @@ export async function getBreakdown(): Promise<Breakdown> {
       packs.count += 1;
       packs.grossCents += row.gross_cents;
       packs.donationCents += row.donation_cents;
+      continue;
+    }
+
+    // Duel credits, for the same reason (story 12.8).
+    if (row.kind === "credits") {
+      credits.count += 1;
+      credits.grossCents += row.gross_cents;
+      credits.donationCents += row.donation_cents;
       continue;
     }
 
@@ -164,13 +198,59 @@ export async function getBreakdown(): Promise<Breakdown> {
   const summedGross =
     tiers.reduce((sum, tier) => sum + tier.grossCents, 0) +
     packs.grossCents +
+    credits.grossCents +
     unattributed.grossCents;
+
+  const usage = await creditUsage(supabase, edition.id);
+  credits.bought = usage.bought;
+  credits.spent = usage.spent;
 
   return {
     tiers,
     packs,
+    credits,
     unattributed,
     totals,
     reconciles: summedGross === totals.grossCents,
   };
+}
+
+/**
+ * How many credits were bought, and how many actually sent a duel.
+ *
+ * **Not an accounting figure, and useful all the same.** It is what will say,
+ * on 30 November, how many bought credits were never used — which is the
+ * share of this revenue that decision P8 hands to the foundation without a
+ * duel ever having been sent. Without it, that share is worked out by hand
+ * from the ledger.
+ *
+ * Read from the ledger rather than counted from the duels: the ledger is the
+ * only definition of a credit in this project, and two ways of counting the
+ * same thing eventually disagree.
+ */
+async function creditUsage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  editionId: string,
+): Promise<{ bought: number; spent: number }> {
+  const { data, error } = await supabase
+    .from("duel_credit_entries")
+    .select("delta")
+    .eq("edition_id", editionId);
+
+  if (error) {
+    console.error("[collecte] mouvements de crédits illisibles", {
+      code: error.code,
+    });
+    return { bought: 0, spent: 0 };
+  }
+
+  let bought = 0;
+  let spent = 0;
+
+  for (const row of data ?? []) {
+    if (row.delta > 0) bought += row.delta;
+    else spent += -row.delta;
+  }
+
+  return { bought, spent };
 }

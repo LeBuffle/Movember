@@ -232,6 +232,31 @@ export type ParticipantDetail = {
   team: { name: string; role: string } | null;
   shipping: { city: string; country: string } | null;
   suspension: { since: string; reason: string } | null;
+  /**
+   * Duels sent and received (story 12.4 AC 7).
+   *
+   * **The only reason this is on the support screen** is that a complaint
+   * about duels is a complaint about somebody naming somebody else. Answering
+   * "qui m'a envoyé ça, et combien de fois" without a screen would mean asking
+   * a developer, which is the same as not being able to answer at all.
+   */
+  duels: {
+    sent: number;
+    received: number;
+    /** Whether they have switched reception off. */
+    optedOut: boolean;
+    /** Credits still in the wallet. */
+    balance: number;
+    recent: Array<{
+      id: string;
+      direction: "sent" | "received";
+      otherName: string;
+      typeName: string;
+      status: string;
+      sentAt: string;
+      free: boolean;
+    }>;
+  };
 };
 
 /**
@@ -260,7 +285,7 @@ export async function getParticipant(
 
   const edition = await editionId();
 
-  const [registration, connection, challenges, cards, team, shipping] =
+  const [registration, connection, challenges, cards, team, shipping, duels] =
     await Promise.all([
       registrationDetail(id, edition),
       connectionDetail(id),
@@ -268,6 +293,7 @@ export async function getParticipant(
       cardHistory(id, edition),
       teamOf(id, edition),
       shippingOf(id, edition),
+      duelHistory(id, edition),
     ]);
 
   const row = profile as unknown as ProfileRow;
@@ -295,6 +321,7 @@ export async function getParticipant(
     cards,
     team,
     shipping,
+    duels,
   };
 }
 
@@ -455,4 +482,116 @@ async function shippingOf(id: string, edition: string | null) {
 
   const row = data as unknown as { city: string; country: string };
   return { city: row.city, country: row.country };
+}
+
+/**
+ * The duels one participant has been part of (story 12.4 AC 7).
+ *
+ * Read with the organisation's own session: the admin policy on `duels` is
+ * what allows this, and there is no filter here that a mistake could drop.
+ *
+ * Bounded to the last twenty. What a support request needs is "combien, et de
+ * qui", not a month of history — and the counts above answer the first half.
+ */
+async function duelHistory(id: string, edition: string | null) {
+  const empty = {
+    sent: 0,
+    received: 0,
+    optedOut: false,
+    balance: 0,
+    recent: [],
+  };
+  if (!edition) return empty;
+
+  const supabase = await createClient();
+
+  const [sent, received, profile, balance] = await Promise.all([
+    supabase
+      .from("duels")
+      .select("id, receiver_id, status, sent_at, free, duel_types (name)", {
+        count: "exact",
+      })
+      .eq("sender_id", id)
+      .eq("edition_id", edition)
+      .order("sent_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("duels")
+      .select("id, sender_id, status, sent_at, free, duel_types (name)", {
+        count: "exact",
+      })
+      .eq("receiver_id", id)
+      .eq("edition_id", edition)
+      .order("sent_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("profiles")
+      .select("duels_opt_out")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase.rpc("duel_credit_balance", {
+      p_profile: id,
+      p_edition: edition,
+    }),
+  ]);
+
+  type Row = {
+    id: string;
+    sender_id?: string;
+    receiver_id?: string;
+    status: string;
+    sent_at: string;
+    free: boolean;
+    duel_types: { name: string } | null;
+  };
+
+  const sentRows = (sent.data ?? []) as unknown as Row[];
+  const receivedRows = (received.data ?? []) as unknown as Row[];
+
+  const others = [
+    ...sentRows.map((row) => row.receiver_id),
+    ...receivedRows.map((row) => row.sender_id),
+  ].filter((value): value is string => Boolean(value));
+
+  const names = new Map<string, string>();
+
+  if (others.length > 0) {
+    const { data } = await supabase
+      .from("public_profiles")
+      .select("id, display_name")
+      .in("id", [...new Set(others)]);
+
+    for (const row of data ?? []) names.set(row.id, row.display_name);
+  }
+
+  const recent = [
+    ...sentRows.map((row) => ({
+      id: row.id,
+      direction: "sent" as const,
+      otherName: names.get(row.receiver_id ?? "") ?? "Participant",
+      typeName: row.duel_types?.name ?? "Défi",
+      status: row.status,
+      sentAt: row.sent_at,
+      free: row.free,
+    })),
+    ...receivedRows.map((row) => ({
+      id: row.id,
+      direction: "received" as const,
+      otherName: names.get(row.sender_id ?? "") ?? "Participant",
+      typeName: row.duel_types?.name ?? "Défi",
+      status: row.status,
+      sentAt: row.sent_at,
+      free: row.free,
+    })),
+  ]
+    .sort((left, right) => right.sentAt.localeCompare(left.sentAt))
+    .slice(0, 20);
+
+  return {
+    sent: sent.count ?? sentRows.length,
+    received: received.count ?? receivedRows.length,
+    optedOut: profile.data?.duels_opt_out === true,
+    balance: Number(balance.data ?? 0),
+    recent,
+  };
 }

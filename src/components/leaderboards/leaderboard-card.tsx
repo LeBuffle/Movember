@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { RankBadge } from "@/components/leaderboards/rank-badge";
 import { RankMovement } from "@/components/leaderboards/rank-movement";
 import { cn } from "@/lib/cn";
@@ -50,6 +52,24 @@ export function LeaderboardCard({
       <p className="text-ink shrink-0 font-bold tabular-nums">
         {formatValue(row.value, definition.unit)}
       </p>
+
+      {/* The duel is launched from here, because here is where somebody
+          decides they want to challenge a particular person (story 12.3 AC 1).
+          A link rather than a form: the next screen shows the three duels, the
+          balance and the deadline before anything is spent.
+
+          Absent for the reader's own line and for anybody who has switched
+          duels off — offering a button that will always be refused is worse
+          than not offering it. */}
+      {row.challengeable && (
+        <Link
+          href={`/jeu/defis-joueurs/envoyer?joueur=${row.profileId}`}
+          className="border-line text-brand-blue hover:border-brand-blue flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-sm font-semibold"
+          aria-label={`Défier ${row.displayName}`}
+        >
+          Défier
+        </Link>
+      )}
     </div>
   );
 }

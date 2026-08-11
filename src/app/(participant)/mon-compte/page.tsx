@@ -2,12 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AccountForm } from "@/components/auth/account-form";
+import { DuelOptOutForm } from "@/components/duels/opt-out-form";
 import { ParticipantShell } from "@/components/layout/participant-shell";
 import { InstallState } from "@/components/pwa/install-state";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
 import { ROUTES } from "@/lib/auth/routes";
+import { setDuelOptOut } from "@/lib/duels/actions";
 import { getParticipantAccess } from "@/lib/registration/access";
 import { getShippingContext } from "@/lib/shipping/address";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +31,7 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email, role")
+    .select("display_name, email, role, duels_opt_out")
     .eq("id", user.id)
     .single();
 
@@ -144,6 +146,27 @@ export default async function AccountPage() {
                 Activer ou gérer mes notifications
               </Link>
             </p>
+          </CardBody>
+        </Card>
+
+        {/* The switch, on the account page rather than under the
+            notifications: cutting duels is not cutting a message, it is
+            leaving a part of the game. Somebody looking for it will look
+            here. */}
+        <Card>
+          <CardTitle>Défis d’autres participants</CardTitle>
+          <CardBody>
+            <p>
+              Un autre participant peut vous envoyer un défi sportif à relever
+              dans les 24 h. Cinq au maximum par jour, sans aucune pénalité si
+              vous n’en relevez aucun.
+            </p>
+            <div className="mt-3">
+              <DuelOptOutForm
+                action={setDuelOptOut}
+                optedOut={profile?.duels_opt_out === true}
+              />
+            </div>
           </CardBody>
         </Card>
 

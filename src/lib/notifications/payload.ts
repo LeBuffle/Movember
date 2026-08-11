@@ -17,7 +17,7 @@
  */
 
 export type NotificationCategory =
-  "defi_du_jour" | "resultat" | "carte" | "annonce" | "relance";
+  "defi_du_jour" | "resultat" | "carte" | "annonce" | "relance" | "defi_joueur";
 
 /** The categories the e-mail fallback covers (architecture D6). */
 export const ESSENTIAL_CATEGORIES: NotificationCategory[] = [
@@ -32,6 +32,7 @@ export const CATEGORY_LABELS: Record<NotificationCategory, string> = {
   carte: "Nouvelle carte",
   annonce: "Annonces de l’organisation",
   relance: "Relances",
+  defi_joueur: "Défis entre joueurs",
 };
 
 export const MAX_TITLE = 60;

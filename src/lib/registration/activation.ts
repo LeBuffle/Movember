@@ -3,6 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 
 import { grantBonusPacks } from "@/lib/cards/grant";
+import { handleCreditPurchase } from "@/lib/duels/purchase";
 import { handlePackPurchase } from "@/lib/packs/purchase";
 import { sendWelcomeEmail } from "@/lib/registration/welcome";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -131,6 +132,13 @@ export async function handleCheckoutCompleted(
      a lost pack payment exactly as it catches a lost registration. */
   if ((session.metadata ?? {}).kind === "pack") {
     return handlePackPurchase(session);
+  }
+
+  // A lot of duel credits (story 12.2), routed the same way and for the same
+  // reasons. A 10 € lot and a 10 € registration tier are indistinguishable by
+  // amount; they are never indistinguishable by `kind`.
+  if ((session.metadata ?? {}).kind === "credits") {
+    return handleCreditPurchase(session);
   }
 
   // A session can complete without being paid — delayed payment methods do

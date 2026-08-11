@@ -44,6 +44,7 @@ export default async function ParticipantPage({
     team,
     shipping,
     suspension,
+    duels,
   } = participant;
 
   const succeeded = challenges.filter(
@@ -188,6 +189,46 @@ export default async function ParticipantPage({
           </p>
         ) : (
           <Empty>Ne fait partie d’aucune équipe.</Empty>
+        )}
+      </Section>
+
+      {/* Duels sent and received (story 12.4 AC 7). On the support screen
+          because a complaint about duels is a complaint about somebody naming
+          somebody else — and answering "qui, et combien de fois" without a
+          screen would mean asking a developer. */}
+      <Section title="Défis entre joueurs">
+        <p className="text-ink text-sm">
+          {duels.sent} envoyé{duels.sent > 1 ? "s" : ""} · {duels.received} reçu
+          {duels.received > 1 ? "s" : ""} · {duels.balance} crédit
+          {duels.balance > 1 ? "s" : ""} en réserve
+          {duels.optedOut && (
+            <span className="text-ink-muted block">
+              A coupé la réception des défis.
+            </span>
+          )}
+        </p>
+
+        {duels.recent.length === 0 ? (
+          <Empty>Aucun défi envoyé ni reçu.</Empty>
+        ) : (
+          <ul className="divide-line mt-3 divide-y text-sm">
+            {duels.recent.map((duel) => (
+              <li key={duel.id} className="py-2 first:pt-0 last:pb-0">
+                <span className="text-ink">
+                  {duel.direction === "sent" ? "à " : "de "}
+                  <strong>{duel.otherName}</strong> — {duel.typeName}
+                  {duel.free && " (riposte)"}
+                </span>
+                <span className="text-ink-muted block text-xs">
+                  {new Date(duel.sentAt).toLocaleString("fr-FR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}{" "}
+                  · {duel.status}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
 

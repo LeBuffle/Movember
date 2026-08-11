@@ -36,6 +36,7 @@ const COLUMNS = [
 const KINDS: Record<string, string> = {
   registration: "Inscription",
   pack: "Pack",
+  credits: "Crédits",
   refund: "Remboursement",
 };
 

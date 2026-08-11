@@ -53,6 +53,7 @@ function row(overrides: Partial<LeaderboardRow> = {}): LeaderboardRow {
     isSelf: false,
     movement: null,
     isNew: false,
+    challengeable: false,
     ...overrides,
   };
 }

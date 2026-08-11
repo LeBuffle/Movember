@@ -18,6 +18,7 @@ import { EDITION_MILESTONES } from "@/lib/edition/calendar";
 import { totalPoints } from "@/lib/challenges/progress";
 import { getAlbum } from "@/lib/cards/collection";
 import { pendingRevealCount } from "@/lib/cards/reveal";
+import { openDuelCount } from "@/lib/duels/pending";
 import { getShippingContext } from "@/lib/shipping/address";
 
 /**
@@ -36,13 +37,15 @@ import { getShippingContext } from "@/lib/shipping/address";
 export default async function GameHome() {
   const today = todayInParis();
 
-  const [shipping, challenges, sync, pendingCards, album] = await Promise.all([
-    getShippingContext(),
-    getParticipantChallenges(30),
-    ownSyncState(),
-    pendingRevealCount(),
-    getAlbum(),
-  ]);
+  const [shipping, challenges, sync, pendingCards, album, openDuels] =
+    await Promise.all([
+      getShippingContext(),
+      getParticipantChallenges(30),
+      ownSyncState(),
+      pendingRevealCount(),
+      getAlbum(),
+      openDuelCount(),
+    ]);
 
   // Cards held, packs included — this figure says what the album contains,
   // not what ranks. The ranking counter is a different one, on purpose
@@ -145,6 +148,28 @@ export default async function GameHome() {
         </Panel>
       )}
 
+      {/* A duel received is running against a clock, and the clock does not
+          stop for somebody who has not opened the right screen (story 12.7).
+          Announced here, where people land every morning. */}
+      {openDuels > 0 && (
+        <Panel className="border-brand-blue bg-brand-blue-soft">
+          <p className="text-ink font-semibold">
+            {openDuels > 1
+              ? `${openDuels} défis vous attendent`
+              : "Un participant vous a défié"}
+          </p>
+          <p className="text-ink-muted mt-1 text-sm">
+            Vous avez 24 heures pour le relever — et rien à perdre si vous ne le
+            faites pas.
+          </p>
+          <p className="mt-3">
+            <Link href="/jeu/defis-joueurs" className={buttonClasses()}>
+              Voir mes défis
+            </Link>
+          </p>
+        </Panel>
+      )}
+
       {/* Brought back for whoever skipped the step at registration (story
           6.2 AC 4). Renders nothing once installed. */}
       <InstallReminder />
@@ -204,6 +229,11 @@ export default async function GameHome() {
             href: "/jeu/actualites",
             title: "Actualités",
             detail: "Les messages de l’organisation",
+          },
+          {
+            href: "/jeu/defis-joueurs",
+            title: "Défis entre joueurs",
+            detail: "Provoquer, relever, riposter",
           },
           {
             href: "/jeu/historique",

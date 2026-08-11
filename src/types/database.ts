@@ -14,7 +14,7 @@ export type EditionStatus = "draft" | "open" | "running" | "closed";
 export type ProfileRole = "participant" | "admin";
 export type RegistrationStatus =
   "pending" | "active" | "refunded" | "cancelled";
-export type PaymentKind = "registration" | "pack" | "refund";
+export type PaymentKind = "registration" | "pack" | "credits" | "refund";
 export type AssignmentSource =
   | "draw"
   /** A repeat, handed out because the catalogue ran out (story 4.4). */
@@ -30,6 +30,15 @@ export type CardGrantSource =
   "challenge" | "daily_draw" | "pack" | "purchase" | "manual";
 /** A pack bought in the shop, before and after the webhook (story 10.3). */
 export type PackPurchaseStatus = "pending" | "paid" | "abandoned";
+
+/** A lot of duel credits follows exactly the same three states. */
+export type DuelPurchaseStatus = PackPurchaseStatus;
+
+export type DuelStatus = "open" | "met" | "expired";
+
+/** Why a credit moved. Signed by `delta`, explained by this. */
+export type DuelCreditReason =
+  "achat" | "depense" | "retour" | "remboursement" | "ajustement";
 
 import type { EvaluatorKey } from "@/lib/challenges/evaluators/registry";
 import type { Difficulty, SportFamily } from "@/lib/challenges/sports";
@@ -54,6 +63,8 @@ export type Database = {
           registration_opens_on: string;
           status: EditionStatus;
           collective_goals: CollectiveGoals;
+          /** Duels one participant may receive per rolling 24 h (epic 12). */
+          duel_cap_per_day: number;
           created_at: string;
         };
         Insert: {
@@ -65,6 +76,7 @@ export type Database = {
           registration_opens_on: string;
           status?: EditionStatus;
           collective_goals?: CollectiveGoals;
+          duel_cap_per_day?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["editions"]["Insert"]>;
@@ -84,6 +96,8 @@ export type Database = {
           /** Required whenever `suspended_at` is set — a constraint enforces it. */
           suspension_reason: string | null;
           suspended_by: string | null;
+          /** « Ne pas me défier », set by the participant (decision P9). */
+          duels_opt_out: boolean;
         };
         Insert: {
           id: string;
@@ -96,6 +110,7 @@ export type Database = {
           suspended_at?: string | null;
           suspension_reason?: string | null;
           suspended_by?: string | null;
+          duels_opt_out?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
@@ -734,6 +749,7 @@ export type Database = {
           cat_carte: boolean;
           cat_annonce: boolean;
           cat_relance: boolean;
+          cat_defi_joueur: boolean;
           updated_at: string;
         };
         Insert: {
@@ -745,6 +761,7 @@ export type Database = {
           cat_carte?: boolean;
           cat_annonce?: boolean;
           cat_relance?: boolean;
+          cat_defi_joueur?: boolean;
           updated_at?: string;
         };
         Update: Partial<
@@ -886,6 +903,165 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      duel_types: {
+        Row: {
+          id: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline: string;
+          evaluator: string;
+          config: Record<string, unknown>;
+          /** How long the receiver has. 24 by rule, data by design. */
+          hours: number;
+          position: number;
+          available: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline?: string;
+          evaluator: string;
+          config?: Record<string, unknown>;
+          hours?: number;
+          position?: number;
+          available?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["duel_types"]["Insert"]>;
+        Relationships: [];
+      };
+      duel_credit_lots: {
+        Row: {
+          id: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline: string;
+          credits: number;
+          price_cents: number;
+          /** Equal to the price by constraint: a credit has no counterpart. */
+          donated_cents: number;
+          position: number;
+          available: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          slug: string;
+          name: string;
+          tagline?: string;
+          credits: number;
+          price_cents: number;
+          donated_cents: number;
+          position?: number;
+          available?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["duel_credit_lots"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      duel_lot_purchases: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          lot_id: string;
+          status: DuelPurchaseStatus;
+          /** The promise, frozen at the moment of sale. */
+          price_cents: number;
+          credits: number;
+          stripe_session_id: string | null;
+          created_at: string;
+          paid_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          lot_id: string;
+          status?: DuelPurchaseStatus;
+          price_cents: number;
+          credits: number;
+          stripe_session_id?: string | null;
+          created_at?: string;
+          paid_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["duel_lot_purchases"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      duels: {
+        Row: {
+          id: string;
+          edition_id: string;
+          sender_id: string;
+          receiver_id: string;
+          duel_type_id: string;
+          /** The duel this one answers. Null for a duel that was paid for. */
+          parent_duel_id: string | null;
+          free: boolean;
+          sent_at: string;
+          expires_at: string;
+          status: DuelStatus;
+          met_at: string | null;
+          met_activity_id: string | null;
+          expiry_message_key: string | null;
+          created_at: string;
+        };
+        /* No Insert: a duel is created by `send_duel` and by nothing else.
+           A writable type here would be an invitation to add a second way in,
+           and the second way is always the one that forgets the debit. */
+        Insert: never;
+        /* Narrowed to what settling a duel writes. `sender_id` and the rest
+           are frozen at creation, and this type is what stops a stray patch
+           from ever redirecting a duel at somebody else. */
+        Update: {
+          status?: DuelStatus;
+          met_at?: string | null;
+          met_activity_id?: string | null;
+          expiry_message_key?: string | null;
+        };
+        Relationships: [];
+      };
+      duel_credit_entries: {
+        Row: {
+          id: string;
+          profile_id: string;
+          edition_id: string;
+          /** Signed. Positive credits, negative spends, never zero. */
+          delta: number;
+          reason: DuelCreditReason;
+          duel_id: string | null;
+          purchase_id: string | null;
+          stripe_session_id: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          edition_id: string;
+          delta: number;
+          reason: DuelCreditReason;
+          duel_id?: string | null;
+          purchase_id?: string | null;
+          stripe_session_id?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        /* Nothing updates a ledger line. A movement that can be edited is a
+           counter with extra steps. */
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       /** Pseudonym and avatar only — see the migration for why. */
@@ -894,6 +1070,8 @@ export type Database = {
           id: string;
           display_name: string;
           avatar_url: string | null;
+          /** Whether they accept duels. Exposed so a button is not offered in vain. */
+          duels_opt_out: boolean;
         };
         Relationships: [];
       };
@@ -976,6 +1154,33 @@ export type Database = {
       snapshot_leaderboard_ranks: {
         Args: { p_day?: string } | Record<string, never>;
         /** Rows written. Zero means already taken today. */
+        Returns: number;
+      };
+      /** Sum of a participant's credit movements. */
+      duel_credit_balance: {
+        Args: { p_profile: string; p_edition: string };
+        Returns: number;
+      };
+      /** Refuses, or debits and creates, in one transaction (story 12.3). */
+      send_duel: {
+        Args: {
+          p_sender: string;
+          p_receiver: string;
+          p_edition: string;
+          p_duel_type: string;
+          p_parent?: string | null;
+        };
+        Returns: {
+          status: string;
+          duel_id?: string;
+          expires_at?: string;
+          free?: boolean;
+          balance?: number;
+        };
+      };
+      /** Closes overdue duels and stamps the sentence their sender reads. */
+      expire_duels: {
+        Args: { p_message_keys: string[] };
         Returns: number;
       };
       /** Completes a challenge and grants its card in one transaction. */
