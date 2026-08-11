@@ -385,6 +385,53 @@ C'est vrai, et c'est la première question que les participants se poseront.
 
 ---
 
+## 12 bis. Un visuel de carte ne s'affiche pas
+
+**Symptôme :** le visuel est correct au moment de l'import, la carte s'enregistre sans
+erreur, et ensuite l'image apparaît cassée — dans le back-office comme dans l'album.
+
+**Ce n'est presque jamais le téléversement.** Le fichier est bien dans le seau. C'est le
+navigateur qui refuse de l'afficher, parce que la politique de sécurité du site
+(`Content-Security-Policy`) n'autorise que notre propre domaine à fournir des images.
+
+L'aperçu au moment de l'import fonctionne quand même : il montre le fichier local, pas
+encore l'adresse de stockage. C'est ce qui rend le défaut trompeur.
+
+### Confirmer en trente secondes
+
+1. Ouvrir la console du navigateur (F12 → Console). Un message y attend :
+   `Refused to load the image … violates the following Content Security Policy directive:
+   img-src …`
+2. Ou : copier l'adresse de l'image et l'ouvrir dans un onglet. **Si elle s'affiche**, le
+   téléversement est bon et c'est bien la politique de sécurité.
+   Si elle renvoie une erreur, alors le problème est ailleurs — seau, droits, ou nom
+   d'objet.
+
+### Corriger
+
+Dans `deploy/.env` sur le VPS :
+
+```
+CSP_IMG_SRC=https://xxxx.supabase.co
+```
+
+La même URL que dans `CSP_CONNECT_SRC`. Puis recréer les conteneurs — la politique est
+posée par Traefik depuis ce fichier, donc un simple redémarrage ne suffit pas :
+
+```bash
+cd /opt/defi-movember/deploy && docker compose up -d --force-recreate
+```
+
+Vérifier ensuite, sans ouvrir de navigateur :
+
+```bash
+curl -sI https://staging.defi-movember.fr/ | grep -i content-security-policy
+```
+
+L'URL Supabase doit apparaître dans `img-src`.
+
+---
+
 ## 13. Restaurer une sauvegarde de la base
 
 > **La procédure la plus grave du document.** Une restauration écrase des données. À ne

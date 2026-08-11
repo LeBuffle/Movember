@@ -158,6 +158,27 @@ continuent d'être rejetés, et rien ne dit pourquoi.
 
 *(stories 3.3, 3.5)*
 
+### La politique de sécurité — ⚠️ à faire, sinon aucun visuel de carte ne s'affiche
+
+Dans `deploy/.env` sur le VPS, deux variables qui prennent la **même valeur** — l'URL du
+projet Supabase :
+
+```
+CSP_CONNECT_SRC=https://xxxx.supabase.co
+CSP_IMG_SRC=https://xxxx.supabase.co
+```
+
+Puis `docker compose up -d --force-recreate` : la politique est posée par Traefik depuis ce
+fichier, un simple redémarrage ne la relit pas.
+
+> **Le défaut qu'elle provoque est trompeur** et a été rencontré le 11 août : le visuel est
+> correct à l'import, la carte s'enregistre, et l'image apparaît ensuite cassée — comme si
+> le téléversement avait échoué. Il avait réussi. L'aperçu à l'import affiche le fichier
+> local ; c'est seulement après enregistrement que le navigateur va chercher l'image chez
+> Supabase, et la refuse. Voir `runbook.md` §12 bis.
+
+*(story 5.6)*
+
 ### Supabase
 
 Ajouter les adresses de retour aux **Redirect URLs** : celle de la préproduction, et

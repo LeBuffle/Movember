@@ -50,7 +50,7 @@ x-security-headers: &security-headers
   traefik.http.middlewares.movember-security.headers.contentTypeNosniff: "true"
   traefik.http.middlewares.movember-security.headers.referrerPolicy: "strict-origin-when-cross-origin"
   traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
-  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${CSP_IMG_SRC:-}; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
 
 # Log rotation.
 #
