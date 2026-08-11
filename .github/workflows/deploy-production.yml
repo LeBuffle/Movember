@@ -94,21 +94,34 @@ jobs:
           # deployments out of thirty died here, each of them reporting
           # nothing at all, because the reason went to /dev/null.
           #
-          # So: a longer wait, five attempts, and the reason kept and printed
-          # when they all fail. Retrying is safe — a fingerprint collected
-          # twice is a duplicate line in a file read top to bottom.
-          for attempt in 1 2 3 4 5; do
+          # So: a longer wait, several attempts, and the reason kept and
+          # printed when they all fail. Retrying is safe — a fingerprint
+          # collected twice is a duplicate line in a file read top to bottom.
+          #
+          # **Twelve attempts over five minutes, and the figure comes from a
+          # real failure.** The window was 100 seconds; on 11 August a
+          # deployment exhausted all five attempts on a VPS that was back a few
+          # minutes later. A reboot takes one to three minutes, so a window
+          # shorter than that turns an ordinary restart into a red
+          # deployment — and a red deployment nobody can explain is one the
+          # Product Owner has to escalate on a Sunday.
+          #
+          # The cost of waiting is five minutes of runner time on a deployment
+          # that was going to fail anyway. The cost of not waiting is a
+          # deployment declared broken while the server is merely rebooting.
+          for attempt in $(seq 1 12); do
             if ssh-keyscan -T 15 -H "$VPS_HOST" >> ~/.ssh/known_hosts 2> /tmp/keyscan.err \
               && [ -s ~/.ssh/known_hosts ]; then
               echo "✓ empreinte du serveur relevée (tentative $attempt)"
               exit 0
             fi
-            echo "  tentative $attempt/5 — pas de réponse sur le port 22, nouvel essai dans 5s"
-            sleep 5
+            echo "  tentative $attempt/12 — pas de réponse sur le port 22, nouvel essai dans 10s"
+            sleep 10
           done
 
-          echo "✗ Impossible de relever l'empreinte SSH du serveur." >&2
-          echo "  Vérifier que le VPS répond sur le port 22 et que VPS_HOST est correct." >&2
+          echo "✗ Le serveur n'a pas répondu sur le port 22 en cinq minutes." >&2
+          echo "  Le code n'est pas en cause : c'est le serveur qui est injoignable." >&2
+          echo "  Marche à suivre : docs/runbook.md, section « 12 quater »." >&2
           cat /tmp/keyscan.err >&2 || true
           exit 1
 

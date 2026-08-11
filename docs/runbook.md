@@ -385,6 +385,78 @@ C'est vrai, et c'est la première question que les participants se poseront.
 
 ---
 
+## 12 quater. Le déploiement échoue sur « pas de réponse sur le port 22 »
+
+**Symptôme :** le déploiement s'arrête à la toute première étape, avant d'avoir touché au
+code, avec ces lignes :
+
+```
+tentative 1/12 — pas de réponse sur le port 22, nouvel essai dans 10s
+...
+✗ Le serveur n'a pas répondu sur le port 22 en cinq minutes.
+```
+
+**Le code n'est pas en cause, et c'est la première chose à savoir.** Cette étape se joue
+avant que le dépôt ne soit envoyé au serveur : elle demande simplement au VPS de se
+présenter. S'il ne répond pas, rien de ce qui a été écrit n'est concerné. Le contrôle
+« Vérifications » du même commit, lui, est vert — c'est ce qui le prouve.
+
+### Le seul test qui départage, en dix secondes
+
+**Ouvrir `https://defi-movember.fr` dans un navigateur.**
+
+| Le site répond | Le site ne répond pas |
+| --- | --- |
+| Le serveur tourne, **seul SSH est tombé** | **C'est le serveur entier** |
+| Voir « SSH seul » ci-dessous | Voir « Le serveur entier » ci-dessous |
+
+### Le serveur entier
+
+Panneau Hostinger → le VPS. Trois cas, dans l'ordre de fréquence :
+
+1. **Redémarrage ou maintenance en cours.** Attendre trois minutes, puis relancer le
+   déploiement depuis l'onglet Actions de GitHub (bouton « Re-run failed jobs »).
+   C'est ce qui s'est passé le 11 août : la relance est passée sans qu'une ligne de code
+   ne change.
+2. **VPS éteint.** Le rallumer depuis le panneau, attendre que le site réponde, relancer.
+3. **Disque plein.** Voir la section 9 — un disque plein empêche aussi bien SSH que le
+   reste de fonctionner.
+
+### SSH seul
+
+Le serveur sert le site mais refuse le port 22. Deux causes, et la première est de loin la
+plus courante :
+
+1. **`fail2ban` a banni l'adresse du runner GitHub.** Les runners changent d'adresse à
+   chaque exécution, donc ce n'est pas un bannissement de « notre » machine mais d'une
+   plage. Se connecter depuis le panneau Hostinger (console web, qui ne passe pas par le
+   port 22) et regarder :
+
+   ```bash
+   sudo fail2ban-client status sshd
+   ```
+
+   Débannir une adresse : `sudo fail2ban-client set sshd unbanip <adresse>`.
+
+2. **Le service SSH s'est arrêté.** Toujours depuis la console web :
+
+   ```bash
+   sudo systemctl status ssh
+   sudo systemctl restart ssh
+   ```
+
+### Ce qui a déjà été fait pour l'éviter
+
+La fenêtre d'attente est de **douze tentatives sur cinq minutes**, ce qui couvre un
+redémarrage ordinaire (une à trois minutes). Elle était de cent secondes jusqu'au 11 août,
+et c'est précisément cette limite qui a fait échouer le déploiement de l'epic 12.
+
+**Si cette section sert plus de deux fois avant le 1ᵉʳ novembre**, le problème n'est pas la
+fenêtre d'attente : c'est le VPS. Ouvrir un ticket chez Hostinger avec les dates et les
+heures des échecs.
+
+---
+
 ## 12 ter. Un site répond 404 après un déploiement — l'autre va bien
 
 **Symptôme :** le déploiement réussit, le conteneur est sain, et pourtant le site répond
