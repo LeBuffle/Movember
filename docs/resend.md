@@ -106,7 +106,25 @@ Le nom affiché compte : un message de `bonjour@…` sans nom s'ouvre moins qu'u
 
 ## Étape 2 — Brancher Supabase (le bloquant)
 
-**Supabase → Project Settings → Authentication → SMTP Settings → Enable Custom SMTP**
+### Où ça se trouve
+
+**Pas dans « Project Settings ».** Le menu Project Settings ne contient que General,
+Infrastructure, Integrations, API Keys, JWT Keys, Log Drains et Add-ons — le réglage SMTP
+n'y est pas, et c'est le premier endroit où on le cherche.
+
+Il vit dans la section **Authentication**, qui a son propre menu :
+
+1. Dans la barre d'icônes tout à gauche, cliquer sur le **cadenas** (Authentication).
+2. Dans le menu qui s'ouvre : **Emails**.
+3. Onglet **SMTP Settings** → **Enable Custom SMTP**.
+
+Adresse directe, si le menu a encore bougé :
+
+```
+https://supabase.com/dashboard/project/<REF_DU_PROJET>/auth/smtp
+```
+
+Le `<REF_DU_PROJET>` est le **Project ID** affiché dans Project Settings → General.
 
 | Champ | Valeur |
 | --- | --- |
@@ -119,13 +137,16 @@ Le nom affiché compte : un message de `bonjour@…` sans nom s'ouvre moins qu'u
 
 Puis **Save**.
 
-Deux réglages à vérifier au passage, dans **Authentication → Providers → Email** :
+Deux réglages à vérifier au passage, toujours dans la section **Authentication** :
+
+**Authentication → Sign In / Providers → Email**
 
 - **Confirm email : activé.** Si tu l'avais désactivé pour tester, c'est le moment de le
   remettre. Sans confirmation, n'importe qui peut créer un compte avec l'adresse de
   quelqu'un d'autre.
 - Les modèles d'e-mails en français : ils sont dans `supabase/EMAILS.md`, à coller dans
-  **Authentication → Emails**.
+  **Authentication → Emails**, onglet **Templates** — le même écran que le SMTP, l'onglet
+  d'à côté.
 
 **Vérifier tout de suite :** créer un compte de test avec une adresse que tu contrôles, et
 regarder l'e-mail arriver. Il doit venir de `bonjour@defi-movember.fr`, pas de

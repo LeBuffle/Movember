@@ -112,7 +112,8 @@ prévu pour du développement, **pas pour 600 inscriptions en quelques jours**.
 
 Il faut donc, **avant l'ouverture des inscriptions**, brancher Supabase sur un service
 d'envoi réel — Resend est prévu par l'architecture — dans
-**Project Settings → Authentication → SMTP Settings**.
+**Authentication → Emails → onglet SMTP Settings** — dans la section Authentication de la
+barre latérale, **pas** dans Project Settings.
 
 👉 **La marche à suivre complète est dans [`docs/resend.md`](../docs/resend.md)** :
 vérification du domaine, réglage SMTP, variables de l'application, quotas et vérifications.
