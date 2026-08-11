@@ -94,29 +94,23 @@ Non utilisés par l'application à ce stade. À traduire si le parcours évolue.
 
 ---
 
-## Le jour du lancement — l'envoi d'e-mails
+## L'envoi d'e-mails — fait ✅
 
-Supabase limite fortement le nombre d'e-mails envoyés par son service intégré : il est
-prévu pour du développement, **pas pour 600 inscriptions en quelques jours**.
+**Branché le 8 août.** Le service intégré de Supabase n'est plus utilisé : les e-mails
+d'authentification partent par Resend, depuis `bonjour@defi-movember.fr`.
 
-> ⚠️ **C'est un bloquant d'ouverture, pas un confort.** Aucun compte ne peut être créé
-> sans son e-mail de confirmation. La limite est atteinte après quelques envois **par
-> heure** — constatée en préproduction le 6 août avec moins de dix essais. Le jour où les
-> inscriptions ouvrent, la dixième personne de la journée ne peut plus créer de compte, et
-> le symptôme qu'elle voit est « le site ne marche pas ».
->
-> Pour continuer à tester en attendant, sur la **préproduction uniquement** :
-> **Authentication → Providers → Email → Confirm email → désactiver**. Les comptes se
-> créent alors sans e-mail. **À réactiver avant la production** — sans confirmation,
-> n'importe qui peut créer un compte avec l'adresse de quelqu'un d'autre.
+La marche à suivre complète — et ce qu'il faudra refaire pour la production — est dans
+[`docs/resend.md`](../docs/resend.md).
 
-Il faut donc, **avant l'ouverture des inscriptions**, brancher Supabase sur un service
-d'envoi réel — Resend est prévu par l'architecture — dans
-**Authentication → Emails → onglet SMTP Settings** — dans la section Authentication de la
-barre latérale, **pas** dans Project Settings.
+> **Pourquoi c'était un bloquant d'ouverture.** Le service intégré est limité à quelques
+> envois par heure ; la limite avait été atteinte en préproduction le 6 août avec moins de
+> dix essais. Sans service d'envoi réel, la dixième personne à s'inscrire un jour
+> d'ouverture n'aurait pas pu créer de compte — et le symptôme qu'elle aurait vu est « le
+> site ne marche pas ».
 
-👉 **La marche à suivre complète est dans [`docs/resend.md`](../docs/resend.md)** :
-vérification du domaine, réglage SMTP, variables de l'application, quotas et vérifications.
+**Deux limites restent à régler avant l'ouverture**, et elles ne sont pas au même endroit :
 
-Les deux usages — les e-mails d'authentification de Supabase et les envois de
-l'application — partagent le même domaine d'expédition authentifié et la même clé.
+| Limite | Où | Pourquoi elle compte |
+| --- | --- | --- |
+| **Supabase** | Authentication → Rate Limits | Basse par défaut, indépendante de Resend. C'est elle qui bloquerait le premier jour d'inscriptions. |
+| **Resend** | Resend → Usage | 100 e-mails par jour sur le palier gratuit. Le calcul est dans `docs/resend.md`. |

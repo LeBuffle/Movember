@@ -121,9 +121,13 @@ continuent d'être rejetés, et rien ne dit pourquoi.
 
 ## Étape 3 — Les services extérieurs
 
-> **Resend a sa propre fiche : [`resend.md`](resend.md).** C'est le dernier bloquant
-> d'ouverture — vérification du domaine, réglage SMTP de Supabase, variables de
-> l'application, et le calcul de quota à faire avant novembre.
+> ✅ **Resend est branché et vérifié** (8 août). Domaine `defi-movember.fr` authentifié,
+> SMTP de Supabase configuré, variables posées sur la préproduction. La confirmation
+> d'inscription et l'e-mail de bienvenue après paiement arrivent tous les deux.
+>
+> La fiche complète reste dans [`resend.md`](resend.md) — elle servira à refaire la même
+> chose pour la production, et elle porte le **calcul de quota à faire avant novembre**,
+> qui est le seul point encore ouvert sur ce sujet.
 
 ### Stripe (mode test)
 
@@ -159,22 +163,29 @@ continuent d'être rejetés, et rien ne dit pourquoi.
 Ajouter les adresses de retour aux **Redirect URLs** : celle de la préproduction, et
 `https://defi-movember.fr/**` avant la mise en production. *(story 1.4)*
 
-### En septembre — Resend
+### Resend — fait ✅
 
-⚠️ **Créer le compte et authentifier le domaine d'expédition (SPF, DKIM) en septembre, pas
-en octobre.**
+Compte créé, domaine `defi-movember.fr` authentifié (DKIM, SPF, DMARC), SMTP branché dans
+**Authentication → Emails → SMTP Settings**, et les trois variables posées dans
+`deploy/.env.staging`.
 
-> **Ce point bloque les inscriptions elles-mêmes, pas seulement les notifications.**
-> Le service d'e-mail intégré de Supabase est limité à quelques envois par heure — la
-> limite a été atteinte en préproduction le 6 août avec moins de dix essais. Sans un
-> service d'envoi réel branché dans **Authentication → Emails → SMTP Settings**, la
-> dixième personne à s'inscrire un jour d'ouverture ne peut pas créer de compte.
->
-> Le même compte Resend sert aux deux usages : la confirmation d'inscription et le repli
-> e-mail des notifications (story 6.4). Un domaine neuf qui envoie huit cents e-mails d'un coup part en indésirable,
-et la réputation d'un domaine se construit lentement. C'est aussi ce qui débloque la story
-2.5 (e-mail de bienvenue), la seule story développée qui attend encore quelque chose.
-*(story 6.4)*
+Vérifié de bout en bout : e-mail de confirmation à la création de compte, et e-mail de
+bienvenue après un paiement de test.
+
+**Ce qu'il reste sur ce sujet**, et ce n'est plus un blocage technique :
+
+1. **Refaire les trois variables dans `deploy/.env.production`** avant la mise en
+   production, et vérifier que le Site URL de Supabase pointe sur le domaine de production.
+2. **Trancher le palier Resend** avant l'ouverture. Le gratuit est 3 000 e-mails par mois
+   et **100 par jour**. Les confirmations et les e-mails de bienvenue tiennent largement ;
+   ce qui déborde, c'est le rappel quotidien pour qui n'a pas installé l'application —
+   200 personnes concernées font 6 000 e-mails sur le mois. Détail du calcul dans
+   [`resend.md`](resend.md).
+3. **Monter la limite d'envoi de Supabase** (Authentication → Rate Limits). Elle est
+   indépendante de celle de Resend et reste basse par défaut : c'est elle qui bloquerait le
+   premier jour d'inscriptions, pas Resend.
+
+*(stories 2.5, 6.4)*
 
 ---
 
