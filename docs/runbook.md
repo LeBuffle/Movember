@@ -406,11 +406,25 @@ middleware.
 **C'est corrigé** : chaque environnement a désormais son propre nom de middleware, et un
 test l'exige. Mais le raisonnement reste vrai pour tout nom partagé entre deux conteneurs.
 
+### La signature dans le journal
+
+C'est elle qui identifie le cas en dix secondes :
+
+```
+ERR Middleware defined multiple times with different configurations
+    middlewareName=movember-security providerName=docker
+ERR error="middleware \"movember-security@docker\" does not exist"
+    routerName=movember@docker
+```
+
+**Traefik nomme le middleware fautif et les routeurs qu'il abandonne.** Il ne journalise
+rien quand tout va bien : après correction, le silence est le bon résultat.
+
 ### Diagnostic
 
 ```bash
 # 1. Les routeurs vus par Traefik
-docker logs n8n-traefik-1 --since 15m 2>&1 | grep -i "middleware\|router" | tail -20
+docker logs n8n-traefik-1 --since 15m 2>&1 | grep -iE "movember|middleware" | tail -20
 
 # 2. Le conteneur tourne-t-il, et est-il sain ?
 docker ps --format '{{.Names}}\t{{.Status}}' | grep movember
@@ -424,11 +438,22 @@ dans l'application.
 
 ### Correction immédiate
 
-Recréer **les deux** conteneurs, pour qu'ils repartent de la même définition :
+Recréer **les deux** conteneurs, et **après** s'être assuré que le disque porte bien la
+version corrigée — c'est le piège qui a fait perdre une demi-heure le 11 août :
 
 ```bash
-cd /opt/defi-movember/deploy && docker compose up -d --force-recreate
+cd /opt/defi-movember && git log --oneline -1     # la version sur le disque
+cd deploy && docker compose up -d --force-recreate
+sleep 10
+curl -s -o /dev/null -w 'staging %{http_code}\n' https://staging.defi-movember.fr/api/health
+curl -s -o /dev/null -w 'prod    %{http_code}\n' https://defi-movember.fr/api/health
+docker logs n8n-traefik-1 --since 2m 2>&1 | grep -iE "movember|middleware"
 ```
+
+Recréer les conteneurs pendant que le disque porte encore l'ancienne version les remet
+dans l'état fautif. `deploy.sh` ne recrée que le service qu'il déploie, ce qui est
+maintenant sans danger — les noms de middleware sont distincts — mais reste vrai pour tout
+autre nom qu'on partagerait un jour.
 
 ---
 

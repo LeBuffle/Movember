@@ -110,7 +110,10 @@ jobs:
           done
 
           echo "✗ La préproduction n'a pas répondu (dernier code : HTTP $code)" >&2
-          echo "  Le déploiement lui-même a réussi — vérifier Traefik et le certificat." >&2
+          echo "  Le déploiement lui-même a réussi — le problème est dans le routage." >&2
+          echo "  HTTP 404 : Traefik n'a trouvé aucune route. Voir docs/runbook.md §12 ter." >&2
+          echo "  HTTP 502/503 : la route existe, le conteneur ne répond pas. Voir §3 et §4." >&2
+          echo "  HTTP 000 : ni DNS ni TLS. Voir §8." >&2
           exit 1
 
       - name: Effacer la clé
