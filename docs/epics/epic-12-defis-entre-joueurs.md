@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Priorité** | Could — ajout de périmètre demandé après la clôture du développement |
-| **Jalon visé** | à trancher : livré fermé, ouvert en cours de novembre (recommandé) |
+| **Priorité** | Should — ajout de périmètre validé par le PO le 11 août |
+| **Jalon visé** | **ouvert dès le 1ᵉʳ novembre**, donc fini et testé avant le gel du 1ᵉʳ octobre |
 | **Dépendances** | Epic 2 (paiement) · Epic 4 (moteur de défis) · Epic 7 (classements) |
 | **Stories** | 8 |
-| **Statut** | **Brouillon — en attente de validation PO** |
+| **Statut** | Périmètre et décisions validés — stories rédigées, développement en attente du feu vert |
 
 ---
 
@@ -74,10 +74,10 @@ défendable de ce mécanisme.
 
 ---
 
-## Ce que j'ajoute aux règles, et pourquoi
+## Ce que j'ai ajouté aux règles, et pourquoi
 
-Ces points ne figuraient pas dans la demande. Ils me paraissent nécessaires pour que le
-mécanisme tienne debout ; ils sont à valider ou à écarter.
+Ces points ne figuraient pas dans la demande. Ils sont nécessaires pour que le mécanisme
+tienne debout, et le PO les a validés le 11 août.
 
 ### 1. Une activité ne vaut que si elle est postérieure au défi
 
@@ -164,41 +164,45 @@ personne peut recevoir 150 défis sans jamais avoir demandé à jouer à ça. Un
 | **Harcèlement d'un participant** | Plafond de 5 par 24 h, interrupteur individuel, et journal des envois consultable par l'organisation |
 | **Deux amis se renvoient des défis en boucle** | Sans points au classement, il n'y a rien à gagner à le faire — c'est l'argument principal pour ne rien faire gagner |
 | Validation avec une activité du matin | Fenêtre temporelle stricte : l'activité démarre après l'envoi |
-| Crédits achetés et jamais dépensés | À trancher (voir ci-dessous) et à écrire dans les CGV **avant** la première vente |
+| Crédits achetés et jamais dépensés | Reversés à la fondation (P8). **À écrire dans les CGV avant la première vente** |
 | **Périmètre ajouté après la clôture** | L'epic 11 et le contenu de septembre passent avant. Cet epic se coupe en entier sans rien casser |
 
 ---
 
-## Ce qui reste à trancher — décisions PO
+## Décisions prises par le PO — 11 août
 
-Ces quatre points changent le code. Je ne les invente pas.
+### P7 — Un défi relevé ne rapporte **rien au classement**
 
-### P7 — Un défi relevé rapporte-t-il quelque chose ?
+Le mécanisme est social : fierté, riposte, plaisanterie. Aucun point, aucune carte.
 
-| Option | Conséquence |
-| --- | --- |
-| **Rien au classement** *(recommandé)* | Le mécanisme est social : fierté, riposte, plaisanterie. Impossible à truquer, aucun garde-fou supplémentaire à écrire, et le classement reste ce qu'il a toujours été |
-| Une carte, hors classement | Comme un pack acheté : elle enrichit l'album sans compter au classement collection |
-| Des points au classement | ⚠️ Deux amis peuvent se renvoyer des défis toute la journée et monter ensemble. Demande un plafond de points quotidien et une détection des paires récurrentes |
+**C'est la décision qui rend toutes les autres protections inutiles.** Deux amis qui se
+renverraient des défis toute la journée n'ont rien à gagner : il n'y a donc ni plafond de
+points quotidien à écrire, ni détection de paires récurrentes, ni arbitrage à prévoir. Le
+classement reste exactement ce qu'il était.
 
-### P8 — Que deviennent les crédits non dépensés au 30 novembre ?
+### P8 — Les crédits non dépensés au 30 novembre sont **reversés à la fondation**
 
-| Option | Conséquence |
-| --- | --- |
-| **Reversés à la fondation** *(recommandé)* | L'argent est encaissé et déjà destiné au don. Simple, cohérent, **à écrire dans les CGV avant l'ouverture** |
-| Remboursés sur demande | Chaque remboursement coûte des frais Stripe et du travail, pour 2 à 10 € |
-| Remboursés automatiquement | ⚠️ Frais parfois supérieurs au montant remboursé |
+L'argent est encaissé et déjà destiné au don. **À écrire dans les CGV avant la première
+vente** — un crédit acheté et non utilisé dont le sort n'est pas annoncé est une
+réclamation qui arrive en décembre.
 
-### P9 — Quelle protection au-delà du plafond de 5 par jour ?
+### P9 — Un interrupteur « ne pas me défier », en plus du plafond
 
-| Option | Conséquence |
-| --- | --- |
-| **Interrupteur « ne pas me défier »** *(recommandé)* | Une colonne, une case à cocher, et une réponse à donner à la personne qui n'aime pas être sollicitée |
-| Blocage individuel | Plus fin, mais demande un écran de gestion et désigne quelqu'un nommément |
-| Rien de plus | ⚠️ Aucun recours pour qui reçoit 5 défis par jour pendant un mois |
+Un réglage dans « Mon compte », désactivable à tout moment.
 
-### P10 — Prix des lots de crédits
+### P10 — Prix des lots : **5 crédits pour 10 €**, **10 crédits pour 20 €**
 
-Proposition, à confirmer : **5 crédits pour 10 €**, **10 crédits pour 20 €**. Prix unitaire
-identique, la remise n'étant pas le sujet — le lot existe pour amortir les frais Stripe.
-Comme le reste, ces montants vivront en base et se changeront en une instruction SQL.
+Prix unitaire identique dans les deux lots : la remise n'est pas le sujet, le lot existe
+pour amortir les frais Stripe. Les montants vivent en base et se changent en une
+instruction SQL.
+
+### Calendrier — ouvert dès le premier jour
+
+Le PO a tranché : le mécanisme est disponible **le 1ᵉʳ novembre au matin**, pas ouvert en
+cours de mois. Conséquence directe : cet epic doit être **fini, déployé et testé avant le
+gel du 1ᵉʳ octobre**, au même titre que les onze autres.
+
+> Il reste néanmoins **le seul epic qui peut être coupé sans rien casser** : les défis
+> quotidiens, les cartes, les classements et les équipes ne dépendent d'aucune de ses
+> lignes. Si octobre se tend, c'est ici qu'on coupe — et le drapeau d'ouverture le permet
+> jusqu'au dernier moment.

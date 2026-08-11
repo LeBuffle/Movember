@@ -6,7 +6,7 @@
 | **Jalon visé** | avant le 1ᵉʳ novembre |
 | **Dépendances** | Epic 7 (classements) |
 | **Stories** | 6 |
-| **Statut** | **Brouillon — en attente de validation PO** |
+| **Statut** | Périmètre validé — stories rédigées, développement en attente du feu vert |
 
 ---
 

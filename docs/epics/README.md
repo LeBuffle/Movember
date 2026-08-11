@@ -35,13 +35,16 @@ brouillon et attendent une validation avant toute ligne de code** (`CLAUDE.md` �
 
 | # | Epic | Objectif en une phrase | Prio | Jalon visé |
 | --- | --- | --- | --- | --- |
-| [12](epic-12-defis-entre-joueurs.md) | **Défis entre joueurs et portefeuille** | Un participant défie un autre participant, contre des crédits achetés à l'avance | C | à trancher |
-| [13](epic-13-classements-vivants.md) | **Classements vivants** | Cartes, médailles, podium, progression et recherche | S | avant le 1ᵉʳ novembre |
+| [12](epic-12-defis-entre-joueurs.md) | **Défis entre joueurs et portefeuille** | Un participant défie un autre participant, contre des crédits achetés à l'avance | S | **avant le 1ᵉʳ octobre** |
+| [13](epic-13-classements-vivants.md) | **Classements vivants** | Cartes, médailles, podium, progression et recherche | S | **avant le 1ᵉʳ octobre** |
 
-> **Ces deux epics ne sont pas sur le chemin critique.** L'epic 11 et le travail de contenu
-> de septembre passent avant : sans eux il n'y a pas de lancement, alors que sans les
-> epics 12 et 13 il y a un jeu complet. L'epic 12 est explicitement conçu pour être
-> **livré fermé et ouvert en cours de novembre**, ce qui en fait une animation en soi.
+> **Ces deux epics ne sont pas sur le chemin critique**, et c'est ce qui les rend sûrs :
+> sans eux il y a un jeu complet. Le PO a choisi de les ouvrir dès le 1ᵉʳ novembre, ce qui
+> les place avant le gel du 1ᵉʳ octobre — mais ils restent les deux seuls qu'on puisse
+> couper en entier si octobre se tend, sans toucher aux défis, aux cartes ni aux équipes.
+>
+> **L'epic 11 et le travail de contenu de septembre passent devant.** Sans eux il n'y a pas
+> de lancement du tout.
 
 ---
 

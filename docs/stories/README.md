@@ -516,6 +516,66 @@ inscriptions ».** C'est aussi celui qu'on sacrifie par manque de temps sur les 
 
 ---
 
+## Epic 12 : Défis entre joueurs et portefeuille
+
+**Ajout de périmètre validé le 11 août**, ouvert dès le 1ᵉʳ novembre — donc à finir avant le
+gel du 1ᵉʳ octobre.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 12.1 | [Schéma du portefeuille et des défis](12.1.schema-defis-joueurs.md) | Draft | 1.6 |
+| 12.2 | [Achat de crédits par lots](12.2.achat-credits.md) | Draft | 12.1, 2.4 |
+| 12.3 | [Envoi d'un défi depuis le classement](12.3.envoi-defi.md) | Draft | 12.1, 7.4 |
+| 12.4 | [Protection du destinataire](12.4.protection-destinataire.md) | Draft | 12.3 |
+| 12.5 | [Validation d'un défi reçu](12.5.validation-defi-recu.md) | Draft | 12.3, 4.3 |
+| 12.6 | [Riposte gratuite et message d'échec](12.6.riposte-et-message.md) | Draft | 12.5 |
+| 12.7 | [Notifications des défis](12.7.notifications-defis.md) | Draft | 12.5, 6.7 |
+| 12.8 | [Comptabilisation des crédits](12.8.comptabilisation-credits.md) | Draft | 12.2, 9.2 |
+
+### Ordre d'exécution
+
+```
+12.1 ──┬──► 12.2 ──► 12.8
+       └──► 12.3 ──► 12.4 ──► 12.5 ──┬──► 12.6
+                                     └──► 12.7
+```
+
+> **Les deux stories qui décident du reste.** 12.5 porte la fenêtre temporelle : sans elle,
+> un défi reçu à 18 h se valide avec la sortie de 7 h du matin, et le mécanisme entier perd
+> son sens. 12.4 porte la protection : sans elle, un participant peut recevoir cent
+> cinquante défis sur le mois sans avoir demandé à jouer à ça.
+
+
+---
+
+## Epic 13 : Classements vivants
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 13.1 | [Photographie quotidienne des rangs](13.1.photographie-rangs.md) | Draft | 7.3 |
+| 13.2 | [Classements en cartes](13.2.classements-en-cartes.md) | Draft | 7.4 |
+| 13.3 | [Médailles et podium provisoire](13.3.medailles-podium.md) | Draft | 13.2 |
+| 13.4 | [Progression depuis la veille](13.4.progression.md) | Draft | 13.1, 13.2 |
+| 13.5 | [Recherche d'un joueur](13.5.recherche-joueur.md) | Draft | 13.2 |
+| 13.6 | [Ma position, toujours visible](13.6.ma-position.md) | Draft | 13.2 |
+
+### Ordre d'exécution
+
+```
+13.1 ──► 13.4
+13.2 ──┬──► 13.3
+       ├──► 13.5
+       └──► 13.6
+```
+
+> **Aucune règle de points n'est touchée.** Cet epic déplace des pixels, ajoute une
+> photographie quotidienne et une recherche. Les tests de l'epic 7 restent la référence et
+> doivent passer **sans être modifiés** — si l'un d'eux doit changer, c'est que la refonte a
+> touché autre chose que l'affichage.
+
+
+---
+
 ## Stories des epics 6 à 11
 
 Elles seront rédigées **au fil de l'avancement**, epic par epic, plutôt que toutes
