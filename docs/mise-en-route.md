@@ -72,6 +72,7 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 30 | `20260806260000_activity_flags.sql` | 9.6 |
 | 31 | `20260806270000_card_packs.sql` | 10.1 |
 | 32 | `20260806280000_account_deletion.sql` | 11.2 |
+| 33 | `20260806290000_leaderboard_snapshots.sql` | 13.1 |
 
 ⚠️ **La 29 reconstruit la vue des classements** : quelques secondes sans classement pendant
 qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.
@@ -232,6 +233,7 @@ curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/
 | `rapprochement` | :23 | Complète les frais Stripe réels | 2.6 |
 | `classements` | :03, :18, :33, :48 | Rafraîchit les huit classements | 7.3 |
 | `purge` | 4:34 | Applique la politique de conservation. **Répond « rien à faire » onze mois par an** | 11.4 |
+| `photographie` | 5:02 | Enregistre les rangs du jour, repère du « +3 places » | 13.1 |
 
 Et une tâche qui n'est pas un appel HTTP mais un script :
 

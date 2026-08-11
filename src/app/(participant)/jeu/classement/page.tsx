@@ -1,17 +1,24 @@
 import Link from "next/link";
 
 import { ParticipantShell } from "@/components/layout/participant-shell";
+import { LeaderboardCard } from "@/components/leaderboards/leaderboard-card";
+import { LeaderboardSearch } from "@/components/leaderboards/leaderboard-search";
+import { Podium, podiumIsMeaningful } from "@/components/leaderboards/podium";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import {
   CATEGORIES,
   categoryOf,
-  formatValue,
   isCategory,
+  type CategoryDefinition,
   type LeaderboardCategory,
 } from "@/lib/leaderboards/categories";
-import { getLeaderboard } from "@/lib/leaderboards/read";
+import {
+  getLeaderboard,
+  searchLeaderboard,
+  type LeaderboardRow,
+} from "@/lib/leaderboards/read";
 import {
   explainNormalisation,
   getTeamLeaderboard,
@@ -54,11 +61,15 @@ export default async function LeaderboardPage({
   const showTeams = raw === "equipes";
   const definition = categoryOf(category);
 
+  const query = (Array.isArray(params.q) ? params.q[0] : params.q) ?? "";
+  const searching = !showTeams && query.trim().length >= 2;
+
   const team = await ownTeam();
 
-  const [board, teams] = await Promise.all([
+  const [board, teams, results] = await Promise.all([
     showTeams ? Promise.resolve(null) : getLeaderboard(category),
     showTeams ? getTeamLeaderboard(team?.id ?? null) : Promise.resolve(null),
+    searching ? searchLeaderboard(category, query) : Promise.resolve(null),
   ]);
 
   const computedAt = board?.computedAt ?? teams?.computedAt ?? null;
@@ -103,64 +114,72 @@ export default async function LeaderboardPage({
           <>
             <p className="text-ink-muted">{definition.description}</p>
 
-            {board.rows.length === 0 ? (
+            <LeaderboardSearch category={category} query={query} />
+
+            {results !== null ? (
+              <SearchResults
+                results={results}
+                query={query}
+                definition={definition}
+                category={category}
+              />
+            ) : board.rows.length === 0 ? (
               <Alert tone="info" title="Le classement est encore vide">
                 Il se remplira dès les premiers défis réussis. Rien n’est cassé
                 — il n’y a simplement rien à classer pour l’instant.
               </Alert>
             ) : (
               <>
-                <ol className="border-line divide-line divide-y border-y">
-                  {board.rows.map((row) => (
-                    <li
-                      key={row.profileId}
-                      className={cn(
-                        "flex items-center justify-between gap-3 py-3",
-                        row.isSelf && "bg-brand-blue-soft -mx-2 px-2",
-                      )}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="text-ink-muted w-8 text-right text-sm tabular-nums">
-                          {row.rank}
-                        </span>
-                        <span className="text-ink font-medium">
-                          {row.displayName}
-                          {row.isSelf && (
-                            <span className="text-brand-blue"> — vous</span>
-                          )}
-                        </span>
-                      </span>
+                {/* Only when it means something. On the first morning everybody
+                    is on zero, and a podium would crown three people for their
+                    place in a tie-break. */}
+                {podiumIsMeaningful(board.rows) && (
+                  <Podium
+                    rows={board.rows.slice(0, 3)}
+                    definition={definition}
+                  />
+                )}
 
-                      <span className="text-ink font-semibold tabular-nums">
-                        {formatValue(row.value, definition.unit)}
-                      </span>
+                {/* Pinned at the top, and only when the reader is not already
+                    visible below. The four hundred people outside the top fifty
+                    are the reason this screen has an own line at all. */}
+                {board.own && !board.rows.some((row) => row.isSelf) && (
+                  <div className="space-y-1">
+                    <p className="text-ink-muted text-sm font-medium">
+                      Votre position
+                    </p>
+                    <LeaderboardCard
+                      row={board.own}
+                      definition={definition}
+                      emphasis
+                    />
+                  </div>
+                )}
+
+                <ol className="space-y-2">
+                  {board.rows.map((row) => (
+                    <li key={row.profileId}>
+                      <LeaderboardCard row={row} definition={definition} />
                     </li>
                   ))}
                 </ol>
-
-                {/* Only when the reader is not already visible above. The
-                    whole reason this exists is the four hundred people who
-                    are not in the top fifty. */}
-                {board.own && !board.rows.some((row) => row.isSelf) && (
-                  <div className="border-brand-blue bg-brand-blue-soft flex items-center justify-between gap-3 rounded-xl border p-3">
-                    <span className="flex items-center gap-3">
-                      <span className="text-brand-blue w-8 text-right text-sm font-bold tabular-nums">
-                        {board.own.rank}
-                      </span>
-                      <span className="text-ink font-medium">
-                        {board.own.displayName} — vous
-                      </span>
-                    </span>
-                    <span className="text-ink font-semibold tabular-nums">
-                      {formatValue(board.own.value, definition.unit)}
-                    </span>
-                  </div>
-                )}
 
                 <p className="text-ink-muted text-sm">
                   {board.total} participant{board.total > 1 ? "s" : ""} classé
                   {board.total > 1 ? "s" : ""}.
                 </p>
+
+                <ComparedTo day={board.comparedTo} />
+
+                {/* Said here rather than left to be guessed: somebody who is
+                    ranked but absent from a category needs a sentence, not a
+                    blank. */}
+                {!board.own && (
+                  <Alert tone="info" title="Vous n’êtes pas encore classé ici">
+                    Ce classement se remplit dès votre première sortie prise en
+                    compte. Rien n’est perdu.
+                  </Alert>
+                )}
               </>
             )}
           </>
@@ -169,6 +188,89 @@ export default async function LeaderboardPage({
 
       <ComputedAt at={computedAt} />
     </ParticipantShell>
+  );
+}
+
+/**
+ * What the search found — its real ranks, not positions in a result list.
+ *
+ * **A result carries the rank it holds in the whole ranking.** Numbering the
+ * results 1, 2, 3 would tell a reader that the person they looked up is third,
+ * when they are 342nd. That is the mistake this story exists to avoid.
+ */
+function SearchResults({
+  results,
+  query,
+  definition,
+  category,
+}: {
+  results: LeaderboardRow[];
+  query: string;
+  definition: CategoryDefinition;
+  category: string;
+}) {
+  return (
+    <section aria-label="Résultats de la recherche" className="space-y-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-ink font-semibold">
+          {results.length === 0
+            ? "Aucun participant trouvé"
+            : `${results.length} participant${results.length > 1 ? "s" : ""} trouvé${results.length > 1 ? "s" : ""}`}{" "}
+          <span className="text-ink-muted font-normal">pour « {query} »</span>
+        </p>
+
+        <Link
+          href={`/jeu/classement?categorie=${category}`}
+          className="text-brand-blue text-sm font-semibold"
+        >
+          Revenir au classement
+        </Link>
+      </div>
+
+      {results.length === 0 ? (
+        <Alert tone="info" title="Rien sous ce pseudonyme">
+          Vérifiez l’orthographe. Seuls les participants inscrits et actifs
+          apparaissent dans les classements.
+        </Alert>
+      ) : (
+        <ol className="space-y-2">
+          {results.map((row) => (
+            <li key={row.profileId}>
+              <LeaderboardCard row={row} definition={definition} />
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Since when the movements are measured.
+ *
+ * **Displayed, never implied.** "+3" without a period is an information the
+ * reader completes from imagination — "depuis hier" or "depuis le début" — and
+ * gets wrong half the time. One line removes the ambiguity.
+ */
+function ComparedTo({ day }: { day: string | null }) {
+  if (!day) {
+    return (
+      <p className="text-ink-muted text-sm">
+        Les gains et pertes de places apparaîtront demain : ils se mesurent d’un
+        matin à l’autre.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-ink-muted text-sm">
+      Gains et pertes de places mesurés depuis le{" "}
+      {new Intl.DateTimeFormat("fr-FR", {
+        dateStyle: "long",
+        timeZone: "Europe/Paris",
+      }).format(new Date(`${day}T06:00:00Z`))}{" "}
+      au matin.
+    </p>
   );
 }
 

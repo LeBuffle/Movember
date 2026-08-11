@@ -111,6 +111,20 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # first. Two of these piling up is how a small delay becomes an outage.
 3,18,33,48 * * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/classements >> /var/log/defi-movember-cron.log 2>&1
 
+# The daily photograph of the rankings (story 13.1). Every morning at 5:02.
+#
+# **Two minutes before the day's challenges, and the order matters.** The
+# photograph is the reference for "vous avez pris 3 places depuis hier matin".
+# Taken after the challenges went out, it would already include the movement
+# of a day that has not been played yet.
+#
+# Re-running it is harmless: the day is part of the primary key, so a second
+# pass writes nothing and the morning's photograph stays the morning's.
+#
+# If it is missed for a day, the screen shows "—" rather than a made-up "+0".
+# A missing photograph costs a line of information; a wrong one costs trust.
+2 5 * * * source /opt/defi-movember/deploy/.env.production && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://defi-movember.fr/api/cron/photographie >> /var/log/defi-movember-cron.log 2>&1
+
 # Retention policy (story 11.4). Once a day, at 4:34.
 #
 # **Its ordinary answer is "rien à faire", and that is by design.** Every

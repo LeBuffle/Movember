@@ -28,6 +28,17 @@ export type LeaderboardRow = {
   rank: number;
   value: number;
   isSelf: boolean;
+  /**
+   * Places gained since yesterday's photograph (story 13.4).
+   *
+   * Positive means climbed. **Null means "we do not know"** — no photograph
+   * yesterday, or the participant was not ranked then. The screen shows a dash
+   * for null, never a zero: a `+0` invented for want of a reference reads as
+   * "I have not moved", which is a different statement and a false one.
+   */
+  movement: number | null;
+  /** True when they appear today and did not yesterday. Never a fall. */
+  isNew: boolean;
 };
 
 export type LeaderboardView = {
@@ -37,6 +48,14 @@ export type LeaderboardView = {
   /** How many are ranked at all. */
   total: number;
   computedAt: string | null;
+  /**
+   * The day the movements are measured from, `YYYY-MM-DD`, or null.
+   *
+   * **Displayed, not just used.** "+3" without knowing since when is an
+   * information the reader completes from imagination, and gets wrong half the
+   * time.
+   */
+  comparedTo: string | null;
 };
 
 const EMPTY: LeaderboardView = {
@@ -44,6 +63,7 @@ const EMPTY: LeaderboardView = {
   own: null,
   total: 0,
   computedAt: null,
+  comparedTo: null,
 };
 
 async function editionId(): Promise<string | null> {
@@ -85,6 +105,64 @@ async function displayNames(ids: string[]): Promise<Map<string, string>> {
 }
 
 /**
+ * Yesterday's ranks, for the movement column (story 13.4).
+ *
+ * **The most recent photograph strictly before today**, not "yesterday's date"
+ * — a missed run would otherwise silently compare against nothing, and every
+ * participant would show a dash for a day. Taking the latest available keeps
+ * the column meaningful, and the date is returned so the screen can say which
+ * day it is talking about.
+ *
+ * @returns an empty map when no photograph exists at all, which is the normal
+ *   state until the first morning of the game.
+ */
+async function previousRanks(
+  edition: string,
+  rankColumn: string,
+): Promise<{ ranks: Map<string, number>; takenOn: string | null }> {
+  const supabase = createAnonClient();
+  if (!supabase) return { ranks: new Map(), takenOn: null };
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: latest } = await supabase
+    .from("leaderboard_snapshots")
+    .select("taken_on")
+    .eq("edition_id", edition)
+    .lt("taken_on", today)
+    .order("taken_on", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const takenOn = latest?.taken_on ?? null;
+  if (!takenOn) return { ranks: new Map(), takenOn: null };
+
+  const { data, error } = await supabase
+    .from("leaderboard_snapshots")
+    .select(`profile_id, ${rankColumn}`)
+    .eq("edition_id", edition)
+    .eq("taken_on", takenOn);
+
+  if (error) {
+    // No movement rather than a wrong one. The screen shows dashes, which is
+    // honest, and the ranking itself is unaffected.
+    console.error("[classements] photographie illisible", {
+      code: error.code,
+    });
+    return { ranks: new Map(), takenOn: null };
+  }
+
+  const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+
+  return {
+    ranks: new Map(
+      rows.map((row) => [String(row.profile_id), Number(row[rankColumn])]),
+    ),
+    takenOn,
+  };
+}
+
+/**
  * One ranking, its top rows, and the reader's own line.
  *
  * **The own line is fetched separately and always.** Showing only the top
@@ -105,7 +183,7 @@ export async function getLeaderboard(
   const definition = categoryOf(category);
   const self = await sessionProfile();
 
-  const [top, mine, counted] = await Promise.all([
+  const [top, mine, counted, previous] = await Promise.all([
     supabase
       .from("leaderboard_entries")
       .select(
@@ -128,6 +206,7 @@ export async function getLeaderboard(
       .from("leaderboard_entries")
       .select("profile_id", { count: "exact", head: true })
       .eq("edition_id", edition),
+    previousRanks(edition, definition.rankColumn),
   ]);
 
   const rows = (top.data ?? []) as unknown as Array<Record<string, unknown>>;
@@ -138,20 +217,133 @@ export async function getLeaderboard(
 
   const names = await displayNames([...new Set(ids)]);
 
-  const toRow = (row: Record<string, unknown>): LeaderboardRow => ({
-    profileId: String(row.profile_id),
-    displayName: names.get(String(row.profile_id)) ?? "Participant",
-    rank: Number(row[definition.rankColumn] ?? 0),
-    value: Number(row[definition.column] ?? 0),
-    isSelf: String(row.profile_id) === self,
-  });
+  const toRow = (row: Record<string, unknown>): LeaderboardRow =>
+    buildRow(row, definition, names, self, previous);
 
   return {
     rows: rows.map(toRow),
     own: ownRow ? toRow(ownRow) : null,
     total: counted.count ?? 0,
     computedAt: rows[0] ? String(rows[0].computed_at ?? "") || null : null,
+    comparedTo: previous.takenOn,
   };
+}
+
+/**
+ * One row of the ranking, movement included.
+ *
+ * Shared by the ranking and the search so the two can never disagree about
+ * what a rank or a movement is.
+ */
+function buildRow(
+  row: Record<string, unknown>,
+  definition: ReturnType<typeof categoryOf>,
+  names: Map<string, string>,
+  self: string | null,
+  previous: { ranks: Map<string, number>; takenOn: string | null },
+): LeaderboardRow {
+  const profileId = String(row.profile_id);
+  const rank = Number(row[definition.rankColumn] ?? 0);
+  const before = previous.ranks.get(profileId);
+
+  /* Three distinct cases, and conflating any two of them produces a figure
+     that is quietly wrong:
+
+     - no photograph at all      → unknown, a dash
+     - photograph without them   → new, never "fell by 340 places"
+     - photograph with them      → a real movement
+
+     A rank going DOWN in number is a climb, hence the subtraction in this
+     order. */
+  const movement =
+    previous.takenOn === null || before === undefined ? null : before - rank;
+
+  return {
+    profileId,
+    displayName: names.get(profileId) ?? "Participant",
+    rank,
+    value: Number(row[definition.column] ?? 0),
+    isSelf: profileId === self,
+    movement,
+    isNew: previous.takenOn !== null && before === undefined,
+  };
+}
+
+/**
+ * Finding one player by pseudonym, anywhere in the ranking (story 13.5).
+ *
+ * **The difference between a search and a filter decides this story.** A filter
+ * applied to the fifty rows already on screen answers "aucun résultat" for
+ * somebody ranked 342nd — who exists, and is visible two pages further down.
+ * That is the defect everybody ships by accident, and that nobody notices while
+ * testing with twenty accounts.
+ *
+ * So the search starts from `public_profiles`, over the whole edition, and then
+ * reads those participants' ranks. It returns their **real rank**, not their
+ * position among the results.
+ *
+ * @returns an empty list for a blank query — not every row. A search box that
+ *   dumps the whole ranking on an accidental keystroke is a search box people
+ *   stop using.
+ */
+export async function searchLeaderboard(
+  category: LeaderboardCategory,
+  query: string,
+  limit = 20,
+): Promise<LeaderboardRow[]> {
+  const term = query.trim();
+  if (term.length < 2) return [];
+
+  const supabase = createAnonClient();
+  if (!supabase) return [];
+
+  const edition = await editionId();
+  if (!edition) return [];
+
+  const definition = categoryOf(category);
+
+  /* Neutralised before it reaches PostgREST: a comma or a parenthesis in a
+     pseudonym would otherwise be read as filter syntax rather than as text.
+     Same treatment as the back-office search of story 8.2. */
+  const safe = term.replace(/[,()*%]/g, " ").trim();
+  if (safe.length < 2) return [];
+
+  const { data: matches, error } = await supabase
+    .from("public_profiles")
+    .select("id, display_name")
+    .ilike("display_name", `%${safe}%`)
+    .limit(limit);
+
+  if (error) {
+    console.error("[classements] recherche impossible", { code: error.code });
+    return [];
+  }
+
+  const found = matches ?? [];
+  if (found.length === 0) return [];
+
+  const [ranked, previous, self] = await Promise.all([
+    supabase
+      .from("leaderboard_entries")
+      .select(
+        "profile_id, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_activities, rank_duration",
+      )
+      .eq("edition_id", edition)
+      .in(
+        "profile_id",
+        found.map((row) => row.id),
+      ),
+    previousRanks(edition, definition.rankColumn),
+    sessionProfile(),
+  ]);
+
+  const names = new Map(found.map((row) => [row.id, row.display_name]));
+
+  const rows = (ranked.data ?? []) as unknown as Array<Record<string, unknown>>;
+
+  return rows
+    .map((row) => buildRow(row, definition, names, self, previous))
+    .sort((left, right) => left.rank - right.rank);
 }
 
 export type OwnStanding = {

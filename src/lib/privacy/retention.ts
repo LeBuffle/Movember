@@ -62,6 +62,12 @@ export const RETENTION_RULES: RetentionRule[] = [
     reason:
       "Activités sportives : effacées six mois après l’édition, après la clôture comptable et le traitement des réclamations.",
   },
+  {
+    table: "leaderboard_snapshots",
+    months: 3,
+    reason:
+      "Photographies quotidiennes des classements : effacées trois mois après l’édition. Elles ne servent qu’à afficher les places gagnées ou perdues pendant le jeu.",
+  },
 ];
 
 /** Tables the purge never touches, and the reason it never does. */

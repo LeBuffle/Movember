@@ -552,12 +552,12 @@ gel du 1ᵉʳ octobre.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 13.1 | [Photographie quotidienne des rangs](13.1.photographie-rangs.md) | Draft | 7.3 |
-| 13.2 | [Classements en cartes](13.2.classements-en-cartes.md) | Draft | 7.4 |
-| 13.3 | [Médailles et podium provisoire](13.3.medailles-podium.md) | Draft | 13.2 |
-| 13.4 | [Progression depuis la veille](13.4.progression.md) | Draft | 13.1, 13.2 |
-| 13.5 | [Recherche d'un joueur](13.5.recherche-joueur.md) | Draft | 13.2 |
-| 13.6 | [Ma position, toujours visible](13.6.ma-position.md) | Draft | 13.2 |
+| 13.1 | [Photographie quotidienne des rangs](13.1.photographie-rangs.md) | Review | 7.3 |
+| 13.2 | [Classements en cartes](13.2.classements-en-cartes.md) | Review | 7.4 |
+| 13.3 | [Médailles et podium provisoire](13.3.medailles-podium.md) | Review | 13.2 |
+| 13.4 | [Progression depuis la veille](13.4.progression.md) | Review | 13.1, 13.2 |
+| 13.5 | [Recherche d'un joueur](13.5.recherche-joueur.md) | Review | 13.2 |
+| 13.6 | [Ma position, toujours visible](13.6.ma-position.md) | Review | 13.2 |
 
 ### Ordre d'exécution
 

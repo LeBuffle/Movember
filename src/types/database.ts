@@ -904,6 +904,27 @@ export type Database = {
        * general ranking never reads `card_grants`; the collection ranking
        * counts only what was earned by playing (architecture D8, D14).
        */
+      leaderboard_snapshots: {
+        Row: {
+          edition_id: string;
+          profile_id: string;
+          /** Day of the photograph, in `YYYY-MM-DD`. */
+          taken_on: string;
+          rank_points: number;
+          rank_challenges: number;
+          rank_cards: number;
+          rank_run: number;
+          rank_bike: number;
+          rank_activities: number;
+          rank_duration: number;
+          created_at: string;
+        };
+        /* No Insert or Update type on purpose: the table has no write policy
+           for anybody, and the photograph is taken by a database function.
+           Somebody able to write here could invent a flattering progression —
+           the only figure of epic 13 that can be faked. */
+        Relationships: [];
+      };
       leaderboard_entries: {
         Row: {
           profile_id: string;
@@ -950,6 +971,12 @@ export type Database = {
       refresh_leaderboards: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      /** Copies today's ranks into the snapshot table (story 13.1). */
+      snapshot_leaderboard_ranks: {
+        Args: { p_day?: string } | Record<string, never>;
+        /** Rows written. Zero means already taken today. */
+        Returns: number;
       };
       /** Completes a challenge and grants its card in one transaction. */
       complete_challenge_with_card: {
