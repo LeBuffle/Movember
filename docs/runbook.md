@@ -385,6 +385,53 @@ C'est vrai, et c'est la première question que les participants se poseront.
 
 ---
 
+## 12 ter. Un site répond 404 après un déploiement — l'autre va bien
+
+**Symptôme :** le déploiement réussit, le conteneur est sain, et pourtant le site répond
+`404` sur toutes ses adresses. Parfois c'est l'environnement qu'on **n'a pas** déployé.
+
+**404 et pas 502 : la distinction est le diagnostic.** Un 502 veut dire « Traefik a trouvé
+la route et le conteneur ne répond pas ». Un 404 veut dire « Traefik n'a trouvé aucune
+route pour ce nom de domaine » — l'application n'est même pas sollicitée.
+
+### La cause rencontrée le 11 août
+
+Production et préproduction déclaraient le **même middleware Traefik**
+(`movember-security`) depuis deux conteneurs. Tant que les deux définitions étaient
+identiques, Traefik s'en accommodait. Un déploiement les fait différer par construction :
+un conteneur est recréé avec la nouvelle politique pendant que l'autre tourne encore avec
+l'ancienne. Traefik refuse alors de trancher et abandonne les routeurs qui référencent ce
+middleware.
+
+**C'est corrigé** : chaque environnement a désormais son propre nom de middleware, et un
+test l'exige. Mais le raisonnement reste vrai pour tout nom partagé entre deux conteneurs.
+
+### Diagnostic
+
+```bash
+# 1. Les routeurs vus par Traefik
+docker logs n8n-traefik-1 --since 15m 2>&1 | grep -i "middleware\|router" | tail -20
+
+# 2. Le conteneur tourne-t-il, et est-il sain ?
+docker ps --format '{{.Names}}\t{{.Status}}' | grep movember
+
+# 3. L'application répond-elle DIRECTEMENT, sans passer par Traefik ?
+docker exec defi-movember-app-staging-1 wget -qO- http://localhost:3000/api/health
+```
+
+Si le point 3 répond et que l'adresse publique fait 404, le problème est chez Traefik, pas
+dans l'application.
+
+### Correction immédiate
+
+Recréer **les deux** conteneurs, pour qu'ils repartent de la même définition :
+
+```bash
+cd /opt/defi-movember/deploy && docker compose up -d --force-recreate
+```
+
+---
+
 ## 12 bis. Un visuel de carte ne s'affiche pas
 
 **Symptôme :** le visuel est correct au moment de l'import, la carte s'enregistre sans

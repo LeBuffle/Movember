@@ -43,14 +43,49 @@ name: defi-movember
 # and fail silently in the rest, which is the worst way for it to fail.
 # `connect-src` needs nothing: Checkout is hosted on Stripe's own pages, so
 # no Stripe code ever runs in ours (NFR14).
+# The header values, defined once.
+#
+# Anchored as scalars so the two middlewares below cannot drift: there is one
+# CSP string in this file, referenced twice.
+x-csp: &csp "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${CSP_IMG_SRC:-}; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
+x-permissions-policy: &permissions-policy "camera=(), microphone=(), geolocation=(), payment=()"
+x-sts-seconds: &sts-seconds "31536000"
+x-referrer-policy: &referrer-policy "strict-origin-when-cross-origin"
+
+# **One middleware per environment, and the names must stay distinct.**
+#
+# They used to share a single `movember-security`, defined by both containers.
+# That worked only for as long as the two definitions were identical — and a
+# deployment makes them differ by construction: one container is recreated
+# with the new policy while the other still runs the old one. Traefik then
+# sees the same middleware declared twice with different values, refuses to
+# choose, and the routers that reference it are dropped.
+#
+# The symptom is a **404 on the environment that was NOT deployed**, which
+# points nowhere near the cause. It happened on 11 August: adding one origin
+# to `img-src` took the staging site off the air, and the deployment logs said
+# the deployment had succeeded — because it had.
+#
+# In November the same defect would have taken PRODUCTION down on a staging
+# deployment. Distinct names make the situation impossible rather than
+# unlikely.
 x-security-headers: &security-headers
-  traefik.http.middlewares.movember-security.headers.stsSeconds: "31536000"
+  traefik.http.middlewares.movember-security.headers.stsSeconds: *sts-seconds
   traefik.http.middlewares.movember-security.headers.stsIncludeSubdomains: "true"
   traefik.http.middlewares.movember-security.headers.frameDeny: "true"
   traefik.http.middlewares.movember-security.headers.contentTypeNosniff: "true"
-  traefik.http.middlewares.movember-security.headers.referrerPolicy: "strict-origin-when-cross-origin"
-  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: "camera=(), microphone=(), geolocation=(), payment=()"
-  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${CSP_IMG_SRC:-}; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
+  traefik.http.middlewares.movember-security.headers.referrerPolicy: *referrer-policy
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: *permissions-policy
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: *csp
+
+x-security-headers-staging: &security-headers-staging
+  traefik.http.middlewares.movember-security-staging.headers.stsSeconds: *sts-seconds
+  traefik.http.middlewares.movember-security-staging.headers.stsIncludeSubdomains: "true"
+  traefik.http.middlewares.movember-security-staging.headers.frameDeny: "true"
+  traefik.http.middlewares.movember-security-staging.headers.contentTypeNosniff: "true"
+  traefik.http.middlewares.movember-security-staging.headers.referrerPolicy: *referrer-policy
+  traefik.http.middlewares.movember-security-staging.headers.customResponseHeaders.Permissions-Policy: *permissions-policy
+  traefik.http.middlewares.movember-security-staging.headers.customResponseHeaders.Content-Security-Policy: *csp
 
 # Log rotation.
 #
@@ -147,7 +182,7 @@ services:
     networks:
       - proxy
     labels:
-      <<: *security-headers
+      <<: *security-headers-staging
       traefik.enable: "true"
       traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
       traefik.http.routers.movember-staging.rule: Host(`${STAGING_DOMAIN}`)
@@ -168,7 +203,7 @@ services:
       # The icon exemption that used to sit here went with it: a phone
       # fetching an icon outside the page context is let through by the
       # application's own middleware.
-      traefik.http.routers.movember-staging.middlewares: movember-staging-noindex@docker,movember-security@docker
+      traefik.http.routers.movember-staging.middlewares: movember-staging-noindex@docker,movember-security-staging@docker
       traefik.http.middlewares.movember-staging-noindex.headers.customResponseHeaders.X-Robots-Tag: "noindex, nofollow, noarchive"
       traefik.http.services.movember-staging.loadbalancer.server.port: "3000"
 

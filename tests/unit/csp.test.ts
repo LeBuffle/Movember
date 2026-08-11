@@ -29,7 +29,13 @@ const compose = readFileSync(
 
 const example = readFileSync(path.join(root, "deploy/.env.example"), "utf8");
 
-const csp = compose.match(/Content-Security-Policy:\s*"([^"]+)"/)?.[1] ?? "";
+/**
+ * La politique, telle qu'elle est définie une seule fois dans le fichier.
+ *
+ * Un seul `x-csp` ancré, référencé par les deux environnements : c'est ce qui
+ * garantit qu'ils ne peuvent pas diverger.
+ */
+const csp = compose.match(/^x-csp:\s*&csp\s*"([^"]+)"/m)?.[1] ?? "";
 
 /** Une directive de la politique, telle qu'elle sera envoyée. */
 function directive(name: string): string {
@@ -91,5 +97,62 @@ describe("les appels sortants", () => {
 
   it("et le paiement peut être soumis chez Stripe", () => {
     expect(directive("form-action")).toMatch(/checkout\.stripe\.com/);
+  });
+});
+
+describe("les deux environnements ne peuvent pas se marcher dessus", () => {
+  /* **Le défaut du 11 août.** Production et préproduction déclaraient le même
+     middleware Traefik, `movember-security`, depuis deux conteneurs. Cela ne
+     tenait que tant que les deux définitions étaient identiques — et un
+     déploiement les fait différer par construction : un conteneur est recréé
+     avec la nouvelle politique pendant que l'autre tourne encore avec
+     l'ancienne. Traefik voit alors le même nom déclaré deux fois avec des
+     valeurs différentes, refuse de trancher, et abandonne les routeurs qui
+     s'y réfèrent.
+
+     Le symptôme est un 404 sur l'environnement qu'on n'a PAS déployé. En
+     novembre, un déploiement de préproduction aurait mis la production hors
+     ligne. */
+
+  it("chaque environnement a son propre middleware d’en-têtes", () => {
+    expect(compose).toMatch(/x-security-headers:\s*&security-headers\b/);
+    expect(compose).toMatch(
+      /x-security-headers-staging:\s*&security-headers-staging\b/,
+    );
+  });
+
+  it("et leurs noms sont distincts", () => {
+    expect(compose).toMatch(
+      /middlewares\.movember-security\.headers\.stsSeconds/,
+    );
+    expect(compose).toMatch(
+      /middlewares\.movember-security-staging\.headers\.stsSeconds/,
+    );
+  });
+
+  it("chaque routeur pointe vers le sien", () => {
+    expect(compose).toMatch(
+      /routers\.movember\.middlewares:.*\bmovember-security@docker/,
+    );
+    expect(compose).toMatch(
+      /routers\.movember-staging\.middlewares:.*\bmovember-security-staging@docker/,
+    );
+  });
+
+  it("la production ne référence jamais le middleware de préproduction", () => {
+    const line =
+      compose.match(/routers\.movember\.middlewares:(.*)/)?.[1] ?? "";
+
+    expect(line).not.toMatch(/movember-security-staging/);
+  });
+
+  it("mais la politique elle-même n’est écrite qu’une fois", () => {
+    // Deux noms, une seule valeur : le risque écarté est le conflit de
+    // définition, pas la divergence de contenu.
+    expect(compose.match(/^x-csp:/gm) ?? []).toHaveLength(1);
+    expect(
+      compose.match(/customResponseHeaders\.Content-Security-Policy: \*csp/g) ??
+        [],
+    ).toHaveLength(2);
   });
 });
