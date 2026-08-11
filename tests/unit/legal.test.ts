@@ -61,6 +61,48 @@ describe("mention fiscale", () => {
   });
 });
 
+describe("les crédits non dépensés — décision P8", () => {
+  const cgv = read("src/app/(public)/cgv/page.tsx");
+  const boutique = read(
+    "src/app/(participant)/jeu/defis-joueurs/credits/page.tsx",
+  );
+
+  it("les conditions disent ce qu’il advient d’un crédit jamais utilisé", () => {
+    // Un crédit acheté et non dépensé dont le sort n'est pas annoncé est une
+    // réclamation qui arrive en décembre, et l'association n'aurait aucun
+    // écrit sur quoi s'appuyer.
+    expect(cgv).toMatch(/Crédits de défis entre joueurs/);
+    expect(cgv).toMatch(
+      /non dépensés au 30 novembre[\s\S]{0,120}pas remboursés/,
+    );
+    expect(cgv).toMatch(/reversé à la fondation Movember/);
+  });
+
+  it("et l’écran de vente le dit avant le paiement", () => {
+    // Une règle qui n'existe que dans les conditions est une règle que
+    // personne n'a lue. Elle doit être sur la page où l'on sort sa carte.
+    expect(boutique).toMatch(/n’aurez pas utilisés au 30 novembre/);
+  });
+
+  it("un envoi refusé ne consomme aucun crédit, et c’est écrit", () => {
+    // C'est la promesse la plus vérifiable du mécanisme, et celle qu'un
+    // participant contestera en premier.
+    expect(cgv).toMatch(/ne consomme aucun crédit/);
+  });
+
+  it("les conditions rappellent qu’un défi ne fait rien gagner", () => {
+    // Décision P7. Sans elle, acheter des crédits pourrait se lire comme un
+    // avantage au classement — ce que le projet interdit (PRD D2).
+    expect(cgv).toMatch(/ni point, ni carte, ni place au classement/);
+  });
+
+  it("et qu’un crédit n’est ni cessible ni convertible en argent", () => {
+    // Souple sur les retours à la ligne : Prettier reformate ce paragraphe.
+    expect(cgv).toMatch(/ni\s+cessibles/);
+    expect(cgv).toMatch(/ni\s+convertibles\s+en\s+argent/);
+  });
+});
+
 describe("mention d’indépendance", () => {
   it("dit que ce n’est pas l’application officielle de la fondation", () => {
     expect(INDEPENDENCE_NOTICE).toMatch(/n’est pas/i);
