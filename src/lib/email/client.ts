@@ -50,6 +50,8 @@ export async function sendEmail(message: EmailMessage): Promise<EmailOutcome> {
     return { ok: false, reason: "unconfigured" };
   }
 
+  const replyTo = process.env.RESEND_REPLY_TO?.trim();
+
   const headers: Record<string, string> = {};
 
   if (message.unsubscribeUrl) {
@@ -69,6 +71,16 @@ export async function sendEmail(message: EmailMessage): Promise<EmailOutcome> {
       body: JSON.stringify({
         from: process.env.RESEND_FROM_ADDRESS!.trim(),
         to: [message.to],
+        /* Where a reply lands.
+
+           Sending from a domain does not create a mailbox on it, and people
+           reply to a confirmation e-mail — "je n'ai pas reçu ma médaille",
+           "j'ai payé deux fois". Without this, those replies bounce off an
+           address nobody owns, and the participant concludes we ignored them.
+
+           An ordinary mailbox the association actually reads is enough; there
+           is no reason to buy hosting for the domain just for this. */
+        ...(replyTo ? { reply_to: replyTo } : {}),
         subject: message.subject,
         html: message.html,
         text: message.text,

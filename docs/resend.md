@@ -44,29 +44,60 @@ Le premier est le bloquant d'ouverture. Le second peut attendre quelques jours.
 vérifié, tout envoi vers une autre adresse est refusé. C'est la cause numéro un des
 « ça marchait dans mes tests et pas en vrai ».
 
+### Il ne faut pas de boîte mail sur le domaine
+
+**Vérifier un domaine chez Resend ne concerne que l'envoi, jamais la réception.** Resend
+lit des enregistrements DNS ; il n'envoie aucun e-mail de confirmation à une adresse du
+domaine, et ne demande à aucun moment qu'une boîte existe.
+
+Autrement dit : `defi-movember.fr` peut n'avoir aucune messagerie, et le site enverra
+quand même ses e-mails. **Rien à acheter, rien à créer.**
+
+### Ce qui manque quand même, et comment y répondre pour zéro euro
+
+Envoyer depuis `bonjour@defi-movember.fr` sans boîte derrière laisse un trou : **les gens
+répondent.** « Je n'ai pas reçu ma médaille », « j'ai payé deux fois », « je n'arrive pas à
+relier Strava » — ces réponses partiraient vers une adresse qui n'existe pas, et la
+personne en conclurait qu'on l'ignore.
+
+La réponse ne coûte rien : `RESEND_REPLY_TO=defimovember@gmail.com`. L'e-mail **part** du
+domaine — c'est ce qui compte pour la réputation et pour l'apparence — et une réponse
+atterrit dans la boîte Gmail que tu relèves déjà.
+
+C'est branché côté code : la variable existe, et l'en-tête `Reply-To` est posé quand elle
+est renseignée.
+
+> Une vraie boîte sur le domaine reste plus soignée, et l'association en aura besoin un
+> jour ou l'autre pour les mentions légales. Mais ce n'est **pas** un prérequis pour
+> avancer aujourd'hui, et ce n'est pas un blocage d'ouverture.
+
+### La manipulation
+
 **Resend → Domains → Add Domain → `defi-movember.fr`**
 
-Resend affiche alors trois ou quatre enregistrements DNS à créer chez le registrar du
-domaine :
+Resend affiche alors les enregistrements DNS à créer chez le registrar du domaine :
 
 | Type | À quoi ça sert |
 | --- | --- |
 | `TXT` (DKIM) | Signe les messages. Sans lui, Gmail met tout en indésirable. |
-| `MX` + `TXT` (SPF) | Autorise Resend à écrire au nom du domaine. |
+| `MX` + `TXT` (SPF) | Gère les retours et autorise Resend à écrire au nom du domaine. |
 | `TXT` (DMARC) | Dit aux fournisseurs quoi faire d'un message non signé. Facultatif chez Resend, **à mettre quand même**. |
 
 Copier-coller chaque ligne chez le registrar, puis **Verify** dans Resend. La propagation
 prend de quelques minutes à quelques heures.
 
-> ⚠️ **Attention à l'enregistrement MX.** Si `defi-movember.fr` reçoit déjà du courrier
-> (une boîte chez le registrar, par exemple), l'ajout d'un MX peut détourner la réception.
-> Resend propose un sous-domaine d'envoi pour éviter ça — par exemple `send.defi-movember.fr`
-> ou `mail.defi-movember.fr`. **C'est ce que je recommande** : le domaine principal garde sa
-> messagerie, et une éventuelle mauvaise réputation d'envoi ne contamine pas l'adresse de
-> contact de l'association.
+> **Correction de ce que j'avais écrit plus tôt.** J'avais recommandé de vérifier un
+> sous-domaine (`send.defi-movember.fr`) par crainte que l'enregistrement MX ne détourne la
+> réception du domaine. C'était une précaution mal placée : Resend **place déjà lui-même**
+> le MX et le SPF sur un sous-domaine `send.`, et ne touche pas au MX du domaine principal.
+> Vérifier `defi-movember.fr` directement est donc le bon choix — meilleure adresse
+> d'expédition, et meilleur alignement DMARC.
+>
+> À vérifier d'un coup d'œil quand même : si l'écran de Resend proposait un `MX` **sur le
+> domaine nu** et que tu ajoutes une messagerie plus tard, ce serait le seul cas où il
+> faudrait repasser par un sous-domaine.
 
-**Adresse d'expédition retenue :** `DEFI Movember <bonjour@send.defi-movember.fr>`
-(à adapter au sous-domaine réellement vérifié).
+**Adresse d'expédition retenue :** `DEFI Movember <bonjour@defi-movember.fr>`
 
 Le nom affiché compte : un message de `bonjour@…` sans nom s'ouvre moins qu'un message de
 « DEFI Movember ».
@@ -83,7 +114,7 @@ Le nom affiché compte : un message de `bonjour@…` sans nom s'ouvre moins qu'u
 | Port | `465` |
 | Username | `resend` — littéralement ce mot, ce n'est pas une erreur |
 | Password | **la clé API Resend** |
-| Sender email | `bonjour@send.defi-movember.fr` |
+| Sender email | `bonjour@defi-movember.fr` |
 | Sender name | `DEFI Movember` |
 
 Puis **Save**.
@@ -97,8 +128,12 @@ Deux réglages à vérifier au passage, dans **Authentication → Providers → 
   **Authentication → Emails**.
 
 **Vérifier tout de suite :** créer un compte de test avec une adresse que tu contrôles, et
-regarder l'e-mail arriver. Il doit venir de `bonjour@send.defi-movember.fr`, pas de
+regarder l'e-mail arriver. Il doit venir de `bonjour@defi-movember.fr`, pas de
 `noreply@mail.app.supabase.io`.
+
+> **Supabase ne permet pas de régler un `Reply-To`.** Ce n'est pas gênant : personne ne
+> répond à un lien de confirmation. Les e-mails auxquels on répond — bienvenue, rappels —
+> partent de l'application, qui pose l'en-tête.
 
 ---
 
@@ -111,12 +146,16 @@ Sur le VPS, dans `deploy/.env.staging` (puis `deploy/.env.production` en octobre
 nano /opt/defi-movember/deploy/.env.staging
 ```
 
-Deux lignes à renseigner :
+Trois lignes à renseigner :
 
 ```
 RESEND_API_KEY=re_...
-RESEND_FROM_ADDRESS=DEFI Movember <bonjour@send.defi-movember.fr>
+RESEND_FROM_ADDRESS=DEFI Movember <bonjour@defi-movember.fr>
+RESEND_REPLY_TO=defimovember@gmail.com
 ```
+
+La troisième est celle qui fait qu'une réponse arrive quelque part. Sans elle, l'e-mail
+part quand même — mais une réponse se perd.
 
 Puis :
 
@@ -126,7 +165,7 @@ chmod 600 /opt/defi-movember/deploy/.env.staging
 
 Et redéployer, ou redémarrer le conteneur.
 
-**Tant que ces deux variables sont absentes, l'application n'envoie rien et le dit dans ses
+**Tant que la clé et l'adresse d'expédition sont absentes, l'application n'envoie rien et le dit dans ses
 journaux — sans jamais tomber en panne.** C'est l'état actuel, et c'est volontaire : un
 service d'envoi manquant ne doit pas empêcher quelqu'un de s'inscrire ou de jouer.
 
