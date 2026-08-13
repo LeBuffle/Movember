@@ -49,6 +49,41 @@ const TIMEOUT_MS = 20_000;
 /** Includes private activities, which is why consent is collected first. */
 export const STRAVA_SCOPE = "activity:read_all";
 
+/**
+ * One raw call to Strava, for the diagnostic screen only.
+ *
+ * **It returns the status rather than an interpretation**, which is exactly
+ * what `callStrava` deliberately does not do: everywhere else, the point is
+ * to hide Strava's vocabulary from the rest of the application. Here the
+ * point is the opposite — somebody is trying to find out what Strava is
+ * actually saying, from a phone, without access to the server logs.
+ *
+ * Costs one call against the shared quota, so it is behind a button and not
+ * behind a page load.
+ */
+export async function stravaProbe(
+  accessToken: string,
+): Promise<{ status: number | null; detail: string }> {
+  try {
+    const response = await fetch(`${API_URL}/athlete`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+
+    const body = await response.text().catch(() => "");
+
+    return { status: response.status, detail: body.slice(0, 200) };
+  } catch (cause) {
+    // No status at all: the request never reached Strava. That is a very
+    // different fault from a refusal, and the one Strava's own dashboard
+    // cannot show, because nothing ever arrived.
+    return {
+      status: null,
+      detail: cause instanceof Error ? `${cause.name}: ${cause.message}` : "",
+    };
+  }
+}
+
 function credentials(): { id: string; secret: string } | null {
   const id = process.env.STRAVA_CLIENT_ID;
   const secret = process.env.STRAVA_CLIENT_SECRET;

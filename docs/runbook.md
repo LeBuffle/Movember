@@ -606,7 +606,25 @@ et ferait remonter les sorties d'octobre de chaque participant.
 
 ### « Strava n'a pas répondu » — trouver ce que ça cache
 
-C'est un message générique, et volontairement : un participant n'a rien à faire d'un code
+**Premier réflexe : `/admin/etat`, bouton « Lancer le diagnostic ».** Il déroule la chaîne
+sur votre propre compte et dit à quelle étape elle s'arrête :
+
+1. les identifiants de l'application dans l'environnement du serveur ;
+2. la clé de chiffrement des jetons ;
+3. la fenêtre de l'édition ;
+4. la liaison en base — statut, échéance du jeton, verrou de rafraîchissement ;
+5. la lecture des jetons enregistrés ;
+6. l'obtention d'un jeton valide, en rafraîchissant si besoin ;
+7. un appel réel à Strava, avec son code HTTP.
+
+⚠️ **Les six premières étapes n'appellent jamais Strava.** Une panne peut donc exister
+sans qu'aucune requête n'apparaisse dans le tableau de bord Strava — c'est même le
+symptôme le plus utile : *aucune requête côté Strava = la chaîne casse avant l'appel*, et
+il faut regarder les étapes 1 à 6, pas l'API.
+
+Le diagnostic dépense un appel du quota. Il est derrière un bouton pour cette raison.
+
+Le message affiché au participant, lui, reste générique : il n'a rien à faire d'un code
 HTTP. **Connecté en administrateur, l'écran ajoute la raison technique sous le message.**
 
 Les journaux du serveur portent le reste, préfixe `[strava]` :

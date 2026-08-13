@@ -92,6 +92,42 @@ describe("le rattrapage", () => {
     expect(actions).toMatch(/if \(!admin\) return undefined;/);
   });
 
+  it("le diagnostic déroule la chaîne au lieu de conclure d’un coup", () => {
+    // Quatre des six étapes n'appellent jamais Strava : une panne peut donc
+    // exister sans qu'aucune requête n'apparaisse dans le tableau de bord
+    // Strava. Un message unique envoyait lire les journaux du serveur, ce
+    // qui n'est pas faisable depuis un téléphone en pleine recette.
+    const diag = code("src/lib/activities/diagnostic.ts");
+
+    for (const step of [
+      "stravaConfigured",
+      "TOKEN_ENCRYPTION_KEY",
+      "editionStartDate",
+      "activity_connections",
+      "decryptToken",
+      "validAccessToken",
+      "stravaProbe",
+    ]) {
+      expect(diag, step).toContain(step);
+    }
+  });
+
+  it("et il ne rend jamais un jeton", () => {
+    // Un diagnostic qui imprime un jeton finit dans une capture d'écran
+    // envoyée par messagerie.
+    const diag = code("src/lib/activities/diagnostic.ts");
+
+    expect(diag).not.toMatch(/detail: `?\$\{?token\.token/);
+    expect(diag).not.toMatch(/link\.access_token\}/);
+    expect(diag).toMatch(/state: "ok" \| "ko" \| "warn"/);
+  });
+
+  it("et il est réservé à l’organisation", () => {
+    expect(code("src/lib/activities/diagnostic-actions.ts")).toMatch(
+      /const admin = await requireAdmin\(\);/,
+    );
+  });
+
   it("regarde deux jours en arrière, pas une heure", () => {
     // Une livraison perdue dans la nuit, ou un service coupé une matinée,
     // c'est exactement ce pour quoi il existe.

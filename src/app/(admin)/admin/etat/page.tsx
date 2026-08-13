@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { StravaDiagnostic } from "@/components/activities/strava-diagnostic";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import { diagnoseStravaAction } from "@/lib/activities/diagnostic-actions";
 import { activitySyncHealth } from "@/lib/activities/health";
 import { APP_ENVIRONMENT, APP_VERSION } from "@/lib/app-version";
 
@@ -114,10 +116,19 @@ export default async function IntegrationsPage() {
         </Card>
       </div>
 
+      <Card>
+        <CardTitle>Diagnostic Strava</CardTitle>
+        <CardBody>
+          <div className="mt-2">
+            <StravaDiagnostic action={diagnoseStravaAction} />
+          </div>
+        </CardBody>
+      </Card>
+
       <Alert tone="info" title="Ce que cet écran ne fait pas">
-        Il ne teste rien en direct. Interroger Strava à chaque affichage
-        dépenserait le quota d’appels pour répondre à une question que les
-        liaisons elles-mêmes renseignent déjà.
+        Il ne teste rien en direct, sauf si vous lancez le diagnostic ci-dessus.
+        Interroger Strava à chaque affichage dépenserait le quota d’appels pour
+        répondre à une question que les liaisons elles-mêmes renseignent déjà.
       </Alert>
     </div>
   );
