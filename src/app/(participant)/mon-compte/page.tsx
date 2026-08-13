@@ -8,6 +8,8 @@ import { InstallState } from "@/components/pwa/install-state";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { AddressReminder } from "@/components/shipping/address-reminder";
+import { ActivitiesVisibilityForm } from "@/components/activities/visibility-form";
+import { setActivitiesVisibility } from "@/lib/activities/visibility-actions";
 import { ROUTES } from "@/lib/auth/routes";
 import { setDuelOptOut } from "@/lib/duels/actions";
 import { ownBalance } from "@/lib/duels/wallet";
@@ -32,7 +34,7 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email, role, duels_opt_out")
+    .select("display_name, email, role, duels_opt_out, activities_opt_out")
     .eq("id", user.id)
     .single();
 
@@ -199,6 +201,26 @@ export default async function AccountPage() {
               <DuelOptOutForm
                 action={setDuelOptOut}
                 optedOut={profile?.duels_opt_out === true}
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Story 15.2. Placé dans son propre encart plutôt qu'à côté des
+            défis : ce sont deux décisions différentes, et les regrouper ferait
+            croire qu'en couper une coupe l'autre. */}
+        <Card>
+          <CardTitle>Mes sorties, vues par les autres</CardTitle>
+          <CardBody>
+            <p>
+              Un classement dit qui gagne ; il ne dit pas comment. Montrer ses
+              sorties permet aux autres de voir un rythme et de s’en inspirer.
+            </p>
+
+            <div className="mt-3">
+              <ActivitiesVisibilityForm
+                action={setActivitiesVisibility}
+                optedOut={profile?.activities_opt_out === true}
               />
             </div>
           </CardBody>

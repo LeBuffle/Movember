@@ -45,6 +45,33 @@ export const CONSENT_NEVER_COLLECTED = [
   "Votre puissance et votre cadence",
 ] as const;
 
+/**
+ * Ce que les autres participants voient de vos sorties (story 15.5).
+ *
+ * **Un consentement recueilli avant l'epic 15 ne couvre pas l'epic 15.** Le
+ * texte ci-dessus autorise la récupération des activités pour valider des
+ * défis ; les montrer à six cents personnes est un traitement différent, et
+ * il doit être écrit là où la personne le lit.
+ *
+ * Posé ici, à côté du reste, parce que la politique de confidentialité et
+ * l'écran de consentement doivent dire la même chose : deux fichiers, deux
+ * moments de modification, et le premier qui dérive est celui que personne ne
+ * relit. Un test compare les deux.
+ */
+export const ACTIVITY_SHARING = {
+  shown: [
+    "Le type de sport",
+    "La date",
+    "La distance, la durée et le dénivelé",
+  ],
+  hidden: [
+    "Le nom que vous avez donné à votre sortie",
+    "Votre tracé, et tout ce que le jeu ne stocke pas",
+  ],
+  /** La phrase qui doit se retrouver mot pour mot aux deux endroits. */
+  rule: "Depuis le classement, les autres participants peuvent ouvrir vos dix dernières sorties de la catégorie consultée. Vos sorties masquées sur Strava restent masquées ici, et vous pouvez couper cet affichage à tout moment depuis « Mon compte » — sans rien perdre de votre rang ni de vos points.",
+} as const;
+
 export type ConsentState = {
   granted: boolean;
   /** When the current consent was given, if it holds. */

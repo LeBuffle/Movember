@@ -137,6 +137,7 @@ async function storeOne(activity: Activity): Promise<StoreResult> {
       duration_seconds: Math.round(activity.durationSeconds),
       elevation_meters: Math.round(activity.elevationMeters),
       is_manual: activity.isManual,
+      is_private: activity.isPrivate,
     })
     .select("id")
     .maybeSingle();
@@ -185,6 +186,10 @@ export async function updateActivity(activity: Activity): Promise<boolean> {
       duration_seconds: Math.round(activity.durationSeconds),
       elevation_meters: Math.round(activity.elevationMeters),
       is_manual: activity.isManual,
+      // Repassée en publique sur Strava ? Le journal la montre au passage
+      // suivant. L'inverse aussi, et c'est le sens qui compte : masquer une
+      // sortie chez le fournisseur doit la retirer d'ici.
+      is_private: activity.isPrivate,
       updated_at: new Date().toISOString(),
     })
     .eq("provider", activity.provider)

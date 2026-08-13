@@ -48,6 +48,8 @@ export type LeaderboardRow = {
    * always be refused.
    */
   challengeable: boolean;
+  /** Whether their outings can be opened from this card (story 15.4). */
+  showsActivities: boolean;
 };
 
 export type LeaderboardView = {
@@ -117,7 +119,12 @@ async function sessionProfile(): Promise<string | null> {
  * column removed or renamed later — and it costs one extra round trip on a
  * path that is already broken.
  */
-type PublicProfile = { name: string; challengeable: boolean };
+type PublicProfile = {
+  name: string;
+  challengeable: boolean;
+  /** Whether they let others open their outings (story 15.2). */
+  showsActivities: boolean;
+};
 
 async function displayNames(
   ids: string[],
@@ -129,14 +136,18 @@ async function displayNames(
 
   const { data, error } = await supabase
     .from("public_profiles")
-    .select("id, display_name, duels_opt_out")
+    .select("id, display_name, duels_opt_out, activities_opt_out")
     .in("id", ids);
 
   if (!error) {
     return new Map(
       (data ?? []).map((row) => [
         row.id,
-        { name: row.display_name, challengeable: row.duels_opt_out !== true },
+        {
+          name: row.display_name,
+          challengeable: row.duels_opt_out !== true,
+          showsActivities: row.activities_opt_out !== true,
+        },
       ]),
     );
   }
@@ -164,8 +175,11 @@ async function displayNames(
     (names ?? []).map((row) => [
       row.id,
       // No duel button rather than a wrong one: we do not know whether this
-      // participant accepts them.
-      { name: row.display_name, challengeable: false },
+      // participant accepts them. Same for the journal, and here it is not
+      // merely a convenience — offering to open somebody's outings without
+      // knowing whether they agreed is the one mistake this epic exists to
+      // avoid.
+      { name: row.display_name, challengeable: false, showsActivities: false },
     ]),
   );
 }
@@ -345,6 +359,7 @@ function buildRow(
     // Never yourself: a "Défier" button on your own line is a refusal waiting
     // to happen.
     challengeable: !isSelf && known?.challengeable === true,
+    showsActivities: known?.showsActivities === true,
   };
 }
 
@@ -394,7 +409,7 @@ export async function searchLeaderboard(
      participants who exist. */
   const enriched = await supabase
     .from("public_profiles")
-    .select("id, display_name, duels_opt_out")
+    .select("id, display_name, duels_opt_out, activities_opt_out")
     .ilike("display_name", `%${safe}%`)
     .limit(limit);
 
@@ -403,6 +418,7 @@ export async function searchLeaderboard(
     id: string;
     display_name: string;
     duels_opt_out?: boolean;
+    activities_opt_out?: boolean;
   }> = enriched.data ?? [];
 
   if (enriched.error) {
@@ -451,8 +467,12 @@ export async function searchLeaderboard(
       {
         name: row.display_name,
         // No duel button rather than a wrong one when the column was
-        // unreadable: we do not know whether they accept them.
+        // unreadable: we do not know whether they accept them. The journal
+        // follows the same rule, and there it matters more: proposing to open
+        // somebody's outings without knowing whether they agreed is exactly
+        // what this epic exists to prevent.
         challengeable: challengeableKnown && row.duels_opt_out !== true,
+        showsActivities: challengeableKnown && row.activities_opt_out !== true,
       },
     ]),
   );

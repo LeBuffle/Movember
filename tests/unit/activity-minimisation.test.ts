@@ -132,6 +132,10 @@ describe("le format interne, après normalisation", () => {
       "elevationMeters",
       "id",
       "isManual",
+      // Ajouté par l'epic 15. Ce n'est pas une donnée de plus sur la
+      // personne : c'est ce que le fournisseur dit de la visibilité d'une
+      // sortie, et c'est ce qui empêche de republier ce qu'elle a masqué.
+      "isPrivate",
       "localDate",
       "name",
       "profileId",

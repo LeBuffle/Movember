@@ -26,13 +26,22 @@ import {
 
 type Sample = Omit<
   Activity,
-  "profileId" | "localDate" | "startedAt" | "isManual"
+  "profileId" | "localDate" | "startedAt" | "isManual" | "isPrivate"
 > & {
   /** Days from the reference date. 0 is the day itself, -1 the day before. */
   dayOffset: number;
   hour: number;
   /** Typed in by hand rather than recorded. Absent means recorded. */
   isManual?: boolean;
+  /**
+   * Hidden at the provider. Absent means visible.
+   *
+   * **Simulated activities are public by default, unlike real ones.** The
+   * database defaults to private because a row that says nothing must not be
+   * published; a fixture says something, and a fixture set that produced an
+   * empty journal would test nothing at all.
+   */
+  isPrivate?: boolean;
 };
 
 const SAMPLES: Sample[] = [
@@ -178,7 +187,7 @@ export function simulatedActivities(
   referenceDate: string,
   profileId = "profil-simule",
 ): Activity[] {
-  return SAMPLES.map(({ dayOffset, hour, isManual, ...sample }) => {
+  return SAMPLES.map(({ dayOffset, hour, isManual, isPrivate, ...sample }) => {
     const localDate = addDays(referenceDate, dayOffset);
 
     return {
@@ -187,6 +196,7 @@ export function simulatedActivities(
       localDate,
       startedAt: `${localDate}T${String(hour).padStart(2, "0")}:00:00.000Z`,
       isManual: isManual ?? false,
+      isPrivate: isPrivate ?? false,
     };
   });
 }
@@ -282,6 +292,7 @@ export const simulatedSource: ActivitySource = {
       durationSeconds: sample.durationSeconds ?? 0,
       elevationMeters: sample.elevationMeters ?? 0,
       isManual: sample.isManual === true,
+      isPrivate: sample.isPrivate === true,
     };
   },
 };

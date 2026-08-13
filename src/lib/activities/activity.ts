@@ -55,6 +55,20 @@ export type Activity = {
    * provider again for every activity.
    */
   isManual: boolean;
+
+  /**
+   * Hidden at the provider by the participant.
+   *
+   * **Read because the application can see what somebody chose to hide.**
+   * The `activity:read_all` scope is what lets the game settle the challenges
+   * of a participant who publishes nothing; it is not permission to publish
+   * on their behalf. The journal of epic 15 shows activities to six hundred
+   * people, so the distinction has to survive the border.
+   *
+   * Never `undefined`: a source that says nothing yields `true`, because not
+   * saying is not saying no.
+   */
+  isPrivate: boolean;
 };
 
 /**

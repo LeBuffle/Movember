@@ -16,6 +16,7 @@ import { getOwnConnection } from "@/lib/activities/connection";
 import { ownManualCount } from "@/lib/activities/own";
 import {
   CONSENT_COLLECTED,
+  ACTIVITY_SHARING,
   CONSENT_NEVER_COLLECTED,
   getConsent,
 } from "@/lib/activities/consent";
@@ -127,6 +128,34 @@ export default async function ActivityConsentPage({
               être écrites. Elles ne sont pas stockées, donc elles ne peuvent
               pas fuiter.
             </p>
+          </CardBody>
+        </Card>
+
+        {/* Story 15.5. Le consentement de la story 3.2 autorise la
+            récupération pour valider des défis ; les montrer aux autres est
+            un traitement différent, et il doit être écrit là où la personne
+            le lit. Le texte vient de `consent.ts` : la politique de
+            confidentialité affiche le même, et un test les compare. */}
+        <Card>
+          <CardTitle>Ce que les autres participants voient</CardTitle>
+          <CardBody>
+            <p>{ACTIVITY_SHARING.rule}</p>
+
+            <p className="text-ink mt-3 text-sm font-medium">
+              Pour chaque sortie montrée
+            </p>
+            <ul className="text-ink space-y-1 text-sm">
+              {ACTIVITY_SHARING.shown.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+
+            <p className="text-ink mt-3 text-sm font-medium">Jamais montré</p>
+            <ul className="text-ink space-y-1 text-sm">
+              {ACTIVITY_SHARING.hidden.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </CardBody>
         </Card>
 

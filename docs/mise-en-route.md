@@ -78,6 +78,13 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 36 | `20260813000000_super_teams.sql` | 14.1 |
 | 37 | `20260813010000_team_logos.sql` | 14.4 |
 | 38 | `20260813020000_walk_leaderboard.sql` | 7.4 (révisée) |
+| 39 | `20260813030000_activity_visibility.sql` | 15.1, 15.2 |
+
+⚠️ **Après la 39, les journaux de sorties sont vides pour tout le monde**, et c'est voulu :
+aucune sortie déjà en base ne porte le drapeau « privée », et ce qu'on ne sait pas est
+traité comme privé. Un réimport les remplit — celui de `/admin/etat` pour soi, celui de la
+fiche participant pour les autres. En novembre le cas ne se posera pas, puisque tout
+arrivera après.
 
 ⚠️ **La 38 recrée la vue des classements** — comme la 29. Quelques secondes sans
 classement pendant qu'elle tourne ; elle se rafraîchit elle-même à la fin.

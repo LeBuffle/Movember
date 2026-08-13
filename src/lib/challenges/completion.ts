@@ -303,7 +303,7 @@ async function readHistory(
   const { data, error } = await admin
     .from("activities")
     .select(
-      "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters, is_manual",
+      "provider_activity_id, provider, name, sport_family, started_at, local_date, distance_meters, duration_seconds, elevation_meters, is_manual, is_private",
     )
     .eq("profile_id", activity.profileId)
     // Same rule as above, and it has to be here too: a cumulative challenge
@@ -334,6 +334,7 @@ async function readHistory(
     duration_seconds: number;
     elevation_meters: number;
     is_manual: boolean;
+    is_private: boolean;
   };
 
   return (data as Row[]).map((row) => ({
@@ -348,6 +349,9 @@ async function readHistory(
     durationSeconds: row.duration_seconds,
     elevationMeters: row.elevation_meters,
     isManual: row.is_manual,
+    // Lu pour compléter la forme, jamais pour décider : une sortie masquée
+    // chez le fournisseur valide les défis comme les autres (story 15.1).
+    isPrivate: row.is_private,
   }));
 }
 

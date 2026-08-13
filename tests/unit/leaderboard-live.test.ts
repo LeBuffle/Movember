@@ -53,6 +53,7 @@ function row(overrides: Partial<LeaderboardRow> = {}): LeaderboardRow {
     isSelf: false,
     movement: null,
     isNew: false,
+    showsActivities: false,
     challengeable: false,
     ...overrides,
   };
@@ -261,7 +262,12 @@ describe("les cartes", () => {
   it("restent compactes : une ligne de haut, pas une vignette", () => {
     // Le piège du format en cartes est de tripler la hauteur de chaque ligne :
     // le 40ᵉ devient alors inatteignable sans dix balayages.
-    expect(card).toMatch(/flex items-center gap-3 rounded-xl border p-3/);
+    //
+    // La carte porte depuis l'epic 15 un dépliant de sorties sous la ligne.
+    // Il ne change rien tant qu'il est fermé — et il l'est toujours au
+    // chargement : ce qui est vérifié ici, c'est que la ligne elle-même est
+    // restée une ligne.
+    expect(card).toMatch(/flex items-center gap-3/);
     expect(card).not.toMatch(/aspect-|h-32|h-40/);
   });
 
@@ -293,7 +299,10 @@ describe("le pseudonyme est l’information essentielle", () => {
     );
 
     // La requête enrichie, puis un repli qui ne demande que l'indispensable.
-    expect(body).toMatch(/select\("id, display_name, duels_opt_out"\)/);
+    // La requête enrichie s'allonge à chaque colonne annexe — `duels_opt_out`
+    // avec l'epic 12, `activities_opt_out` avec l'epic 15 — et c'est
+    // exactement ce qui rend le repli nécessaire.
+    expect(body).toMatch(/select\("id, display_name, duels_opt_out/);
     expect(body).toMatch(/select\("id, display_name"\)/);
   });
 

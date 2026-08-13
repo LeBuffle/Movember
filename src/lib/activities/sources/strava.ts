@@ -267,7 +267,32 @@ type StravaActivity = {
   elapsed_time?: unknown;
   total_elevation_gain?: unknown;
   manual?: unknown;
+  /** `everyone`, `followers_only` or `only_me`. The precise answer. */
+  visibility?: unknown;
+  /** The older boolean. Kept as a fallback, not as the first choice. */
+  private?: unknown;
 };
+
+/**
+ * Whether Strava considers this activity hidden.
+ *
+ * **`followers_only` counts as private.** Somebody who limits an outing to
+ * the people who follow them has not agreed to six hundred strangers, and
+ * treating "not fully public" as "public" is the mistake that only shows up
+ * once it is too late.
+ *
+ * Anything unrecognised — an older payload, a field Strava renames — comes
+ * back private. Not saying is not saying no.
+ */
+function stravaIsPrivate(source: StravaActivity): boolean {
+  if (typeof source.visibility === "string") {
+    return source.visibility !== "everyone";
+  }
+
+  if (typeof source.private === "boolean") return source.private;
+
+  return true;
+}
 
 const positive = (value: unknown): number =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
@@ -446,6 +471,7 @@ export const stravaSource: ActivitySource = {
       // Capturing it now is what makes that story possible without going
       // back to Strava for two hundred activities.
       isManual: source.manual === true,
+      isPrivate: stravaIsPrivate(source),
     };
   },
 };

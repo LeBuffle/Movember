@@ -654,11 +654,11 @@ la personne dans cette catégorie : un classement dit qui gagne, il ne dit jamai
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 15.1 | [Conserver le caractère privé d'une sortie](15.1.sortie-privee.md) | Draft | 3.4 |
-| 15.2 | [Le réglage « ne pas montrer mes sorties »](15.2.reglage-visibilite-sorties.md) | Draft | 1.7 |
-| 15.3 | [Lecture du journal, par catégorie](15.3.lecture-journal.md) | Draft | 15.1, 15.2, 7.3 |
-| 15.4 | [Le dépliant depuis une ligne de classement](15.4.depliant-classement.md) | Draft | 15.3, 13.2 |
-| 15.5 | [Mentions de confidentialité mises à jour](15.5.mentions-confidentialite.md) | Draft | 11.6, 3.2 |
+| 15.1 | [Conserver le caractère privé d'une sortie](15.1.sortie-privee.md) | **Review** | 3.4 |
+| 15.2 | [Le réglage « ne pas montrer mes sorties »](15.2.reglage-visibilite-sorties.md) | **Review** | 1.7 |
+| 15.3 | [Lecture du journal, par catégorie](15.3.lecture-journal.md) | **Review** | 15.1, 15.2, 7.3 |
+| 15.4 | [Le dépliant depuis une ligne de classement](15.4.depliant-classement.md) | **Review** | 15.3, 13.2 |
+| 15.5 | [Mentions de confidentialité mises à jour](15.5.mentions-confidentialite.md) | **Review** | 11.6, 3.2 |
 
 ### Ordre d'exécution
 
@@ -689,3 +689,8 @@ tout le monde le temps d'une préproduction.
 > tiers. Une donnée absente d'une réponse ne fuit pas ; une donnée présente mais non
 > affichée finit dans un outil de développement ou dans le prochain écran qui réutilise la
 > même fonction.
+
+> **Epic 15 terminé** — les cinq stories sont en Review. Il reste au PO à appliquer la
+> migration 39, puis à **réimporter** : aucune sortie déjà en base ne porte le drapeau
+> « privée », et ce qu'on ne sait pas est traité comme privé. Sans réimport, tous les
+> journaux sont vides — ce qui est le comportement voulu, pas une panne.

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LegalPage } from "@/components/marketing/legal-page";
+import { ACTIVITY_SHARING } from "@/lib/activities/consent";
 import {
   ASSOCIATION,
   HOSTING,
@@ -95,9 +96,21 @@ export default function PrivacyPage() {
       <h2>Ce que les autres participants voient</h2>
       <p>
         Votre pseudonyme et vos résultats de jeu. Jamais votre adresse e-mail,
-        jamais votre nom, jamais le détail de vos activités, jamais votre
-        adresse postale.
+        jamais votre nom, jamais votre adresse postale.
       </p>
+      <p>{ACTIVITY_SHARING.rule}</p>
+      <p>Pour chaque sortie montrée :</p>
+      <ul>
+        {ACTIVITY_SHARING.shown.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+      <p>Ne sont jamais montrés :</p>
+      <ul>
+        {ACTIVITY_SHARING.hidden.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
 
       <h2>Combien de temps</h2>
       <p>

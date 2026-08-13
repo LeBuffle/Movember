@@ -98,6 +98,8 @@ export type Database = {
           suspended_by: string | null;
           /** « Ne pas me défier », set by the participant (decision P9). */
           duels_opt_out: boolean;
+          /** « Ne pas montrer mes sorties » (story 15.2). */
+          activities_opt_out: boolean;
         };
         Insert: {
           id: string;
@@ -111,6 +113,7 @@ export type Database = {
           suspension_reason?: string | null;
           suspended_by?: string | null;
           duels_opt_out?: boolean;
+          activities_opt_out?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
@@ -395,6 +398,8 @@ export type Database = {
           elevation_meters: number;
           /** Typed in by hand at the provider (story 3.4). Read by story 9.8. */
           is_manual: boolean;
+          /** Masquée chez le fournisseur. Vrai par défaut (story 15.1). */
+          is_private: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -411,6 +416,7 @@ export type Database = {
           duration_seconds?: number;
           elevation_meters?: number;
           is_manual?: boolean;
+          is_private?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -1118,6 +1124,8 @@ export type Database = {
           avatar_url: string | null;
           /** Whether they accept duels. Exposed so a button is not offered in vain. */
           duels_opt_out: boolean;
+          /** Exposé pour la même raison : ne pas ouvrir un dépliant vide. */
+          activities_opt_out: boolean;
         };
         Relationships: [];
       };

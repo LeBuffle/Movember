@@ -6,7 +6,7 @@
 | **Jalon visé** | **ouvert dès le 1ᵉʳ novembre**, donc fini et testé avant le gel du 1ᵉʳ octobre |
 | **Dépendances** | Epic 3 (import des activités) · Epic 7 (classements) · Epic 13 (classements en cartes) |
 | **Stories** | 5 |
-| **Statut** | Décisions validées — stories rédigées, développement en attente du feu vert |
+| **Statut** | **Livré** — les cinq stories sont en Review, en attente de recette PO |
 
 ---
 
@@ -154,15 +154,20 @@ montrerait tout de tout le monde le temps d'une préproduction.
 
 ## Critères de sortie
 
-- [ ] Une sortie masquée sur Strava n'apparaît jamais dans un journal.
-- [ ] Une sortie importée avant la migration n'apparaît pas non plus, faute de savoir.
-- [ ] Le titre de la sortie n'apparaît nulle part, dans aucune réponse du serveur.
-- [ ] Couper l'affichage vide le journal **immédiatement**, y compris pour le passé.
-- [ ] Couper l'affichage ne change ni le rang, ni les points, ni les défis.
-- [ ] Le journal du classement Vélo ne contient que des sorties à vélo.
-- [ ] Rien n'est lisible sans être un participant inscrit et actif de l'édition.
-- [ ] Un compte suspendu n'a pas de journal.
-- [ ] La politique de confidentialité dit ce qui est montré aux autres participants.
+Cochés = tenus par un test automatique. Les autres se vérifient sur l'application, une
+fois la migration 39 appliquée et un réimport lancé.
+
+- [x] Une sortie masquée sur Strava n'apparaît jamais dans un journal.
+- [x] Une sortie importée avant la migration n'apparaît pas non plus, faute de savoir.
+- [x] Le titre de la sortie n'apparaît nulle part, dans aucune réponse du serveur.
+- [x] Couper l'affichage vide le journal **immédiatement**, y compris pour le passé.
+- [x] Couper l'affichage n'écrit que dans `profiles` — ni rang, ni points, ni défis.
+- [x] Le journal du classement Vélo ne contient que des sorties à vélo.
+- [x] Rien n'est lisible sans être un participant inscrit et actif de l'édition.
+- [x] Un compte suspendu n'a pas de journal.
+- [x] La politique de confidentialité dit ce qui est montré aux autres participants.
+- [ ] Vérifié sur l'application, sur un téléphone, avec deux comptes.
+- [ ] Un parcours au clavier et au lecteur d'écran.
 
 ---
 

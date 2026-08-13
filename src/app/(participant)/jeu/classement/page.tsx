@@ -160,7 +160,15 @@ export default async function LeaderboardPage({
                 <ol className="space-y-2">
                   {board.rows.map((row) => (
                     <li key={row.profileId}>
-                      <LeaderboardCard row={row} definition={definition} />
+                      {/* Le dépliant des sorties (story 15.4) n'est offert
+                          qu'ici : la copie épinglée au-dessus montre la même
+                          personne, et deux dépliants pour un journal seraient
+                          deux choses à refermer. */}
+                      <LeaderboardCard
+                        row={row}
+                        definition={definition}
+                        journal
+                      />
                     </li>
                   ))}
                 </ol>
@@ -237,7 +245,7 @@ function SearchResults({
         <ol className="space-y-2">
           {results.map((row) => (
             <li key={row.profileId}>
-              <LeaderboardCard row={row} definition={definition} />
+              <LeaderboardCard row={row} definition={definition} journal />
             </li>
           ))}
         </ol>
