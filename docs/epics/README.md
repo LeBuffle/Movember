@@ -30,18 +30,24 @@ livre un incrément déployable et vérifiable sur la préproduction.
 
 ### Ajouts de périmètre — après la clôture du développement
 
-Demandés par le PO le 11 août, une fois les onze epics livrés. **Les deux sont en
-brouillon et attendent une validation avant toute ligne de code** (`CLAUDE.md` §2).
+Demandés par le PO les 11 et 13 août, une fois les onze epics livrés. **Chacun attend une
+validation avant toute ligne de code** (`CLAUDE.md` §2).
 
 | # | Epic | Objectif en une phrase | Prio | Jalon visé |
 | --- | --- | --- | --- | --- |
 | [12](epic-12-defis-entre-joueurs.md) | **Défis entre joueurs et portefeuille** | Un participant défie un autre participant, contre des crédits achetés à l'avance | S | **avant le 1ᵉʳ octobre** |
 | [13](epic-13-classements-vivants.md) | **Classements vivants** | Cartes, médailles, podium, progression et recherche | S | **avant le 1ᵉʳ octobre** |
+| [14](epic-14-super-equipes.md) | **Super-équipes et logos** | Une fédération regroupe ses équipes, avec son classement interne et son identité visuelle | S | **avant le 1ᵉʳ octobre** |
 
-> **Ces deux epics ne sont pas sur le chemin critique**, et c'est ce qui les rend sûrs :
+> **Ces trois epics ne sont pas sur le chemin critique**, et c'est ce qui les rend sûrs :
 > sans eux il y a un jeu complet. Le PO a choisi de les ouvrir dès le 1ᵉʳ novembre, ce qui
-> les place avant le gel du 1ᵉʳ octobre — mais ils restent les deux seuls qu'on puisse
-> couper en entier si octobre se tend, sans toucher aux défis, aux cartes ni aux équipes.
+> les place avant le gel du 1ᵉʳ octobre — mais ils restent les seuls qu'on puisse couper en
+> entier si octobre se tend, sans toucher aux défis, aux cartes ni aux équipes.
+>
+> **L'epic 14 est le seul des trois qui soit un levier de recrutement.** Il répond à un
+> participant identifié — une fédération de tables locales, vraisemblablement le plus gros
+> contributeur de l'édition — qui ne peut aujourd'hui entrer que comme une collection
+> d'équipes sans lien entre elles.
 >
 > **L'epic 11 et le travail de contenu de septembre passent devant.** Sans eux il n'y a pas
 > de lancement du tout.

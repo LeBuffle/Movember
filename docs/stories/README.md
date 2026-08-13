@@ -576,6 +576,49 @@ gel du 1ᵉʳ octobre.
 
 ---
 
+## Epic 14 : Super-équipes et logos
+
+**Ajout de périmètre demandé le 13 août**, ouvert dès le 1ᵉʳ novembre — donc à finir avant
+le gel du 1ᵉʳ octobre. C'est le seul des trois ajouts qui soit un **levier de
+recrutement** : il répond à une fédération identifiée, qui ne peut aujourd'hui entrer que
+comme une collection d'équipes sans lien entre elles.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 14.1 | [Schéma des super-équipes et rattachement](14.1.schema-super-equipes.md) | Draft | 7.1 |
+| 14.2 | [Gestion des super-équipes depuis le back-office](14.2.gestion-super-equipes-admin.md) | Draft | 14.1, 1.10 |
+| 14.3 | [Classement interne d'une super-équipe](14.3.classement-interne-super-equipe.md) | Draft | 14.2, 7.5 |
+| 14.4 | [Logo d'équipe, téléversé par le capitaine](14.4.logo-equipe.md) | Draft | 14.1, 5.6 |
+| 14.5 | [Logo et description de super-équipe](14.5.apparence-super-equipe.md) | Draft | 14.2, 14.4 |
+| 14.6 | [Modération des logos](14.6.moderation-logos.md) | Draft | 14.4, 8.8 |
+
+### Ordre d'exécution
+
+```
+14.1 ──┬──► 14.2 ──┬──► 14.3
+       │           └──► 14.5
+       └──► 14.4 ──► 14.6
+```
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| **Le nom des fédérations et de leurs référents** | La création réelle des super-équipes | Le développement et la recette se mènent sur des équipes de test |
+| Compartiment de stockage configuré | 14.4 (téléversement) | Le reste de l'epic se mène sans — même compartiment que les visuels de cartes |
+
+> **La gestion des équipes ne change pas.** Une super-équipe se pose au-dessus : elle ne
+> touche ni à l'adhésion par code, ni au capitaine d'équipe, ni au classement général.
+> Détacher une équipe lui retire son classement interne et rien d'autre — c'est la
+> propriété qui rend l'epic coupable en entier si octobre se tend.
+
+> **Un seul classement est ajouté, aucun n'est modifié.** Le classement interne applique la
+> formule normalisée de la story 7.5 avec les mêmes réglages en base. Une seconde formule
+> serait un second débat sur l'équité.
+
+
+---
+
 ## Stories des epics 6 à 11
 
 Elles seront rédigées **au fil de l'avancement**, epic par epic, plutôt que toutes
