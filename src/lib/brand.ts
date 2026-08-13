@@ -13,7 +13,7 @@
  */
 
 /** `--color-brand-blue`. Tints the browser and system chrome. */
-export const THEME_COLOR = "#1d4ed8";
+export const THEME_COLOR = "#01294d";
 
 /** `--color-surface`. Behind the splash screen while the app boots. */
 export const BACKGROUND_COLOR = "#ffffff";

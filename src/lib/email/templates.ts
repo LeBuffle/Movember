@@ -82,11 +82,11 @@ export function notificationEmail(input: NotificationEmailInput): EmailContent {
 <html lang="fr">
 <body style="margin:0;padding:24px;background:#fafafa;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#171717">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;padding:24px">
-    <p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:600">DEFI Movember</p>
+    <p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b8440a;font-weight:600">DEFI Movember</p>
     <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">${escapeHtml(title)}</h1>
     ${body ? `<p style="margin:0 0 20px;color:#525252;line-height:1.5">${escapeHtml(body)}</p>` : ""}
     <p style="margin:0">
-      <a href="${escapeAttribute(input.actionUrl)}" style="display:inline-block;background:#c2410c;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Ouvrir le jeu</a>
+      <a href="${escapeAttribute(input.actionUrl)}" style="display:inline-block;background:#b8440a;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Ouvrir le jeu</a>
     </p>
   </div>
 
@@ -167,7 +167,7 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
 <body style="margin:0;padding:24px;background:#fafafa;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#171717">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;padding:24px">
     ${logoHtml()}
-    <p style="margin:12px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:600">DEFI Movember</p>
+    <p style="margin:12px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b8440a;font-weight:600">DEFI Movember</p>
     <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">Votre inscription est confirmée</h1>
 
     <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 20px">
@@ -185,7 +185,7 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
       </tr>
     </table>
 
-    <p style="margin:0 0 20px;padding:12px;background:#fff7ed;border-left:4px solid #c2410c;color:#525252;line-height:1.5;font-size:14px">
+    <p style="margin:0 0 20px;padding:12px;background:#fff5ee;border-left:4px solid #b8440a;color:#525252;line-height:1.5;font-size:14px">
       ${escapeHtml(TAX_LINE)}
     </p>
 
@@ -196,7 +196,7 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
     </ol>
 
     <p style="margin:0">
-      <a href="${escapeAttribute(input.gameUrl)}" style="display:inline-block;background:#c2410c;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Commencer</a>
+      <a href="${escapeAttribute(input.gameUrl)}" style="display:inline-block;background:#b8440a;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Commencer</a>
     </p>
   </div>
 

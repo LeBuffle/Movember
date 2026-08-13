@@ -17,7 +17,7 @@ import { cn } from "@/lib/cn";
  * 3. **The tab bar**, and the bottom padding that stops it covering the last
  *    row of content — the mistake that makes a floating bar hated.
  *
- * Blue-soft rather than the solid brand blue for the band: `#eff6ff` carries
+ * Blue-soft rather than the solid brand blue for the band: `#eef3f9` carries
  * ordinary dark text at full contrast, where a solid blue would force white
  * text and a second set of rules for every element placed on it.
  */

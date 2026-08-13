@@ -100,12 +100,27 @@ describe("accent orange is constrained to non-text use", () => {
 
 describe("accent text over the brand blue", () => {
   // The rest of the palette assumes dark text on white. The social sharing
-  // image reverses that, and got caught: the accent orange sits at 1.88:1 on
-  // the brand blue — legible to nobody.
-  it("the accent orange is unusable on blue, which is why a variant exists", () => {
+  // image reverses that, and got caught once: against the old royal blue the
+  // accent orange sat at 1.88:1 — legible to nobody.
+  //
+  // The logo's navy fixed that on its own, and this test now pins the new
+  // fact rather than the old one. Kept rather than deleted: it is the place
+  // that would catch a lighter blue being introduced later, which would take
+  // the orange back below the line without anybody looking.
+  it("the accent orange became readable on the navy", () => {
     expect(
       contrastRatio(colors["brand-orange"], colors["brand-blue"]),
-    ).toBeLessThan(AA_NON_TEXT);
+    ).toBeGreaterThanOrEqual(AA_BODY_TEXT);
+  });
+
+  it("and the on-blue variant is more readable still, which is why it stays", () => {
+    // Small text on a dark panel wants more than the minimum. The variant is
+    // no longer a necessity, it is a comfort — and the assertion says which.
+    expect(
+      contrastRatio(colors["brand-orange-on-blue"], colors["brand-blue"]),
+    ).toBeGreaterThan(
+      contrastRatio(colors["brand-orange"], colors["brand-blue"]),
+    );
   });
 
   it("the on-blue variant is readable as large text", () => {

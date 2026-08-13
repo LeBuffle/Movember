@@ -13,28 +13,40 @@
  * `tests/unit/contrast.test.ts` reads THIS FILE and fails the build if a
  * ratio regresses.
  *
- * The trap is orange. `--color-brand-orange` (#ea580c) only reaches 3.56:1
+ * The trap is orange. `--color-brand-orange` (#fb5a0c) only reaches 3.20:1
  * on white: it is an ACCENT — fills, borders, decoration — and must never
  * carry small text, nor be used as a background behind white text. When
- * orange has to carry text, use `--color-brand-orange-ink` (5.18:1).
+ * orange has to carry text, use `--color-brand-orange-ink` (5.43:1).
+ *
+ * The two brand colours are read from the official logo
+ * (`public/brand/logo-source.jpeg`), not chosen beside it. A site whose blue
+ * is nearly the logo's blue looks like a printing error — the eye catches the
+ * near-miss far more easily than it would notice a deliberate contrast.
  * ========================================================================= */
 
 @theme {
   /* --- Brand ----------------------------------------------------------- */
-  /* 6.70:1 on white — safe for text and as a button fill behind white text */
-  --color-brand-blue: #1d4ed8;
-  --color-brand-blue-dark: #1e3a8a;
-  --color-brand-blue-soft: #eff6ff;
+  /* The logo's navy, sampled from the artwork. 14.73:1 on white — safe for
+     text and as a button fill behind white text, with room to spare. */
+  --color-brand-blue: #01294d;
+  --color-brand-blue-dark: #011f3c;
+  --color-brand-blue-soft: #eef3f9;
 
-  /* 3.56:1 on white — ACCENT ONLY, never small text, never behind white text */
-  --color-brand-orange: #ea580c;
-  /* 5.18:1 on white — the orange to use whenever text is involved */
-  --color-brand-orange-ink: #c2410c;
-  --color-brand-orange-soft: #fff7ed;
+  /* The logo's orange. 3.20:1 on white — ACCENT ONLY, never small text,
+     never behind white text. */
+  --color-brand-orange: #fb5a0c;
+  /* 5.43:1 on white — the orange to use whenever text is involved. A darker
+     shade of the logo orange rather than a different hue. */
+  --color-brand-orange-ink: #b8440a;
+  --color-brand-orange-soft: #fff5ee;
   /* The palette above is built for dark-on-white. This one is the reverse
-     case: 3.97:1 ON THE BRAND BLUE, for accent text over a blue surface —
+     case: 8.73:1 ON THE BRAND BLUE, for accent text over a blue surface —
      the social sharing image today, any blue panel later. Unreadable on
-     white (1.7:1), which is why it is named for where it belongs. */
+     white (1.70:1), which is why it is named for where it belongs.
+
+     The accent orange now clears 4.5:1 on the navy, so it is usable there
+     too; this lighter tone stays because small text on a dark panel wants
+     more than the minimum. */
   --color-brand-orange-on-blue: #fdba74;
 
   /* --- Neutrals -------------------------------------------------------- */
