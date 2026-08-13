@@ -642,3 +642,50 @@ d'avance. Deux raisons :
 
 Le contenu de chaque epic, ses stories prévues et ses critères de sortie sont déjà définis
 dans [`../epics/`](../epics/).
+
+
+---
+
+## Epic 15 : Journal des sorties
+
+**Ajout de périmètre demandé le 13 août**, ouvert dès le 1ᵉʳ novembre — donc à finir avant
+le gel du 1ᵉʳ octobre. Depuis une ligne de classement, voir les dix dernières sorties de
+la personne dans cette catégorie : un classement dit qui gagne, il ne dit jamais comment.
+
+| # | Story | Statut | Dépend de |
+| --- | --- | --- | --- |
+| 15.1 | [Conserver le caractère privé d'une sortie](15.1.sortie-privee.md) | Draft | 3.4 |
+| 15.2 | [Le réglage « ne pas montrer mes sorties »](15.2.reglage-visibilite-sorties.md) | Draft | 1.7 |
+| 15.3 | [Lecture du journal, par catégorie](15.3.lecture-journal.md) | Draft | 15.1, 15.2, 7.3 |
+| 15.4 | [Le dépliant depuis une ligne de classement](15.4.depliant-classement.md) | Draft | 15.3, 13.2 |
+| 15.5 | [Mentions de confidentialité mises à jour](15.5.mentions-confidentialite.md) | Draft | 11.6, 3.2 |
+
+### Ordre d'exécution
+
+```
+15.1 ──┬──► 15.3 ──► 15.4
+15.2 ──┘
+15.5 (indépendante, mais à livrer avec le reste)
+```
+
+**15.1 et 15.2 avant 15.3, et c'est l'ordre qui protège.** La lecture ne doit jamais
+exister avant les deux filtres qu'elle applique : livrée d'abord, elle montrerait tout de
+tout le monde le temps d'une préproduction.
+
+### Ce qui bloque quoi
+
+| Prérequis | Bloque | Contournement |
+| --- | --- | --- |
+| **Un réimport des sorties** | Le contenu réel des journaux | Le drapeau « privée » n'existe que pour les sorties importées après la migration ; les précédentes sont masquées faute de savoir |
+| Des sorties réelles | La vérification de 15.4 | L'écran se mène sur des activités simulées |
+
+> **L'application voit ce que le participant a caché.** La portée `activity:read_all` sert
+> à valider ses défis, jamais à publier à sa place. Une sortie masquée sur Strava reste
+> masquée ici, et **ce qu'on ne sait pas est traité comme privé** — les sorties importées
+> avant la migration ne portent pas l'information, et ne rien dire n'est pas dire non.
+
+> **Le titre n'est pas caché : il n'est pas demandé.** « Footing avant le rendez-vous chez
+> le kiné » est un champ libre qui peut porter un lieu, un état de santé ou le nom d'un
+> tiers. Une donnée absente d'une réponse ne fuit pas ; une donnée présente mais non
+> affichée finit dans un outil de développement ou dans le prochain écran qui réutilise la
+> même fonction.
