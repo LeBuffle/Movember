@@ -685,6 +685,19 @@ manque :
 d'août ne crée pas les défis qui n'ont pas été tirés en août. Seuls les fils rouges —
 dont la fenêtre remonte dans le passé — profitent d'un rattrapage.
 
+### Dépanner **un** participant qui signale un problème
+
+C'est le cas de novembre, et il ne se traite pas depuis `/admin/etat` — les boutons y
+agissent sur votre propre compte. Allez sur **sa fiche** : `/admin/participants`, puis son
+nom, section « Compte sportif ». Deux boutons :
+
+- **« Diagnostiquer sa liaison »** — les sept étapes sur son compte à lui. Ne lit rien de
+  plus que ce que la fiche affiche déjà.
+- **« Réimporter ses sorties »** — reprend depuis le premier jour de l'édition. Journalisé,
+  parce qu'il écrit au nom de quelqu'un d'autre.
+
+Puis « Recalculer les classements » sur `/admin/etat` si un défi a été validé.
+
 ### Réimporter tout depuis le début de l'édition
 
 **Le bouton « Vérifier maintenant » d'un participant ne regarde que les deux derniers

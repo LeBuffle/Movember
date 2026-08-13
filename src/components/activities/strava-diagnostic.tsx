@@ -154,3 +154,88 @@ export function RehearsalTools({
     </div>
   );
 }
+
+/**
+ * Les deux gestes de dépannage, sur la fiche d'un participant.
+ *
+ * **C'est la version qui servira en novembre.** Un bénévole ne diagnostique
+ * pas sa propre liaison pendant l'édition : il répond à « ma sortie de
+ * dimanche n'a pas compté », et celui qui se plaint n'est jamais lui.
+ *
+ * L'identifiant voyage dans le formulaire, ce qui est acceptable ici et ne
+ * l'était pas sur l'écran d'apparence d'une super-équipe : là-bas il aurait
+ * permis d'agir sur la fédération d'un autre, ici c'est précisément le
+ * travail, et il passe par `requireAdmin`.
+ */
+export function ParticipantStravaTools({
+  profileId,
+  diagnose,
+  reimport,
+}: {
+  profileId: string;
+  diagnose: (
+    previous: DiagnosticState,
+    formData: FormData,
+  ) => Promise<DiagnosticState>;
+  reimport: (
+    previous: ReimportState,
+    formData: FormData,
+  ) => Promise<ReimportState>;
+}) {
+  const [diagState, diagAction] = useActionState<DiagnosticState, FormData>(
+    diagnose,
+    {},
+  );
+  const [importState, importAction] = useActionState<ReimportState, FormData>(
+    reimport,
+    {},
+  );
+
+  return (
+    <div className="border-line mt-4 space-y-4 border-t pt-4">
+      <div className="flex flex-wrap gap-2">
+        <form action={diagAction}>
+          <input type="hidden" name="profileId" value={profileId} />
+          <Button type="submit" variant="secondary" size="sm">
+            Diagnostiquer sa liaison
+          </Button>
+        </form>
+
+        <form action={importAction}>
+          <input type="hidden" name="profileId" value={profileId} />
+          <Button type="submit" variant="secondary" size="sm">
+            Réimporter ses sorties
+          </Button>
+        </form>
+      </div>
+
+      <p className="text-ink-muted text-sm">
+        Le diagnostic ne lit rien de plus que cette fiche. Le réimport reprend
+        ses sorties depuis le premier jour de l’édition, et il est journalisé.
+      </p>
+
+      {diagState.message && <Alert tone="danger">{diagState.message}</Alert>}
+      {importState.message && <Alert tone="info">{importState.message}</Alert>}
+
+      {diagState.report && (
+        <div className="space-y-3">
+          <Alert tone="info" title="Conclusion">
+            {diagState.report.verdict}
+          </Alert>
+
+          <ol className="border-line divide-line divide-y border-y">
+            {diagState.report.steps.map((step) => (
+              <li key={step.label} className="py-3">
+                <p className="text-ink font-medium">
+                  <span aria-hidden>{MARK[step.state]} </span>
+                  {step.label}
+                </p>
+                <p className="text-ink-muted mt-1 text-sm">{step.detail}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}

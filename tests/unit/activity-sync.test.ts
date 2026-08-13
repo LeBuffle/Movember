@@ -128,6 +128,27 @@ describe("le rattrapage", () => {
     );
   });
 
+  it("les mêmes gestes existent sur la fiche d’un autre participant", () => {
+    // C'est la version qui sert en novembre : un bénévole ne diagnostique
+    // pas sa propre liaison, il répond à « ma sortie n'a pas compté ».
+    const actions = code("src/lib/activities/diagnostic-actions.ts");
+
+    expect(actions).toMatch(/export async function diagnoseParticipantAction/);
+    expect(actions).toMatch(/export async function reimportParticipantAction/);
+  });
+
+  it("et le réimport au nom de quelqu’un d’autre est journalisé", () => {
+    // Il écrit des activités pour un tiers : on doit pouvoir dire qui l'a
+    // lancé.
+    const actions = code("src/lib/activities/diagnostic-actions.ts");
+    const reimport = actions.slice(
+      actions.indexOf("export async function reimportParticipantAction"),
+    );
+
+    expect(reimport).toMatch(/logAdminAction/);
+    expect(reimport).toContain("activities.reimported");
+  });
+
   it("une liaison qui n’a jamais rien rapatrié reprend depuis le début", () => {
     // L'import complet ne tourne qu'au moment où le compte est relié. S'il
     // échoue ce jour-là — Strava indisponible, édition pas encore ouverte —

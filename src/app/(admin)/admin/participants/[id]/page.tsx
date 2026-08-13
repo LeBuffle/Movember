@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ParticipantStravaTools } from "@/components/activities/strava-diagnostic";
 import { SuspensionForm } from "@/components/admin/suspension-form";
 import { Badge } from "@/components/ui/badge";
+import {
+  diagnoseParticipantAction,
+  reimportParticipantAction,
+} from "@/lib/activities/diagnostic-actions";
 import { getParticipant } from "@/lib/admin/participants";
 import { formatEuros } from "@/lib/registration/tiers";
 
@@ -20,6 +25,11 @@ export const dynamic = "force-dynamic";
  * a suspension (story 8.7). A screen that shows everything and edits
  * everything is a screen where mistakes happen, and none of them would be
  * traced.
+ *
+ * The two Strava buttons do not break that rule, and it is worth saying why:
+ * neither corrects anything. One reads a state this page already displays;
+ * the other re-runs by hand what the hourly task does on its own, and is
+ * journalised because it writes on somebody else's behalf.
  *
  * The address is reduced to a town and a country. The full one belongs on the
  * deliveries screen, which exists for the person packing parcels; every other
@@ -130,6 +140,14 @@ export default async function ParticipantPage({
             Aucun compte sportif relié. Ses défis ne peuvent pas se valider tout
             seuls — c’est la première chose à vérifier s’il signale un problème.
           </Empty>
+        )}
+
+        {connection && (
+          <ParticipantStravaTools
+            profileId={id}
+            diagnose={diagnoseParticipantAction}
+            reimport={reimportParticipantAction}
+          />
         )}
       </Section>
 
