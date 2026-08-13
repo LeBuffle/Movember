@@ -554,8 +554,26 @@ récupéré avant le … ». Si vous voyez cette phrase, il n'y a rien à répar
 La date est lue en base, pas écrite dans le code. **Sur la préproduction uniquement** :
 
 ```sql
-update public.editions set starts_on = '2026-08-01' where year = 2026;
+update public.editions
+   set registration_opens_on = '2026-08-01',
+       starts_on             = '2026-08-01'
+ where year = 2026;
 ```
+
+⚠️ **Les deux dates ensemble, pas `starts_on` seule.** La contrainte
+`editions_registration_opens_before_start` exige que les inscriptions ouvrent avant ou le
+jour du départ. Déplacer le départ au 1ᵉʳ août en laissant les inscriptions au 15 octobre
+donne :
+
+```
+ERROR: 23514: new row for relation "editions" violates check constraint
+"editions_registration_opens_before_start"
+```
+
+Reculer `registration_opens_on` est sans effet visible : **l'application ne lit pas cette
+colonne**. La date d'ouverture affichée sur le site public vient de
+`src/lib/edition/calendar.ts`. La colonne existe pour la cohérence de la ligne, et c'est
+la contrainte qui la fait respecter.
 
 Aucun déploiement. Puis relier le compte Strava — ou appuyer sur « Resynchroniser », en
 respectant le délai de cinq minutes entre deux appuis — et l'import initial rapatrie tout
@@ -570,8 +588,18 @@ Le site public continue d'annoncer le 1ᵉʳ novembre : le calendrier affiché e
 `src/lib/edition/calendar.ts` et ne bouge pas. Sur une préproduction, c'est sans
 conséquence.
 
-**Pour revenir en arrière**, la même commande avec `'2026-11-01'`. Les activités déjà
-importées restent en base ; elles ne sont pas supprimées par le retour à la date d'origine.
+**Pour revenir en arrière**, remettre les deux dates d'origine — dans cet ordre, sinon la
+même contrainte se plaint dans l'autre sens :
+
+```sql
+update public.editions
+   set starts_on             = '2026-11-01',
+       registration_opens_on = '2026-10-15'
+ where year = 2026;
+```
+
+Les activités déjà importées restent en base ; elles ne sont pas supprimées par le retour
+à la date d'origine.
 
 ⚠️ **Ne jamais lancer cette commande en production.** Elle ouvrirait le jeu avant l'heure
 et ferait remonter les sorties d'octobre de chaque participant.
