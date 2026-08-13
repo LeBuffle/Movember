@@ -529,6 +529,67 @@ autre nom qu'on partagerait un jour.
 
 ---
 
+## 12 quinquies. Strava est relié mais aucune activité ne remonte
+
+**Symptôme :** le compte Strava est connecté, l'écran « Mes activités sportives » dit que
+la liaison est en place, le bouton « Resynchroniser » ne renvoie aucune erreur — et il
+n'arrive rien du tout.
+
+### La cause, rencontrée le 13 août
+
+**Rien ne remonte avant le premier jour de l'édition, et c'est voulu.** L'application ne
+récupère jamais de sortie antérieure à `editions.starts_on` : rapatrier trois ans
+d'historique brûlerait le quota d'appels et stockerait des données de santé dont le jeu
+n'a aucun usage.
+
+Avant le 1ᵉʳ novembre, la fenêtre demandée à Strava commence donc **après** sa propre fin.
+Strava répond une liste vide, sans erreur. Vu de l'écran, un compte qui marche est
+indiscernable d'un compte en panne.
+
+Depuis le 13 août, l'application le dit : « L'édition n'a pas encore commencé : rien n'est
+récupéré avant le … ». Si vous voyez cette phrase, il n'y a rien à réparer.
+
+### Ouvrir un environnement plus tôt pour tester
+
+La date est lue en base, pas écrite dans le code. **Sur la préproduction uniquement** :
+
+```sql
+update public.editions set starts_on = '2026-08-01' where year = 2026;
+```
+
+Aucun déploiement. Puis relier le compte Strava — ou appuyer sur « Resynchroniser », en
+respectant le délai de cinq minutes entre deux appuis — et l'import initial rapatrie tout
+depuis le 1ᵉʳ août.
+
+⚠️ **Cette date déplace le jeu avec elle.** La fenêtre rétroactive d'un défi fil rouge
+remonte jusqu'au début de l'édition : un « 20 jours d'activité » tiré en préproduction
+regardera donc jusqu'au 1ᵉʳ août. C'est précisément ce qu'on veut tester, ce n'est pas un
+effet de bord.
+
+Le site public continue d'annoncer le 1ᵉʳ novembre : le calendrier affiché est écrit dans
+`src/lib/edition/calendar.ts` et ne bouge pas. Sur une préproduction, c'est sans
+conséquence.
+
+**Pour revenir en arrière**, la même commande avec `'2026-11-01'`. Les activités déjà
+importées restent en base ; elles ne sont pas supprimées par le retour à la date d'origine.
+
+⚠️ **Ne jamais lancer cette commande en production.** Elle ouvrirait le jeu avant l'heure
+et ferait remonter les sorties d'octobre de chaque participant.
+
+### Si la phrase ne s'affiche pas et que rien ne remonte quand même
+
+Dans l'ordre :
+
+1. **L'abonnement webhook ne peut exister que sur un environnement à la fois** (une seule
+   inscription par application Strava). L'environnement sans abonnement vit entièrement
+   sur le rattrapage horaire — vérifier que la tâche planifiée `rattrapage` tourne.
+2. `GET /api/cron/rattrapage` rend un compte-rendu : `participants`, `stored`, `broken`,
+   `tooEarly`. Un `broken` non nul signifie une autorisation retirée côté Strava.
+3. Une activité met parfois plusieurs minutes à apparaître sur Strava elle-même. Le délai
+   de cinq minutes entre deux resynchronisations existe pour ça.
+
+---
+
 ## 12 bis. Un visuel de carte ne s'affiche pas
 
 **Symptôme :** le visuel est correct au moment de l'import, la carte s'enregistre sans

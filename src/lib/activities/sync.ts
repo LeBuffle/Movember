@@ -4,7 +4,7 @@ import type { ActivityProvider } from "@/lib/activities/activity";
 import { validAccessToken } from "@/lib/activities/refresh";
 import { activitySource } from "@/lib/activities/sources";
 import { recordActivities } from "@/lib/activities/store";
-import { EDITION_YEAR } from "@/lib/edition/calendar";
+import { editionStartDate } from "@/lib/edition/start";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -27,7 +27,15 @@ export type SyncWindow = { after: Date; before: Date };
 
 export type SyncOutcome =
   | { ok: true; received: number; stored: number; completed: number }
-  | { ok: false; reason: "no-link" | "unavailable" | "broken" };
+  | {
+      ok: false;
+      reason:
+        | "no-link"
+        | "unavailable"
+        | "broken"
+        /** The edition has not started: there is nothing to fetch yet. */
+        | "before-edition";
+    };
 
 /**
  * How far back a catch-up reaches on a routine run.
@@ -42,15 +50,20 @@ const ROUTINE_WINDOW_DAYS = 2;
 const MAX_PER_RUN = 500;
 
 /**
- * The edition's own start, which is as far back as an initial import goes.
+ * The edition's own start, which is as far back as an import ever goes.
  *
  * Bringing back three years of outings would burn the call quota, store data
  * the game has no use for, and go against the minimisation this whole epic
  * is built on (architecture D9).
+ *
+ * **Read from `editions.starts_on`, not written here.** It used to be a
+ * hard-coded 1 November, and that had two consequences neither of which was
+ * intended. The first is that nothing could be tested before November: the
+ * window handed to Strava started after it ended, so every fetch came back
+ * empty, silently, and a linked account looked broken. The second is that the
+ * date existed twice — the fil rouge evaluation already read the column — so
+ * the two could disagree without anything saying so. See `edition/start.ts`.
  */
-function editionStart(): Date {
-  return new Date(Date.UTC(EDITION_YEAR, 10, 1));
-}
 
 /**
  * Synchronises one participant over a window.
@@ -62,6 +75,21 @@ export async function syncParticipant(
   profileId: string,
   window?: SyncWindow,
   provider: ActivityProvider = "strava",
+): Promise<SyncOutcome> {
+  return syncOne(profileId, provider, window, await editionStartDate());
+}
+
+/**
+ * One participant, with the edition's start already resolved.
+ *
+ * Split out so the hourly sweep reads the edition once rather than once per
+ * participant — five hundred identical queries to learn the same date.
+ */
+async function syncOne(
+  profileId: string,
+  provider: ActivityProvider,
+  window: SyncWindow | undefined,
+  start: Date,
 ): Promise<SyncOutcome> {
   const source = activitySource(provider);
   if (!source) return { ok: false, reason: "no-link" };
@@ -88,8 +116,13 @@ export async function syncParticipant(
 
   // Never before the edition, whatever was asked. A caller passing a wider
   // window would otherwise import somebody's whole sporting past.
-  const start = editionStart();
   const after = range.after < start ? start : range.after;
+
+  // **Said rather than fetched.** Before the edition opens, the clamped
+  // window starts after it ends: Strava answers with an empty list and no
+  // error, so a linked account looks like an account that has done no sport.
+  // That silence is what made this hard to diagnose in the first place.
+  if (after >= range.before) return { ok: false, reason: "before-edition" };
 
   const fetched = await source.fetchActivities(token.token, profileId, {
     after,
@@ -127,10 +160,13 @@ export async function importInitialActivities(
   profileId: string,
   provider: ActivityProvider = "strava",
 ): Promise<SyncOutcome> {
-  return syncParticipant(
+  const start = await editionStartDate();
+
+  return syncOne(
     profileId,
-    { after: editionStart(), before: new Date(Date.now() + 60_000) },
     provider,
+    { after: start, before: new Date(Date.now() + 60_000) },
+    start,
   );
 }
 
@@ -140,6 +176,8 @@ export type CatchUpReport = {
   completed: number;
   unavailable: number;
   broken: number;
+  /** Reached before the edition opened. Not a failure — a calendar. */
+  tooEarly: number;
 };
 
 /**
@@ -159,6 +197,7 @@ export async function runCatchUp(
     completed: 0,
     unavailable: 0,
     broken: 0,
+    tooEarly: 0,
   };
 
   const { data, error } = await admin
@@ -177,8 +216,11 @@ export async function runCatchUp(
   const links = data ?? [];
   report.participants = links.length;
 
+  // Read once for the whole sweep, not once per participant.
+  const start = await editionStartDate();
+
   for (const link of links) {
-    const outcome = await syncParticipant(link.profile_id, undefined, provider);
+    const outcome = await syncOne(link.profile_id, provider, undefined, start);
 
     if (outcome.ok) {
       report.stored += outcome.stored;
@@ -187,6 +229,7 @@ export async function runCatchUp(
     }
 
     if (outcome.reason === "broken") report.broken += 1;
+    else if (outcome.reason === "before-edition") report.tooEarly += 1;
     else report.unavailable += 1;
   }
 

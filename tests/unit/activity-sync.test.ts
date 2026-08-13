@@ -29,8 +29,36 @@ describe("le rattrapage", () => {
   it("ne remonte jamais avant le début de l’édition", () => {
     // Rapatrier trois ans de sorties brûlerait le quota, stockerait des
     // données dont le jeu n'a aucun usage, et irait contre la minimisation.
-    expect(sync).toMatch(/function editionStart/);
+    expect(sync).toMatch(/editionStartDate\(\)/);
     expect(sync).toMatch(/range\.after < start \? start : range\.after/);
+  });
+
+  it("lit cette date en base, il ne l’écrit pas dans le code", () => {
+    // Elle était écrite en dur au 1ᵉʳ novembre ici, et lue dans
+    // `editions.starts_on` par l'évaluation des fils rouges : deux réponses
+    // à une même question, sans rien pour les faire concorder. C'est aussi
+    // ce qui permet d'ouvrir la préproduction plus tôt sans déploiement.
+    expect(sync).not.toMatch(/Date\.UTC\(EDITION_YEAR/);
+    expect(code("src/lib/edition/start.ts")).toMatch(/select\("starts_on"\)/);
+  });
+
+  it("le dit au lieu d’interroger Strava pour rien avant l’édition", () => {
+    // La fenêtre bornée commence alors après sa propre fin : Strava répond
+    // une liste vide sans erreur, et un compte relié ressemble à un compte
+    // qui n'a fait aucun sport. C'est ce silence qui rendait la panne
+    // introuvable.
+    expect(sync).toMatch(/after >= range\.before/);
+    expect(sync).toMatch(/reason: "before-edition"/);
+  });
+
+  it("et le balayage horaire ne lit cette date qu’une fois", () => {
+    // Cinq cents requêtes identiques pour apprendre la même date.
+    const sweep = sync.slice(sync.indexOf("export async function runCatchUp"));
+
+    expect(sweep).toMatch(/const start = await editionStartDate\(\);/);
+    expect(sweep).toMatch(
+      /syncOne\(link\.profile_id, provider, undefined, start\)/,
+    );
   });
 
   it("regarde deux jours en arrière, pas une heure", () => {

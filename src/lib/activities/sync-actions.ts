@@ -75,6 +75,16 @@ export async function resynchronise(
   revalidatePath("/jeu");
 
   if (!outcome.ok) {
+    // « Avant l'édition » n'est pas une panne, et le dire évite la seule
+    // conclusion que le participant tirerait autrement : que la liaison ne
+    // marche pas.
+    if (outcome.reason === "before-edition") {
+      return {
+        message:
+          "Votre compte est bien relié. Le jeu n’a pas encore commencé : les sorties seront récupérées à partir du premier jour de l’édition.",
+      };
+    }
+
     return {
       message:
         outcome.reason === "broken"

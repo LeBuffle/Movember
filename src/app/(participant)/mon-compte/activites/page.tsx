@@ -28,6 +28,7 @@ import {
   resynchronise,
 } from "@/lib/activities/sync-actions";
 import { ROUTES } from "@/lib/auth/routes";
+import { editionStartDate } from "@/lib/edition/start";
 
 export const metadata = {
   title: "Mes activités sportives — DEFI Movember",
@@ -61,11 +62,14 @@ export default async function ActivityConsentPage({
   const raw = query.erreur;
   const failure = Array.isArray(raw) ? raw[0] : raw;
 
-  const [consent, connection, manual] = await Promise.all([
+  const [consent, connection, manual, editionStart] = await Promise.all([
     getConsent(),
     getOwnConnection(),
     ownManualCount(),
+    editionStartDate(),
   ]);
+
+  const editionStarted = new Date() >= editionStart;
 
   return (
     <ParticipantShell title="Mes activités sportives" eyebrow="Mon compte">
@@ -191,6 +195,18 @@ export default async function ActivityConsentPage({
                       ? `Dernière vérification le ${formatDateTime(connection.lastSyncedAt)}.`
                       : "Vos sorties n’ont pas encore été vérifiées."}
                   </p>
+
+                  {/* Avant le premier jour, il n'y a rien à récupérer — et
+                      sans le dire, une liaison qui marche ressemble à une
+                      liaison en panne. C'est exactement le doute qui a
+                      motivé cette phrase. */}
+                  {!editionStarted && (
+                    <p className="text-ink-muted mt-2 text-sm">
+                      L’édition n’a pas encore commencé : rien n’est récupéré
+                      avant le {formatDate(editionStart.toISOString())}. La
+                      liaison, elle, est bien en place.
+                    </p>
+                  )}
 
                   {connection.status === "broken" && (
                     <>
