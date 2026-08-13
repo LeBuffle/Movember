@@ -1,4 +1,5 @@
 import { LegalPage } from "@/components/marketing/legal-page";
+import { GAME_STARTS_ON } from "@/lib/edition/calendar";
 import { ASSOCIATION, registeredAddress } from "@/lib/legal/association";
 import { TAX_NOTICE, TAX_NOTICE_TITLE } from "@/lib/legal/notices";
 
@@ -15,6 +16,12 @@ export const metadata = {
  * never donations), the absence of any tax receipt, and the right of
  * withdrawal, which does not apply to a service the participant asks to
  * start immediately.
+ *
+ * **Article 10 is a rule, not a case-by-case promise** (decision P6, settled
+ * on 11 August). Three volunteers arbitrating four hundred refund requests in
+ * November end up saying yes to whoever insists hardest, which is fair to
+ * nobody. A date, one named exception, and the association absorbing the
+ * payment fees is a policy that holds without a negotiation.
  *
  * **Article 6 must be in place before the first credit is sold** (decision
  * P8). A credit bought and never spent, whose fate was not announced, is a
@@ -142,28 +149,27 @@ export default function TermsPage() {
 
       <h2>10. Politique de remboursement</h2>
       <p>
-        Une demande de remboursement adressée à l’association{" "}
-        <strong>avant l’ouverture du jeu</strong> est honorée intégralement.
+        <strong>Avant le {GAME_STARTS_ON}</strong>, toute demande de
+        remboursement adressée à l’association est honorée intégralement, sans
+        justification à fournir.
       </p>
       <p>
-        Après l’ouverture du jeu, le remboursement est apprécié au cas par cas :
-        les contreparties déjà expédiées et les frais de paiement déjà prélevés
-        en sont déduits. Un remboursement retire l’accès au jeu.
+        <strong>À partir du {GAME_STARTS_ON}</strong>, le jeu a commencé et
+        l’accès a été fourni : les inscriptions ne sont plus remboursables. Une
+        exception est prévue en cas d’<strong>empêchement médical</strong>, sur
+        présentation d’un justificatif, avec déduction des contreparties déjà
+        expédiées. Un remboursement retire l’accès au jeu.
       </p>
       <p>
-        Les packs de cartes déjà ouverts ne sont pas remboursables : leur
-        contenu a été remis.
+        Les <strong>packs de cartes ouverts</strong> et les{" "}
+        <strong>crédits de défi dépensés</strong> ne sont jamais remboursables :
+        leur contenu a été remis. Les crédits non dépensés au terme du défi
+        suivent la règle de l’article 6 — ils sont reversés à la fondation.
       </p>
       <p>
-        Les crédits de défi déjà dépensés ne sont pas remboursables. Les crédits
-        non dépensés au terme du défi suivent la règle de l’article 6 : ils sont
-        reversés à la fondation.
-      </p>
-      <p>
-        <em>
-          Point à arrêter par l’association avant l’ouverture des inscriptions
-          (point P6).
-        </em>
+        Les frais de paiement prélevés par le prestataire restent{" "}
+        <strong>à la charge de l’association</strong> : un remboursement est
+        intégral du point de vue du participant.
       </p>
 
       <h2>11. Annulation du défi</h2>

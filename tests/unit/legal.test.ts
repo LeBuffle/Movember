@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { EDITION_MILESTONES, GAME_STARTS_ON } from "@/lib/edition/calendar";
 import {
   ASSOCIATION,
   HOSTING,
@@ -107,6 +108,53 @@ describe("les crédits non dépensés — décision P8", () => {
     // Souple sur les retours à la ligne : Prettier reformate ce paragraphe.
     expect(cgv).toMatch(/ni\s+cessibles/);
     expect(cgv).toMatch(/ni\s+convertibles\s+en\s+argent/);
+  });
+});
+
+describe("la politique de remboursement — décision P6", () => {
+  const cgv = read("src/app/(public)/cgv/page.tsx");
+
+  it("n’est plus une question ouverte", () => {
+    // Une page légale qui annonce elle-même qu'elle n'est pas décidée est une
+    // page qu'un participant peut opposer à l'association.
+    expect(cgv).not.toMatch(/à arrêter par l’association/);
+    expect(cgv).not.toMatch(/point P6/);
+  });
+
+  it("pose une date plutôt qu’un « cas par cas »", () => {
+    // Trois bénévoles qui arbitrent quatre cents demandes en novembre finissent
+    // par dire oui à qui insiste le plus, ce qui n'est juste pour personne.
+    expect(cgv).toMatch(/GAME_STARTS_ON/);
+    expect(cgv).not.toMatch(/au cas par cas/);
+  });
+
+  it("et cette date est celle du premier jour de jeu", () => {
+    // Une échéance de remboursement en désaccord avec l'ouverture du jeu est
+    // une échéance indéfendable.
+    const milestone = EDITION_MILESTONES.find(
+      (entry) => entry.date === "2026-11-01",
+    );
+
+    expect(milestone).toBeDefined();
+    expect(GAME_STARTS_ON).toMatch(/novembre 2026/);
+    expect(GAME_STARTS_ON).toContain(milestone!.label.replace(/\s.*/, ""));
+  });
+
+  it("nomme la seule exception, et ce qu’elle demande", () => {
+    expect(cgv).toMatch(/empêchement médical/);
+    expect(cgv).toMatch(/justificatif/);
+  });
+
+  it("dit qui porte les frais de paiement", () => {
+    // Stripe ne rend pas ses frais sur un remboursement. Le silence sur ce
+    // point produit un virement de 14,55 € au lieu de 15 € et un message
+    // d'incompréhension.
+    expect(cgv).toMatch(/à la charge de l’association/);
+  });
+
+  it("et ce qui n’est jamais remboursable reste dit", () => {
+    expect(cgv).toMatch(/packs de cartes ouverts/);
+    expect(cgv).toMatch(/crédits de défi dépensés/);
   });
 });
 

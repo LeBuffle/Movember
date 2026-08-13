@@ -43,6 +43,16 @@ export function registrationsOpen(now: Date = new Date()): boolean {
  * Dates fixed by the association. November is not negotiable — the whole
  * operation exists to coincide with it.
  */
+/**
+ * The day the game opens, written the way a contract writes a date.
+ *
+ * **A refund deadline that disagrees with the first day of play is a refund
+ * deadline nobody can defend**, so the terms read it from here rather than
+ * spelling it out again. The milestone below carries the same day in machine
+ * form; a test keeps the two saying the same thing.
+ */
+export const GAME_STARTS_ON = "1ᵉʳ novembre 2026";
+
 export const EDITION_MILESTONES: EditionMilestone[] = [
   {
     label: "Mi-octobre",

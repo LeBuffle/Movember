@@ -595,7 +595,7 @@ Phase 4 ou en cours de développement.
 | P14 | Volume cible du catalogue de défis : au moins 60 à 80 défis répartis par sport et par difficulté. **Travail de contenu à mener en septembre.** | Septembre |
 | ~~P4~~ | ~~Classement par équipe : total ou moyenne~~ ✅ **Tranché** : normalisé par le nombre de membres, pour ne pas désavantager les petites équipes. | — |
 | P5 | Taille minimale et maximale d'une équipe ; qui peut en créer une. | Phase 4 |
-| P6 | Politique de remboursement (blessure, abandon, erreur de niveau) — conditionne les CGV. | Avant l'ouverture des inscriptions |
+| ~~P6~~ | ~~Politique de remboursement — conditionne les CGV.~~ ✅ **Tranché le 11 août** : intégral avant le 1ᵉʳ novembre, plus rien ensuite hors empêchement médical sur justificatif, frais de paiement à la charge de l'association. Article 10 des CGV. | — |
 | P7 | Traitement d'un participant qui paye puis refuse de connecter Strava. | Avant l'ouverture des inscriptions |
 | P8 | Inscriptions encore possibles après le 1ᵉʳ novembre ? Avec quel rattrapage sur les défis passés ? | Phase 4 |
 | P9 | Modalités de la formule entreprise (facturation groupée ou inscriptions individuelles). | V2 |

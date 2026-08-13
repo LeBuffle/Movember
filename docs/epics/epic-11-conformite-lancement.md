@@ -60,7 +60,8 @@ quand 600 personnes attendent leur défi du jour.
 - Les CGV doivent énoncer **sans ambiguïté** que les sommes versées sont des frais
   d'inscription et des achats avec contrepartie, **pas des dons ouvrant droit à réduction
   d'impôt**, et qu'aucun reçu fiscal ne sera émis.
-- La politique de remboursement doit être arrêtée (point P6 du PRD) avant l'ouverture.
+- ~~La politique de remboursement doit être arrêtée (point P6 du PRD) avant l'ouverture.~~
+  ✅ Tranchée le 11 août et écrite à l'article 10 des CGV.
 - La mention d'indépendance vis-à-vis de la fondation Movember doit être visible.
 
 ## Critères de sortie
