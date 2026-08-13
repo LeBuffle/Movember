@@ -128,6 +128,19 @@ describe("le rattrapage", () => {
     );
   });
 
+  it("une liaison qui n’a jamais rien rapatrié reprend depuis le début", () => {
+    // L'import complet ne tourne qu'au moment où le compte est relié. S'il
+    // échoue ce jour-là — Strava indisponible, édition pas encore ouverte —
+    // le participant ne récupère jamais son début de mois, et la fenêtre de
+    // deux jours ne l'y aidera pas.
+    const actions = code("src/lib/activities/sync-actions.ts");
+
+    expect(actions).toMatch(
+      /connection\.lastSyncedAt\s*\?\s*await syncParticipant/,
+    );
+    expect(actions).toMatch(/:\s*await importInitialActivities\(user\.id\)/);
+  });
+
   it("regarde deux jours en arrière, pas une heure", () => {
     // Une livraison perdue dans la nuit, ou un service coupé une matinée,
     // c'est exactement ce pour quoi il existe.

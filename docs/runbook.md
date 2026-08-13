@@ -666,6 +666,40 @@ Dans l'ordre :
 
 ---
 
+## 12 sexies. Les sorties remontent mais le classement ne bouge pas
+
+**Symptôme :** le diagnostic de `/admin/etat` est tout vert, des sorties sont bien
+enregistrées, et le classement reste identique.
+
+**Ce n'est pas la même chaîne.** Une sortie ne donne pas de points ; elle valide un défi,
+et c'est le défi qui en donne. Entre les deux il y a trois conditions, et il suffit qu'une
+manque :
+
+| Condition | Comment le vérifier |
+| --- | --- |
+| **Un défi était attribué ce jour-là** | Une sortie ne valide qu'un défi déjà attribué, et jamais un défi attribué après elle. Sans tâche `defis-du-jour` ce jour-là, il n'y a rien à valider |
+| **La sortie satisfait ce défi** | `/jeu` montre le défi en cours et sa progression |
+| **Les classements ont été recalculés** | Ils le sont toutes les quinze minutes. Bouton « Recalculer les classements maintenant » sur `/admin/etat` |
+
+⚠️ **Un import rétroactif ne rattrape presque rien, et c'est voulu.** Rapatrier le mois
+d'août ne crée pas les défis qui n'ont pas été tirés en août. Seuls les fils rouges —
+dont la fenêtre remonte dans le passé — profitent d'un rattrapage.
+
+### Réimporter tout depuis le début de l'édition
+
+**Le bouton « Vérifier maintenant » d'un participant ne regarde que les deux derniers
+jours.** L'import complet ne tourne qu'une fois, au moment où le compte est relié : une
+liaison faite avant l'ouverture de l'édition ne rattrape donc jamais son début de mois.
+
+Deux réponses, selon qui en a besoin :
+
+- **Un participant qui n'a jamais rien rapatrié** : son bouton reprend automatiquement
+  depuis le début de l'édition, jusqu'à ce qu'un import réussisse une fois.
+- **L'organisation** : `/admin/etat`, « Réimporter mes sorties depuis le début de
+  l'édition ». Il rend le compte exact — sorties lues, enregistrées, défis validés.
+
+---
+
 ## 12 bis. Un visuel de carte ne s'affiche pas
 
 **Symptôme :** le visuel est correct au moment de l'import, la carte s'enregistre sans

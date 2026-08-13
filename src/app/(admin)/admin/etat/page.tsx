@@ -1,10 +1,17 @@
 import Link from "next/link";
 
-import { StravaDiagnostic } from "@/components/activities/strava-diagnostic";
+import {
+  RehearsalTools,
+  StravaDiagnostic,
+} from "@/components/activities/strava-diagnostic";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
-import { diagnoseStravaAction } from "@/lib/activities/diagnostic-actions";
+import {
+  diagnoseStravaAction,
+  refreshLeaderboardsAction,
+  reimportOwnHistoryAction,
+} from "@/lib/activities/diagnostic-actions";
 import { activitySyncHealth } from "@/lib/activities/health";
 import { APP_ENVIRONMENT, APP_VERSION } from "@/lib/app-version";
 
@@ -121,6 +128,18 @@ export default async function IntegrationsPage() {
         <CardBody>
           <div className="mt-2">
             <StravaDiagnostic action={diagnoseStravaAction} />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardTitle>Outils de recette</CardTitle>
+        <CardBody>
+          <div className="mt-2">
+            <RehearsalTools
+              reimport={reimportOwnHistoryAction}
+              refresh={refreshLeaderboardsAction}
+            />
           </div>
         </CardBody>
       </Card>

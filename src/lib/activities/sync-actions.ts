@@ -6,7 +6,10 @@ import { requireAdmin } from "@/lib/admin/guard";
 import { getConnection, unlinkAccount } from "@/lib/activities/connection";
 import { readAccessToken } from "@/lib/activities/connection";
 import { activitySource } from "@/lib/activities/sources";
-import { syncParticipant } from "@/lib/activities/sync";
+import {
+  importInitialActivities,
+  syncParticipant,
+} from "@/lib/activities/sync";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -79,7 +82,15 @@ export async function resynchronise(
     };
   }
 
-  const outcome = await syncParticipant(user.id);
+  // **Un rattrapage de deux jours ne rattrape pas une liaison neuve.**
+  // L'import complet ne tourne qu'au moment où le compte est relié : s'il
+  // échoue ce jour-là — Strava indisponible, édition pas encore ouverte — le
+  // participant ne récupère jamais son début de mois, et aucun bouton ne le
+  // rattrape. Tant que rien n'a jamais été rapatrié, on reprend donc depuis
+  // le début de l'édition plutôt que depuis avant-hier.
+  const outcome = connection.lastSyncedAt
+    ? await syncParticipant(user.id)
+    : await importInitialActivities(user.id);
 
   revalidatePath("/mon-compte/activites");
   revalidatePath("/jeu");
