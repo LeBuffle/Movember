@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ParticipantShell } from "@/components/layout/participant-shell";
+import { TeamLogo } from "@/components/super-teams/team-logo";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { EDITION_YEAR } from "@/lib/edition/calendar";
 import { getTeamLeaderboard } from "@/lib/leaderboards/teams";
+import { federationOfTeam } from "@/lib/super-teams/read";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { formatJoinCode } from "@/lib/teams/code";
 import { TEAM_KINDS } from "@/lib/teams/kinds";
@@ -52,17 +54,18 @@ export default async function TeamPublicPage({
 
   const { data: team } = await supabase
     .from("public_teams")
-    .select("id, name, slug, kind")
+    .select("id, name, slug, kind, super_team_id, logo_url")
     .eq("edition_id", edition.id)
     .eq("slug", slug)
     .maybeSingle();
 
   if (!team) notFound();
 
-  const [members, own, board] = await Promise.all([
+  const [members, own, board, federation] = await Promise.all([
     teamMembers(team.id),
     ownTeam(),
     getTeamLeaderboard(),
+    federationOfTeam(team.super_team_id),
   ]);
 
   const standing = board.rows.find((row) => row.teamId === team.id);
@@ -71,21 +74,37 @@ export default async function TeamPublicPage({
 
   return (
     <ParticipantShell title={team.name} eyebrow="Équipe">
-      <div>
-        <p className="text-ink-muted text-sm">
-          <Link
-            href="/jeu/classement?categorie=equipes"
-            className="underline underline-offset-4"
-          >
-            Classement des équipes
-          </Link>
-        </p>
-        <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
-          {team.name}
-        </h1>
-        <p className="text-ink-muted mt-2">
-          {kind?.label} · {members.length} membre{members.length > 1 ? "s" : ""}
-        </p>
+      <div className="flex flex-wrap items-center gap-4">
+        <TeamLogo name={team.name} url={team.logo_url} size="lg" />
+
+        <div>
+          <p className="text-ink-muted text-sm">
+            <Link
+              href="/jeu/classement?categorie=equipes"
+              className="underline underline-offset-4"
+            >
+              Classement des équipes
+            </Link>
+          </p>
+          <h1 className="text-ink mt-1 text-3xl font-bold tracking-tight">
+            {team.name}
+          </h1>
+          <p className="text-ink-muted mt-2">
+            {kind?.label} · {members.length} membre
+            {members.length > 1 ? "s" : ""}
+            {federation && (
+              <>
+                {" · "}
+                <Link
+                  href={`/jeu/super-equipe/${federation.slug}`}
+                  className="underline underline-offset-4"
+                >
+                  {federation.name}
+                </Link>
+              </>
+            )}
+          </p>
+        </div>
       </div>
 
       {standing ? (

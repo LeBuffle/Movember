@@ -702,6 +702,14 @@ export type Database = {
           join_code: string;
           captain_id: string;
           kind: "libre" | "entreprise" | "association";
+          /** The federation this team belongs to, or null (story 14.1). */
+          super_team_id: string | null;
+          logo_url: string | null;
+          /** Moderation is a posteriori, so the trace is the safeguard. */
+          logo_uploaded_by: string | null;
+          logo_uploaded_at: string | null;
+          /** Null means the logo is still waiting in the moderation queue. */
+          logo_reviewed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -713,10 +721,48 @@ export type Database = {
           join_code: string;
           captain_id: string;
           kind?: "libre" | "entreprise" | "association";
+          super_team_id?: string | null;
+          logo_url?: string | null;
+          logo_uploaded_by?: string | null;
+          logo_uploaded_at?: string | null;
+          logo_reviewed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["teams"]["Insert"]>;
+        Relationships: [];
+      };
+      super_teams: {
+        Row: {
+          id: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          description: string;
+          /** Named by the organisation, and often only later (story 14.1). */
+          captain_id: string | null;
+          logo_url: string | null;
+          logo_uploaded_by: string | null;
+          logo_uploaded_at: string | null;
+          logo_reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          description?: string;
+          captain_id?: string | null;
+          logo_url?: string | null;
+          logo_uploaded_by?: string | null;
+          logo_uploaded_at?: string | null;
+          logo_reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["super_teams"]["Insert"]>;
         Relationships: [];
       };
       team_members: {
@@ -1136,6 +1182,21 @@ export type Database = {
           slug: string;
           kind: "libre" | "entreprise" | "association";
           created_at: string;
+          super_team_id: string | null;
+          logo_url: string | null;
+        };
+        Relationships: [];
+      };
+      /** A federation as everybody may read it. Never its captain's identity. */
+      public_super_teams: {
+        Row: {
+          id: string;
+          edition_id: string;
+          name: string;
+          slug: string;
+          description: string;
+          created_at: string;
+          logo_url: string | null;
         };
         Relationships: [];
       };

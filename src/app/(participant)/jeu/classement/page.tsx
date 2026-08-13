@@ -23,6 +23,7 @@ import {
   explainNormalisation,
   getTeamLeaderboard,
 } from "@/lib/leaderboards/teams";
+import { TeamLogo } from "@/components/super-teams/team-logo";
 import { ownTeam } from "@/lib/teams/membership";
 
 export const metadata = {
@@ -316,6 +317,7 @@ function TeamBoard({
               <span className="text-ink-muted w-8 text-right text-sm tabular-nums">
                 {row.rank}
               </span>
+              <TeamLogo name={row.name} url={row.logoUrl} size="sm" />
               <span>
                 <Link
                   href={`/jeu/equipe/${row.slug}`}

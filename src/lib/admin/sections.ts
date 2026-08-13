@@ -64,6 +64,22 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     status: "available",
   },
   {
+    slug: "super-equipes",
+    label: "Super-équipes",
+    description:
+      "Les fédérations : quelles équipes les composent, et qui en est capitaine.",
+    epic: "epic 14",
+    status: "available",
+  },
+  {
+    slug: "logos",
+    label: "Logos",
+    description:
+      "Les logos envoyés par les capitaines, à relire et à retirer si besoin.",
+    epic: "epic 14",
+    status: "available",
+  },
+  {
     slug: "actualites",
     label: "Fil d’actualité",
     description:

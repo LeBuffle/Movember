@@ -34,6 +34,8 @@ export type TeamStanding = {
   teamId: string;
   name: string;
   slug: string;
+  /** The badge its captain uploaded, if any (story 14.4). */
+  logoUrl: string | null;
   memberCount: number;
   /** What the team actually did. The figure a company is proud of. */
   points: number;
@@ -59,8 +61,25 @@ const EMPTY: TeamLeaderboard = {
   computedAt: null,
 };
 
+/**
+ * Restricting the ranking to a subset of teams (story 14.3).
+ *
+ * **The internal ranking of a federation is this function, not a second
+ * one.** Two formulas would be two debates about fairness, and two rules
+ * nobody can explain the day somebody contests one of them. So the internal
+ * ranking passes the teams of its super team here and gets the same
+ * normalisation, the same stored exponent, the same member threshold and the
+ * same tie handling — with ranks starting again at 1, which is the only
+ * difference and the whole point.
+ */
+export type TeamLeaderboardOptions = {
+  /** When given, only these teams are ranked. Order is irrelevant. */
+  teamIds?: readonly string[];
+};
+
 export async function getTeamLeaderboard(
   ownTeamId: string | null = null,
+  options: TeamLeaderboardOptions = {},
 ): Promise<TeamLeaderboard> {
   const supabase = createAnonClient();
   if (!supabase) return EMPTY;
@@ -86,7 +105,7 @@ export async function getTeamLeaderboard(
         .not("team_id", "is", null),
       supabase
         .from("public_teams")
-        .select("id, name, slug")
+        .select("id, name, slug, logo_url")
         .eq("edition_id", edition.id),
     ]);
 
@@ -122,11 +141,15 @@ export async function getTeamLeaderboard(
   const names = new Map(
     (teams ?? []).map((team) => [
       team.id,
-      { name: team.name, slug: team.slug },
+      { name: team.name, slug: team.slug, logoUrl: team.logo_url },
     ]),
   );
 
+  const only = options.teamIds ? new Set(options.teamIds) : null;
+
   const scored = [...totals.entries()]
+    // The federation's own teams, when one asked for its internal ranking.
+    .filter(([teamId]) => !only || only.has(teamId))
     // A team of one is a personal ranking wearing a team's name. Excluded
     // rather than penalised, because penalising it invites the argument.
     .filter(([, totals]) => totals.members >= minMembers)
@@ -134,6 +157,7 @@ export async function getTeamLeaderboard(
       teamId,
       name: names.get(teamId)?.name ?? "Équipe",
       slug: names.get(teamId)?.slug ?? "",
+      logoUrl: names.get(teamId)?.logoUrl ?? null,
       memberCount: totals.members,
       points: totals.points,
       challengesSucceeded: totals.challenges,

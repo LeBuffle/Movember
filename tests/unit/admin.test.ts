@@ -161,8 +161,11 @@ describe("les sections du back-office", () => {
       "equipes",
       "journal",
       "livraisons",
+      // Les deux écrans de l'epic 14, ajoutés délibérément.
+      "logos",
       "notifications",
       "participants",
+      "super-equipes",
     ]);
   });
 

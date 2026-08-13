@@ -6,7 +6,7 @@
 | **Jalon visé** | **ouvert dès le 1ᵉʳ novembre**, donc fini et testé avant le gel du 1ᵉʳ octobre |
 | **Dépendances** | Epic 7 (équipes et classements) · Epic 5 (téléversement d'images) · Epic 8 (back-office) |
 | **Stories** | 6 |
-| **Statut** | Périmètre et décisions validés — stories rédigées, développement en attente du feu vert |
+| **Statut** | **Livré** — les six stories sont en Review, en attente de recette PO |
 
 ---
 
@@ -154,17 +154,19 @@ points et leur place au classement général. Une suppression qui emporte des
 
 ## Critères de sortie
 
-- [ ] Un administrateur crée une super-équipe, y rattache trois équipes et nomme un capitaine.
-- [ ] Aucun participant ne peut créer, modifier ou supprimer une super-équipe.
-- [ ] Le classement interne montre les trois équipes, avec la **même formule** que le classement général.
-- [ ] Une équipe ne peut appartenir qu'à une seule super-équipe — vérifié par un test.
-- [ ] Un capitaine d'équipe téléverse un logo ; il s'affiche sur la page de son équipe.
-- [ ] Le capitaine de super-équipe change son logo et sa description, et **rien d'autre**.
-- [ ] L'organisation retire un logo en un geste, et le retrait est journalisé.
-- [ ] Détacher une équipe ne lui fait perdre ni ses membres, ni ses points, ni son rang général.
-- [ ] **Aucun classement existant n'a changé** — les tests de l'epic 7 passent sans modification.
+Cochés = tenus par un test automatique. Les autres se vérifient sur l'application, une
+fois les deux migrations appliquées.
 
----
+- [x] Une équipe ne peut appartenir qu'à une seule super-équipe — garde porté par l'écriture.
+- [x] Aucun participant ne peut créer, modifier ou supprimer une super-équipe.
+- [x] Le classement interne applique la **même formule** que le classement général, lue au même endroit.
+- [x] **Aucun classement existant n'a changé** — les tests de l'epic 7 passent sans modification.
+- [x] Le capitaine de super-équipe ne peut écrire que le logo et la description.
+- [x] Supprimer une super-équipe ne supprime aucune équipe.
+- [x] Le retrait d'un logo est journalisé et prévient son capitaine.
+- [ ] Un administrateur crée une super-équipe, y rattache trois équipes et nomme un capitaine.
+- [ ] Un capitaine d'équipe téléverse un logo ; il s'affiche sur la page de son équipe et au classement.
+- [ ] Détacher une équipe ne lui fait perdre ni ses membres, ni ses points, ni son rang général.
 
 ## Risques propres à l'epic
 

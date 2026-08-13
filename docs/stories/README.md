@@ -585,12 +585,12 @@ comme une collection d'équipes sans lien entre elles.
 
 | # | Story | Statut | Dépend de |
 | --- | --- | --- | --- |
-| 14.1 | [Schéma des super-équipes et rattachement](14.1.schema-super-equipes.md) | Draft | 7.1 |
-| 14.2 | [Gestion des super-équipes depuis le back-office](14.2.gestion-super-equipes-admin.md) | Draft | 14.1, 1.10 |
-| 14.3 | [Classement interne d'une super-équipe](14.3.classement-interne-super-equipe.md) | Draft | 14.2, 7.5 |
-| 14.4 | [Logo d'équipe, téléversé par le capitaine](14.4.logo-equipe.md) | Draft | 14.1, 5.6 |
-| 14.5 | [Logo et description de super-équipe](14.5.apparence-super-equipe.md) | Draft | 14.2, 14.4 |
-| 14.6 | [Modération des logos](14.6.moderation-logos.md) | Draft | 14.4, 8.8 |
+| 14.1 | [Schéma des super-équipes et rattachement](14.1.schema-super-equipes.md) | **Review** | 7.1 |
+| 14.2 | [Gestion des super-équipes depuis le back-office](14.2.gestion-super-equipes-admin.md) | **Review** | 14.1, 1.10 |
+| 14.3 | [Classement interne d'une super-équipe](14.3.classement-interne-super-equipe.md) | **Review** | 14.2, 7.5 |
+| 14.4 | [Logo d'équipe, téléversé par le capitaine](14.4.logo-equipe.md) | **Review** | 14.1, 5.6 |
+| 14.5 | [Logo et description de super-équipe](14.5.apparence-super-equipe.md) | **Review** | 14.2, 14.4 |
+| 14.6 | [Modération des logos](14.6.moderation-logos.md) | **Review** | 14.4, 8.8 |
 
 ### Ordre d'exécution
 
@@ -615,6 +615,11 @@ comme une collection d'équipes sans lien entre elles.
 > **Un seul classement est ajouté, aucun n'est modifié.** Le classement interne applique la
 > formule normalisée de la story 7.5 avec les mêmes réglages en base. Une seconde formule
 > serait un second débat sur l'équité.
+
+> **Epic 14 terminé** — les six stories sont en Review. Il reste au PO à appliquer les deux
+> migrations (`super_teams`, `team_logos` — la seconde crée le seau `logos`, sans lequel
+> aucun envoi de logo n'aboutit), puis à créer les super-équipes réelles une fois les noms
+> des fédérations connus.
 
 
 ---

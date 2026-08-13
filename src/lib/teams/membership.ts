@@ -30,6 +30,10 @@ export type OwnTeam = {
   joinCode: string | null;
   isCaptain: boolean;
   memberCount: number;
+  /** The badge the captain uploaded, if any (story 14.4). */
+  logoUrl: string | null;
+  /** The federation this team was attached to, if any (story 14.1). */
+  superTeamId: string | null;
 };
 
 async function currentEdition(): Promise<string | null> {
@@ -253,7 +257,9 @@ export async function ownTeam(): Promise<OwnTeam | null> {
   const [{ data: team }, { count }] = await Promise.all([
     admin
       .from("teams")
-      .select("id, name, slug, kind, join_code, captain_id")
+      .select(
+        "id, name, slug, kind, join_code, captain_id, logo_url, super_team_id",
+      )
       .eq("id", membership.team_id)
       .maybeSingle(),
     admin
@@ -274,5 +280,7 @@ export async function ownTeam(): Promise<OwnTeam | null> {
     joinCode: isCaptain ? team.join_code : null,
     isCaptain,
     memberCount: count ?? 0,
+    logoUrl: team.logo_url,
+    superTeamId: team.super_team_id,
   };
 }

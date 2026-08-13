@@ -27,7 +27,7 @@ La liste attendue une fois **toutes** les migrations passées :
 `notification_deliveries`, `notification_preferences`, `payments`, `profiles`,
 `push_subscriptions`, `registration_tiers`, `registrations`, `shipping_addresses`,
 `team_members`, `teams`, `activity_flags`, `integrity_settings`, `card_packs`,
-`pack_purchases`.
+`pack_purchases`, `super_teams`.
 
 Ce qui manque dans cette liste indique par où reprendre.
 
@@ -75,6 +75,12 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 33 | `20260806290000_leaderboard_snapshots.sql` | 13.1 |
 | 34 | `20260806300000_player_duels.sql` | 12.1 |
 | 35 | `20260806310000_duel_notifications.sql` | 12.7 |
+| 36 | `20260813000000_super_teams.sql` | 14.1 |
+| 37 | `20260813010000_team_logos.sql` | 14.4 |
+
+⚠️ **La 37 crée le seau `logos`.** Sans elle, un capitaine qui envoie un logo reçoit un
+message d'erreur de stockage : la table accepte l'adresse, mais le fichier n'a nulle part
+où aller.
 
 ⚠️ **La 29 reconstruit la vue des classements** : quelques secondes sans classement pendant
 qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.

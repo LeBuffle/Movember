@@ -1,8 +1,17 @@
+import Link from "next/link";
+
 import { ParticipantShell } from "@/components/layout/participant-shell";
 import { LeaveTeamForm, MemberList } from "@/components/teams/member-list";
 import { CreateTeamForm, JoinTeamForm } from "@/components/teams/team-forms";
+import { TeamLogoForm } from "@/components/super-teams/logo-form";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
+import {
+  clearTeamLogoAction,
+  setTeamLogoAction,
+} from "@/lib/super-teams/appearance-actions";
+import { captainedSuperTeam } from "@/lib/super-teams/appearance";
+import { federationOfTeam } from "@/lib/super-teams/read";
 import { formatJoinCode } from "@/lib/teams/code";
 import { createTeamAction, joinTeamAction } from "@/lib/teams/actions";
 import { TEAM_KINDS } from "@/lib/teams/kinds";
@@ -37,7 +46,11 @@ export default async function TeamPage() {
 
   if (team) {
     const kind = TEAM_KINDS.find((entry) => entry.value === team.kind);
-    const members = await teamMembers(team.id);
+    const [members, federation, ownSuperTeam] = await Promise.all([
+      teamMembers(team.id),
+      federationOfTeam(team.superTeamId),
+      captainedSuperTeam(),
+    ]);
 
     return (
       <ParticipantShell
@@ -69,6 +82,60 @@ export default async function TeamPage() {
                 de I, de L, de 0 ni de 1 — pour qu’ils se lisent à voix haute
                 sans se tromper.
               </p>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* The federation, when the organisation attached this team to one.
+            A branch cares about the ranking it is actually compared in. */}
+        {federation && (
+          <Alert tone="info" title={`Membre de ${federation.name}`}>
+            <p>
+              Votre équipe fait partie de cette super-équipe et apparaît dans
+              son classement interne.{" "}
+              <Link
+                href={`/jeu/super-equipe/${federation.slug}`}
+                className="underline underline-offset-4"
+              >
+                Voir le classement interne
+              </Link>
+            </p>
+          </Alert>
+        )}
+
+        {/* The federation's own captain — story 14.5. Reached from here
+            because they are a participant first, with a team like everybody
+            else, and nothing in the menu should suggest otherwise. */}
+        {ownSuperTeam && (
+          <Alert
+            tone="warning"
+            title={`Vous êtes capitaine de ${ownSuperTeam.name}`}
+          >
+            <p>
+              Vous pouvez changer son logo et sa description.{" "}
+              <Link
+                href="/jeu/super-equipe"
+                className="underline underline-offset-4"
+              >
+                Gérer l’apparence
+              </Link>
+            </p>
+          </Alert>
+        )}
+
+        {/* The badge, and only for the captain — story 14.4. */}
+        {team.isCaptain && (
+          <Card>
+            <CardTitle>Le logo de l’équipe</CardTitle>
+            <CardBody>
+              <div className="mt-2">
+                <TeamLogoForm
+                  set={setTeamLogoAction}
+                  clear={clearTeamLogoAction}
+                  teamName={team.name}
+                  logoUrl={team.logoUrl}
+                />
+              </div>
             </CardBody>
           </Card>
         )}
