@@ -1,4 +1,5 @@
 import { LegalPage } from "@/components/marketing/legal-page";
+import { ASSOCIATION, registeredAddress } from "@/lib/legal/association";
 import { TAX_NOTICE, TAX_NOTICE_TITLE } from "@/lib/legal/notices";
 
 export const metadata = {
@@ -27,7 +28,9 @@ export default function TermsPage() {
       <h2>1. Objet</h2>
       <p>
         Les présentes conditions régissent l’inscription au DEFI Movember,
-        organisé par une association loi 1901 au profit de la fondation
+        organisé par l’association <strong>{ASSOCIATION.name}</strong> (
+        {ASSOCIATION.legalForm}, RNA {ASSOCIATION.rnaNumber}), dont le siège
+        social est situé {registeredAddress()}, au profit de la fondation
         Movember. Elles s’appliquent à toute inscription réalisée sur ce site.
       </p>
 
@@ -179,8 +182,9 @@ export default function TermsPage() {
 
       <h2>13. Réclamations</h2>
       <p>
-        Toute réclamation peut être adressée à l’association par les coordonnées
-        figurant dans les mentions légales.
+        Toute réclamation peut être adressée à l’association à{" "}
+        <a href={`mailto:${ASSOCIATION.email}`}>{ASSOCIATION.email}</a>, ou par
+        courrier au siège social : {registeredAddress()}.
       </p>
     </LegalPage>
   );

@@ -69,7 +69,7 @@ export function notificationEmail(input: NotificationEmailInput): EmailContent {
     `Ouvrir : ${input.actionUrl}`,
     "",
     "—",
-    "DEFI Movember — projet indépendant porté par une association loi 1901,",
+    "DEFI Movember — projet indépendant porté par RéACTION, association loi 1901,",
     "sans lien avec la fondation Movember.",
     input.unsubscribeUrl
       ? `Ne plus recevoir ces e-mails : ${input.unsubscribeUrl}`
@@ -91,7 +91,7 @@ export function notificationEmail(input: NotificationEmailInput): EmailContent {
   </div>
 
   <div style="max-width:560px;margin:16px auto 0;font-size:12px;color:#525252;line-height:1.5">
-    <p style="margin:0 0 6px">Projet indépendant porté par une association loi 1901, sans lien avec la fondation Movember.</p>
+    <p style="margin:0 0 6px">Projet indépendant porté par RéACTION, association loi 1901, sans lien avec la fondation Movember.</p>
     ${
       input.unsubscribeUrl
         ? `<p style="margin:0"><a href="${escapeAttribute(input.unsubscribeUrl)}" style="color:#525252">Ne plus recevoir ces e-mails</a></p>`
@@ -158,7 +158,7 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
     `Commencer : ${input.gameUrl}`,
     "",
     "—",
-    "DEFI Movember — projet indépendant porté par une association loi 1901,",
+    "DEFI Movember — projet indépendant porté par RéACTION, association loi 1901,",
     "sans lien avec la fondation Movember.",
   ].join("\n");
 
@@ -201,7 +201,7 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
   </div>
 
   <div style="max-width:560px;margin:16px auto 0;font-size:12px;color:#525252;line-height:1.5">
-    <p style="margin:0">Projet indépendant porté par une association loi 1901, sans lien avec la fondation Movember.</p>
+    <p style="margin:0">Projet indépendant porté par RéACTION, association loi 1901, sans lien avec la fondation Movember.</p>
   </div>
 </body>
 </html>`;

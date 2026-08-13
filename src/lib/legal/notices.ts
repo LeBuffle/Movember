@@ -52,9 +52,9 @@ export const TAX_NOTICE =
  * of the interface may suggest otherwise (`CLAUDE.md` §5).
  */
 export const INDEPENDENCE_NOTICE =
-  "Projet indépendant porté par une association loi 1901. Ce site n’est pas " +
-  "l’application officielle de la fondation Movember et n’utilise aucun de ses " +
-  "logos ou visuels.";
+  "Projet indépendant porté par RéACTION, association loi 1901. Ce site n’est " +
+  "pas l’application officielle de la fondation Movember et n’utilise aucun de " +
+  "ses logos ou visuels.";
 
 /**
  * Marks a legal page whose text is not final.

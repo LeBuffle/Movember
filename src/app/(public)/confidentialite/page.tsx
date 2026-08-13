@@ -1,6 +1,11 @@
 import Link from "next/link";
 
 import { LegalPage } from "@/components/marketing/legal-page";
+import {
+  ASSOCIATION,
+  HOSTING,
+  registeredAddress,
+} from "@/lib/legal/association";
 import { RETENTION_RULES, NEVER_PURGED } from "@/lib/privacy/retention";
 
 export const metadata = {
@@ -28,9 +33,12 @@ export default function PrivacyPage() {
     <LegalPage title="Politique de confidentialité" updatedOn="2026-08-08">
       <h2>Qui traite vos données</h2>
       <p>
-        L’association organisatrice, dont les coordonnées figurent dans les
-        mentions légales, est responsable du traitement. Le marché visé est la
-        France et l’Union européenne.
+        L’association <strong>{ASSOCIATION.name}</strong> (
+        {ASSOCIATION.legalForm}, RNA {ASSOCIATION.rnaNumber}), dont le siège
+        social est situé {registeredAddress()}, est{" "}
+        <strong>responsable du traitement</strong>. Vous pouvez la joindre à{" "}
+        <a href={`mailto:${ASSOCIATION.email}`}>{ASSOCIATION.email}</a>. Le
+        marché visé est la France et l’Union européenne.
       </p>
 
       <h2>Ce que nous collectons</h2>
@@ -160,6 +168,11 @@ export default function PrivacyPage() {
         la contourner. Elle vous est communiquée sur demande auprès de
         l’association.
       </p>
+      <p>
+        Pour exercer l’un de ces droits, écrivez à{" "}
+        <a href={`mailto:${ASSOCIATION.email}`}>{ASSOCIATION.email}</a>. Nous
+        répondons dans un délai d’un mois.
+      </p>
 
       <h2>Sous-traitants</h2>
       <p>
@@ -171,8 +184,10 @@ export default function PrivacyPage() {
 
       <h2>Hébergement</h2>
       <p>
-        Les données sont hébergées dans l’Union européenne. Le service de base
-        de données est situé en région Paris.
+        Les données sont hébergées dans l’Union européenne. L’application tourne
+        sur un serveur {HOSTING.application.provider} situé en{" "}
+        {HOSTING.application.region} ; la base de données est chez{" "}
+        {HOSTING.database.provider}, région {HOSTING.database.region}.
       </p>
     </LegalPage>
   );

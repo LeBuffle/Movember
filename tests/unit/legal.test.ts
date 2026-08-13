@@ -4,6 +4,13 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ASSOCIATION,
+  HOSTING,
+  PROJECT_CONTACT,
+  registeredAddress,
+} from "@/lib/legal/association";
+
+import {
   DRAFT_LEGAL_NOTICE,
   INDEPENDENCE_NOTICE,
   TAX_NOTICE,
@@ -100,6 +107,68 @@ describe("les crédits non dépensés — décision P8", () => {
     // Souple sur les retours à la ligne : Prettier reformate ce paragraphe.
     expect(cgv).toMatch(/ni\s+cessibles/);
     expect(cgv).toMatch(/ni\s+convertibles\s+en\s+argent/);
+  });
+});
+
+describe("l’éditeur du site est identifiable", () => {
+  const mentions = read("src/app/(public)/mentions-legales/page.tsx");
+  const confidentialite = read("src/app/(public)/confidentialite/page.tsx");
+  const cgv = read("src/app/(public)/cgv/page.tsx");
+
+  it("les coordonnées vivent en un seul endroit", () => {
+    // Une adresse retapée sur trois pages est une adresse qui sera corrigée
+    // sur deux le jour où l'association déménage.
+    expect(ASSOCIATION.name).toBe("RéACTION");
+    expect(ASSOCIATION.rnaNumber).toMatch(/^W\d{9}$/);
+    expect(registeredAddress()).toMatch(/32350 Barran/);
+
+    for (const page of [mentions, confidentialite, cgv]) {
+      expect(page).toMatch(/@\/lib\/legal\/association/);
+    }
+  });
+
+  it("les mentions légales portent ce que la LCEN exige", () => {
+    // Dénomination, siège, RNA, directeur de la publication, contact. Un site
+    // qui encaisse de l'argent sans dire qui l'encaisse ne laisse personne à
+    // qui se plaindre.
+    expect(mentions).toMatch(/ASSOCIATION\.name/);
+    expect(mentions).toMatch(/registeredAddress\(\)/);
+    expect(mentions).toMatch(/ASSOCIATION\.rnaNumber/);
+    expect(mentions).toMatch(/OFFICERS\.president/);
+    expect(mentions).toMatch(/ASSOCIATION\.email/);
+  });
+
+  it("et la politique de confidentialité nomme le responsable de traitement", () => {
+    // Le RGPD demande qu'il soit identifiable : « l'association organisatrice »
+    // ne l'est pas.
+    expect(confidentialite).toMatch(/responsable du traitement/);
+    expect(confidentialite).toMatch(/ASSOCIATION\.name/);
+    expect(confidentialite).toMatch(/ASSOCIATION\.email/);
+  });
+
+  it("les CGV disent avec qui le contrat est passé", () => {
+    expect(cgv).toMatch(/ASSOCIATION\.name/);
+    expect(cgv).toMatch(/ASSOCIATION\.rnaNumber/);
+  });
+
+  it("les deux adresses de contact ne sont pas la même", () => {
+    // Une question sur un défi qui n'a pas validé et une demande d'exercice de
+    // droits ne vont pas au même endroit ; une seule boîte, et l'une des deux
+    // attend.
+    expect(PROJECT_CONTACT.email).not.toBe(ASSOCIATION.email);
+    expect(mentions).toMatch(/PROJECT_CONTACT\.email/);
+  });
+
+  it("l’hébergeur est nommé, comme la loi le demande", () => {
+    expect(HOSTING.application.provider).toBe("Hostinger");
+    expect(mentions).toMatch(/HOSTING\.application\.provider/);
+  });
+
+  it("et rien n’est inventé : ce qui manque est visible", () => {
+    // Un détail légal plausible mais faux est pire qu'un blanc, parce que
+    // personne ne s'aperçoit jamais qu'il est faux. Ce qui reste à fournir doit
+    // donc se voir sur la page.
+    expect(mentions).toMatch(/TO_BE_PROVIDED = "à compléter"/);
   });
 });
 
