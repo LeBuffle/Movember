@@ -96,9 +96,12 @@ describe("le contenu de l'e-mail", () => {
     expect(content.text).toMatch(/Votre défi du jour/);
   });
 
-  it("ne charge rien depuis l'extérieur", () => {
+  it("ne charge rien depuis l'extérieur, logo compris", () => {
     // Rien à charger, donc rien de bloqué, rien à consentir, et un message
-    // qui ressemble moins à de la publicité.
+    // qui ressemble moins à de la publicité. Le logo est délibérément absent
+    // ici : ces e-mails partent souvent, et une image bloquée par défaut en
+    // tête d'un rappel quotidien est du bruit qui demande une autorisation.
+    // Le mail de bienvenue, lui, le porte — il arrive une fois et il est lu.
     expect(content.html).not.toMatch(/<img/);
     expect(content.html).not.toMatch(/<script/);
     expect(content.html).not.toMatch(/<link/);

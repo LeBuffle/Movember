@@ -1,4 +1,29 @@
 import type { NotificationPayload } from "@/lib/notifications/payload";
+import { absoluteUrl } from "@/lib/site-url";
+
+/**
+ * The logo, at the top of every e-mail.
+ *
+ * **Absolute, and it has to be**: an e-mail is read outside the site, so a
+ * path relative to nothing resolves to nothing. Most clients block remote
+ * images until the reader allows them, which is why the `alt` text carries the
+ * project's name rather than the word "logo" — blocked, the e-mail still says
+ * whose it is.
+ *
+ * Width and height are attributes rather than CSS: Outlook ignores a good deal
+ * of the stylesheet and would otherwise render the picture at its natural
+ * size, which is four hundred pixels tall.
+ *
+ * **Used by the welcome e-mail and by nothing else.** The notification
+ * fallbacks below load nothing from outside, on purpose: they go out often,
+ * and an image blocked by default at the top of a daily reminder is noise
+ * asking to be allowed. The welcome e-mail is the opposite case — it arrives
+ * once, it is read, it carries a link somebody is about to click, and a bare
+ * unbranded message asking that is the exact shape of a phishing attempt.
+ */
+function logoHtml(): string {
+  return `<img src="${escapeAttribute(absoluteUrl("/brand/logo-web.png"))}" width="102" height="110" alt="DEFI Movember" style="display:block;border:0;height:auto;max-width:102px" />`;
+}
 
 /**
  * What a fallback e-mail looks like.
@@ -141,7 +166,8 @@ export function welcomeEmail(input: WelcomeEmailInput): EmailContent {
 <html lang="fr">
 <body style="margin:0;padding:24px;background:#fafafa;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#171717">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;padding:24px">
-    <p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:600">DEFI Movember</p>
+    ${logoHtml()}
+    <p style="margin:12px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:600">DEFI Movember</p>
     <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">Votre inscription est confirmée</h1>
 
     <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 20px">

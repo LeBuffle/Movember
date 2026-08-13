@@ -94,6 +94,27 @@ Ce n'est pas une erreur du seed : c'est la migration correspondante qui n'a pas 
 appliquée. Appliquer les migrations manquantes, puis relancer le seed en entier — il
 reprend tout depuis le début sans rien dupliquer.
 
+### Le logo et les icônes
+
+Le logo officiel vit dans `public/brand/logo-source.jpeg`. **Tout le reste en est
+dérivé** — les quatre déclinaisons web, les icônes de l'application, l'image de partage —
+par deux scripts, dans cet ordre :
+
+```bash
+npm install --no-save sharp
+node scripts/prepare-brand.mjs   # détoure le fond, découpe la marque, taille pour le web
+node scripts/generate-icons.mjs  # icônes, favicon, image de partage
+npm uninstall --no-save sharp
+```
+
+Les fichiers produits sont versionnés : ce sont des entrées de construction, pas des
+artefacts, et les régénérer à chaque déploiement serait du gaspillage. **À relancer
+uniquement si le logo change.**
+
+`sharp` n'est volontairement pas une dépendance du projet : c'est un module natif de
+poids, utile trois fois dans la vie du projet, et l'ajouter ralentirait chaque
+construction pour rien.
+
 ### Le catalogue de défis
 
 Une fois le seed passé, importer `supabase/challenges-2026.sql` : **70 défis**, répartis

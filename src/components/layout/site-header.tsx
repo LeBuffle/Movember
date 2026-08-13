@@ -1,12 +1,16 @@
 import Link from "next/link";
 
+import { Logo } from "@/components/layout/logo";
 import { ROUTES } from "@/lib/auth/routes";
 
 /**
  * Public site header.
  *
- * The wordmark is text, not an image: the project has its own identity and
- * uses no Movember Foundation logo or imagery (CLAUDE.md §5).
+ * Carries the project's own logo — its own identity, using no Movember
+ * Foundation logo or imagery (CLAUDE.md §5). The wordmark stays beside it in
+ * text rather than being read off the picture: the logo says "DÉFI", the
+ * project is called "DEFI Movember", and a visitor who lands here needs to
+ * read the second one.
  *
  * **It carries the way in.** Until now it carried none: the public site had
  * no link to the sign-in page anywhere, so somebody who already had an
@@ -23,12 +27,15 @@ export function SiteHeader() {
   return (
     <header className="border-line bg-surface border-b">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-baseline gap-1.5">
-          <span className="text-brand-blue text-xl font-extrabold tracking-tight">
-            DEFI
-          </span>
-          <span className="text-brand-orange-ink text-xl font-extrabold tracking-tight">
-            Movember
+        <Link href="/" className="flex items-center gap-2.5">
+          <Logo />
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-brand-blue text-xl font-extrabold tracking-tight">
+              DEFI
+            </span>
+            <span className="text-brand-orange-ink text-xl font-extrabold tracking-tight">
+              Movember
+            </span>
           </span>
         </Link>
 

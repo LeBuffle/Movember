@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
+import { Logo } from "@/components/layout/logo";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,12 @@ export function AuthForm({
           answers "am I still doing what I set out to do?" before the form
           asks anything. */}
       {banner && <div className="mb-5">{banner}</div>}
+
+      {/* The logo, above the form. These screens are reached from an e-mail
+          link as often as from the site itself, and somebody arriving that
+          way lands on a bare form with no way to tell whose it is — which is
+          exactly the shape a phishing page has. */}
+      <Logo size="large" className="mx-auto mb-6" />
 
       <h1 className="text-ink text-3xl font-bold tracking-tight">{title}</h1>
       {intro && <p className="text-ink-muted mt-2">{intro}</p>}
