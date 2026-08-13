@@ -135,6 +135,7 @@ describe("l’éditeur du site est identifiable", () => {
     expect(mentions).toMatch(/registeredAddress\(\)/);
     expect(mentions).toMatch(/ASSOCIATION\.rnaNumber/);
     expect(mentions).toMatch(/OFFICERS\.president/);
+    expect(mentions).toMatch(/PUBLICATION_DIRECTOR/);
     expect(mentions).toMatch(/ASSOCIATION\.email/);
   });
 

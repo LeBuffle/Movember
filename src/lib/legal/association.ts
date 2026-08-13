@@ -35,16 +35,24 @@ export const ASSOCIATION = {
 /**
  * The association's officers.
  *
- * **The président is the director of publication** — for an association, that
- * role falls to its legal representative unless the board designates somebody
- * else. The trésorier is not a legal requirement on a legal notice; he is
- * named because this site collects money, and a collection whose treasurer is
+ * The trésorier is not a legal requirement on a legal notice; he is named
+ * because this site collects money, and a collection whose treasurer is
  * anonymous asks for a trust it does not offer.
  */
 export const OFFICERS = {
   president: "Mickael Hartman",
   treasurer: "Henri Desmist",
 } as const;
+
+/**
+ * Who answers for what is published here.
+ *
+ * **Designated by the association rather than inherited from the office.**
+ * The role falls to the legal representative by default — the président — but
+ * a board may name somebody else, and this one did: the person who runs the
+ * project day to day is the person who can answer for what is on it.
+ */
+export const PUBLICATION_DIRECTOR = "Sylvain Tournay";
 
 /**
  * Who to write to about the game itself.

@@ -4,6 +4,7 @@ import {
   HOSTING,
   OFFICERS,
   PROJECT_CONTACT,
+  PUBLICATION_DIRECTOR,
   registeredAddress,
 } from "@/lib/legal/association";
 import { INDEPENDENCE_NOTICE } from "@/lib/legal/notices";
@@ -41,7 +42,8 @@ export default function LegalNoticePage() {
         <li>Forme juridique : {ASSOCIATION.legalForm}</li>
         <li>Siège social : {registeredAddress()}</li>
         <li>Numéro RNA : {ASSOCIATION.rnaNumber}</li>
-        <li>Directeur de la publication : {OFFICERS.president}, président</li>
+        <li>Président : {OFFICERS.president}</li>
+        <li>Directeur de la publication : {PUBLICATION_DIRECTOR}</li>
         <li>Trésorier : {OFFICERS.treasurer}</li>
         <li>
           Contact de l’association :{" "}
