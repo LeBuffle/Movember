@@ -1,16 +1,21 @@
 /**
- * The eight rankings, described once.
+ * The nine rankings, described once.
  *
  * Pure and apart from every query, because the screens are partly client
  * components and because this is the list that decides what exists. Adding a
  * ninth ranking is an entry here plus a column in the view — which is exactly
  * the point of computing them all in one pass (architecture D14).
  *
- * **Why seven individual rankings rather than one.** At 600 participants, a
- * single ranking interests the first ten. Seven categories give everybody
- * somewhere to appear honourably — the cyclist, the regular, the collector,
- * the one who simply goes out often. The technical cost is marginal; the
- * effect on whether somebody comes back on day nine is not.
+ * **Why eight individual rankings rather than one.** At 600 participants, a
+ * single ranking interests the first ten. Eight categories give everybody
+ * somewhere to appear honourably — the cyclist, the walker, the regular, the
+ * collector, the one who simply goes out often. The technical cost is
+ * marginal; the effect on whether somebody comes back on day nine is not.
+ *
+ * **Four of them are read from the activities themselves, not from the
+ * challenges.** Somebody chasing kilometres without caring about the daily
+ * challenge still has a ranking of their own — which is a deliberate second
+ * way to play, and the one the least sporty participants tend to find.
  */
 
 export type LeaderboardCategory =
@@ -19,6 +24,7 @@ export type LeaderboardCategory =
   | "cards"
   | "run"
   | "bike"
+  | "walk"
   | "activities"
   | "duration";
 
@@ -77,6 +83,15 @@ export const CATEGORIES: CategoryDefinition[] = [
     description: "Les kilomètres parcourus à vélo.",
     column: "bike_distance_meters",
     rankColumn: "rank_bike",
+    unit: "metres",
+  },
+  {
+    key: "walk",
+    label: "Marche",
+    description:
+      "Les kilomètres parcourus en marchant. La famille la plus accessible : elle ne demande ni matériel ni entraînement.",
+    column: "walk_distance_meters",
+    rankColumn: "rank_walk",
     unit: "metres",
   },
   {

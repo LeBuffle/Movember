@@ -39,6 +39,7 @@ export default async function DashboardPage() {
         cards: standing.cardsEarned,
         run: standing.runDistanceMeters,
         bike: standing.bikeDistanceMeters,
+        walk: standing.walkDistanceMeters,
         activities: standing.activityCount,
         duration: standing.totalDurationSeconds,
       }
@@ -48,6 +49,7 @@ export default async function DashboardPage() {
         cards: 0,
         run: 0,
         bike: 0,
+        walk: 0,
         activities: 0,
         duration: 0,
       };

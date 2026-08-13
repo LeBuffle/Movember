@@ -1139,6 +1139,8 @@ export type Database = {
           rank_cards: number;
           rank_run: number;
           rank_bike: number;
+          /** Nul avant l'ajout du classement Marche (13 août). */
+          rank_walk: number | null;
           rank_activities: number;
           rank_duration: number;
           created_at: string;
@@ -1160,6 +1162,7 @@ export type Database = {
           cards_earned: number;
           run_distance_meters: number;
           bike_distance_meters: number;
+          walk_distance_meters: number;
           activity_count: number;
           total_duration_seconds: number;
           rank_points: number;
@@ -1167,6 +1170,7 @@ export type Database = {
           rank_cards: number;
           rank_run: number;
           rank_bike: number;
+          rank_walk: number;
           rank_activities: number;
           rank_duration: number;
           computed_at: string;

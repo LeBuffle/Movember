@@ -317,6 +317,12 @@ les quatre stories qui la lisent sont des écrans.
 > les cartes gagnées en jouant. Un pack acheté ne doit déplacer personne — c'est le seul
 > endroit du projet où l'argent pourrait toucher au jeu.
 
+> **Quatre classements se lisent depuis les sorties, pas depuis les défis** — Course,
+> Vélo, Marche et Temps, plus le nombre de sorties. C'est une seconde façon de jouer,
+> assumée : quelqu'un qui vise le kilométrage sans se soucier du défi du jour a un
+> classement à lui. **Marche ajoutée le 13 août** à la demande du PO ; c'est la famille la
+> plus accessible, et celle qui donne une place à qui ne court pas et ne roule pas.
+
 ---
 
 ## Epic 8 : Back-office d'animation

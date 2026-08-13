@@ -222,7 +222,14 @@ async function previousRanks(
 
   return {
     ranks: new Map(
-      rows.map((row) => [String(row.profile_id), Number(row[rankColumn])]),
+      rows
+        // Une photographie prise avant l'ajout d'un classement n'en porte
+        // pas le rang. Sans ce filtre, `Number(null)` vaut zéro et tout le
+        // monde afficherait une progression spectaculaire inventée.
+        .filter(
+          (row) => row[rankColumn] !== null && row[rankColumn] !== undefined,
+        )
+        .map((row) => [String(row.profile_id), Number(row[rankColumn])]),
     ),
     takenOn,
   };
@@ -253,7 +260,7 @@ export async function getLeaderboard(
     supabase
       .from("leaderboard_entries")
       .select(
-        "profile_id, computed_at, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_activities, rank_duration",
+        "profile_id, computed_at, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, walk_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_walk, rank_activities, rank_duration",
       )
       .eq("edition_id", edition)
       .order(definition.rankColumn, { ascending: true })
@@ -262,7 +269,7 @@ export async function getLeaderboard(
       ? supabase
           .from("leaderboard_entries")
           .select(
-            "profile_id, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_activities, rank_duration",
+            "profile_id, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, walk_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_walk, rank_activities, rank_duration",
           )
           .eq("edition_id", edition)
           .eq("profile_id", self)
@@ -427,7 +434,7 @@ export async function searchLeaderboard(
     supabase
       .from("leaderboard_entries")
       .select(
-        "profile_id, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_activities, rank_duration",
+        "profile_id, points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, walk_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_walk, rank_activities, rank_duration",
       )
       .eq("edition_id", edition)
       .in(
@@ -463,6 +470,7 @@ export type OwnStanding = {
   cardsEarned: number;
   runDistanceMeters: number;
   bikeDistanceMeters: number;
+  walkDistanceMeters: number;
   activityCount: number;
   totalDurationSeconds: number;
   ranks: Record<LeaderboardCategory, number>;
@@ -489,7 +497,7 @@ export async function ownStanding(): Promise<OwnStanding | null> {
   const { data } = await supabase
     .from("leaderboard_entries")
     .select(
-      "points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_activities, rank_duration, computed_at",
+      "points, challenges_succeeded, cards_earned, run_distance_meters, bike_distance_meters, walk_distance_meters, activity_count, total_duration_seconds, rank_points, rank_challenges, rank_cards, rank_run, rank_bike, rank_walk, rank_activities, rank_duration, computed_at",
     )
     .eq("edition_id", edition)
     .eq("profile_id", self)
@@ -505,6 +513,7 @@ export async function ownStanding(): Promise<OwnStanding | null> {
     cardsEarned: Number(row.cards_earned),
     runDistanceMeters: Number(row.run_distance_meters),
     bikeDistanceMeters: Number(row.bike_distance_meters),
+    walkDistanceMeters: Number(row.walk_distance_meters),
     activityCount: Number(row.activity_count),
     totalDurationSeconds: Number(row.total_duration_seconds),
     ranks: {
@@ -513,6 +522,7 @@ export async function ownStanding(): Promise<OwnStanding | null> {
       cards: Number(row.rank_cards),
       run: Number(row.rank_run),
       bike: Number(row.rank_bike),
+      walk: Number(row.rank_walk),
       activities: Number(row.rank_activities),
       duration: Number(row.rank_duration),
     },

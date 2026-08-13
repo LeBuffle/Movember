@@ -49,6 +49,8 @@ describe("les sept classements individuels", () => {
       "cards",
       "run",
       "bike",
+      // Ajouté le 13 août : la famille la plus accessible manquait.
+      "walk",
       "activities",
       "duration",
     ]);

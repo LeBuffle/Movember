@@ -29,22 +29,38 @@ function code(source: string): string {
     .replace(/--.*$/gm, "");
 }
 
+/**
+ * La fonction de rafraîchissement, posée une fois et jamais redéfinie.
+ */
 const migration = code(
   read("supabase/migrations/20260806210000_leaderboards.sql"),
+);
+
+/**
+ * **La définition de la vue qui fait foi.**
+ *
+ * Elle a été recréée deux fois depuis la story 7.3 — par la suspension de
+ * participant, puis par le classement Marche — et une vue matérialisée
+ * n'accepte pas de colonne ajoutée : c'est toujours la dernière qui gagne.
+ * Tester la première reviendrait à garantir les propriétés d'un fichier qui
+ * ne s'exécute plus en dernier, ce qui est pire que ne rien tester.
+ */
+const view = code(
+  read("supabase/migrations/20260813020000_walk_leaderboard.sql"),
 );
 const refresh = code(read("src/lib/leaderboards/refresh.ts"));
 const cron = code(read("src/app/api/cron/classements/route.ts"));
 
 /** La partie de la vue qui calcule les points du classement général. */
 function section(name: string): string {
-  const start = migration.indexOf(`${name} as (`);
+  const start = view.indexOf(`${name} as (`);
   expect(start, `bloc ${name} introuvable`).toBeGreaterThan(-1);
 
   // Cut at the CTE boundary — a closing parenthesis at the start of a line —
   // rather than at the first "),": that one sits inside `coalesce(sum(x), 0)`.
-  const end = migration.indexOf("\n)", start);
+  const end = view.indexOf("\n)", start);
 
-  return migration.slice(start, end === -1 ? undefined : end);
+  return view.slice(start, end === -1 ? undefined : end);
 }
 
 describe("le classement général est purement sportif", () => {
@@ -89,11 +105,11 @@ describe("le classement des cartes ignore les cartes achetées", () => {
   });
 });
 
-describe("les huit classements", () => {
+describe("les neuf classements", () => {
   it("sortent tous d'une seule vue", () => {
-    // Architecture D14 : une passe sur les mêmes données, donc un huitième
+    // Architecture D14 : une passe sur les mêmes données, donc un neuvième
     // classement est quasiment gratuit.
-    expect(migration).toMatch(
+    expect(view).toMatch(
       /create materialized view public\.leaderboard_entries/,
     );
   });
@@ -105,18 +121,29 @@ describe("les huit classements", () => {
       "rank_cards",
       "rank_run",
       "rank_bike",
+      "rank_walk",
       "rank_activities",
       "rank_duration",
     ]) {
-      expect(migration).toMatch(new RegExp(`as ${column}`));
+      expect(view).toMatch(new RegExp(`as ${column}`));
+    }
+  });
+
+  it("et l'écran en annonce autant", () => {
+    // Une colonne en base qu'aucun onglet n'affiche est un classement que
+    // personne ne voit ; un onglet sans colonne est un écran qui casse.
+    const categories = code(read("src/lib/leaderboards/categories.ts"));
+
+    for (const column of ["rank_walk", "walk_distance_meters"]) {
+      expect(categories, column).toContain(column);
     }
   });
 
   it("partagent une place en cas d'égalité", () => {
     // `row_number` départagerait arbitrairement, et le classement paraîtrait
     // instable à chaque recalcul.
-    expect(migration).toMatch(/rank\(\) over/);
-    expect(migration).not.toMatch(/row_number\(\) over/);
+    expect(view).toMatch(/rank\(\) over/);
+    expect(view).not.toMatch(/row_number\(\) over/);
   });
 
   it("ne comptent que les inscriptions actives", () => {
@@ -129,7 +156,54 @@ describe("les huit classements", () => {
 
   it("portent la date de leur calcul", () => {
     // AC 6 : pour que personne ne prenne un décalage pour une erreur.
-    expect(migration).toMatch(/now\(\) as computed_at/);
+    expect(view).toMatch(/now\(\) as computed_at/);
+  });
+});
+
+describe("les classements sportifs se lisent depuis les sorties", () => {
+  it("ils ne passent par aucun défi", () => {
+    // **C'est la seconde façon de jouer.** Quelqu'un qui vise le kilométrage
+    // sans se soucier du défi du jour doit exister au classement — sinon les
+    // seuls classés sont ceux qui jouent au jeu tel qu'il a été pensé.
+    const totals = section("activity_totals");
+
+    expect(totals).toMatch(/from public\.activities act/);
+    expect(totals).not.toMatch(/challenge_assignments/);
+    expect(totals).not.toMatch(/status = 'completed'/);
+  });
+
+  it("course, vélo et marche comptent chacun leur famille", () => {
+    const totals = section("activity_totals");
+
+    for (const family of ["'run'", "'bike'", "'walk'"]) {
+      expect(totals, family).toContain(`act.sport_family = ${family}`);
+    }
+  });
+
+  it("sorties et temps comptent tous sports confondus", () => {
+    // Y compris la natation et le renforcement, qui n'ont pas de classement
+    // de distance : sans cela, une séance de piscine ne compterait nulle part.
+    const totals = section("activity_totals");
+
+    expect(totals).toMatch(/count\(\*\)::bigint as activity_count/);
+    expect(totals).toMatch(/sum\(act\.duration_seconds\)/);
+  });
+
+  it("la photographie quotidienne conserve aussi le rang de marche", () => {
+    // Sans quoi le classement existerait sans progression « depuis hier »,
+    // ce qui se remarque dès le lendemain.
+    expect(view).toMatch(/add column if not exists rank_walk/);
+    expect(view).toMatch(/e\.rank_walk/);
+  });
+
+  it("et un rang absent d'une vieille photographie n'invente pas de progression", () => {
+    // `Number(null)` vaut zéro : sans filtre, tout le monde afficherait une
+    // remontée spectaculaire le jour de l'ajout d'un classement.
+    const reader = code(read("src/lib/leaderboards/read.ts"));
+
+    expect(reader.replace(/\s+/g, " ")).toMatch(
+      /row\[rankColumn\] !== null && row\[rankColumn\] !== undefined/,
+    );
   });
 });
 

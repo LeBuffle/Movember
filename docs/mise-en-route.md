@@ -77,6 +77,10 @@ Puis la suivante. **L'ordre compte** : chaque migration suppose les précédente
 | 35 | `20260806310000_duel_notifications.sql` | 12.7 |
 | 36 | `20260813000000_super_teams.sql` | 14.1 |
 | 37 | `20260813010000_team_logos.sql` | 14.4 |
+| 38 | `20260813020000_walk_leaderboard.sql` | 7.4 (révisée) |
+
+⚠️ **La 38 recrée la vue des classements** — comme la 29. Quelques secondes sans
+classement pendant qu'elle tourne ; elle se rafraîchit elle-même à la fin.
 
 ⚠️ **La 37 crée le seau `logos`.** Sans elle, un capitaine qui envoie un logo reçoit un
 message d'erreur de stockage : la table accepte l'adresse, mais le fichier n'a nulle part
