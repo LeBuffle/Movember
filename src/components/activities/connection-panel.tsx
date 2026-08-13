@@ -43,6 +43,13 @@ export function Resynchronise({
     <form action={formAction} className="mt-3 space-y-3">
       {state.message && <Alert tone="info">{state.message}</Alert>}
 
+      {/* Réservé à l'organisation : renvoyé vide pour tout le monde d'autre
+          (voir `adminDetail`). Un participant n'a rien à faire d'un code
+          HTTP ; celui qui doit réparer, si. */}
+      {state.detail && (
+        <p className="text-ink-muted mt-2 text-sm">{state.detail}</p>
+      )}
+
       {state.stored !== undefined && (
         <Alert tone="success">
           {state.stored === 0

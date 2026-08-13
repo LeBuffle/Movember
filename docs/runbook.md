@@ -604,7 +604,33 @@ Les activités déjà importées restent en base ; elles ne sont pas supprimées
 ⚠️ **Ne jamais lancer cette commande en production.** Elle ouvrirait le jeu avant l'heure
 et ferait remonter les sorties d'octobre de chaque participant.
 
-### Si la phrase ne s'affiche pas et que rien ne remonte quand même
+### « Strava n'a pas répondu » — trouver ce que ça cache
+
+C'est un message générique, et volontairement : un participant n'a rien à faire d'un code
+HTTP. **Connecté en administrateur, l'écran ajoute la raison technique sous le message.**
+
+Les journaux du serveur portent le reste, préfixe `[strava]` :
+
+```bash
+ssh <vps> 'docker logs --since 15m defi-movember-staging 2>&1 | grep -E "\[strava\]|\[jetons\]|\[rattrapage\]"'
+```
+
+Ce qu'on peut y lire, et ce que ça veut dire :
+
+| Trace | Cause | Réparation |
+| --- | --- | --- |
+| `[strava] réponse inattendue { status: 429 }` | Quota d'appels épuisé | Attendre le quart d'heure suivant. Ne pas insister : chaque appel prolonge la coupure pour tout le monde |
+| `[strava] réponse inattendue { status: 5xx }` | Panne chez Strava | Rien à faire. Le rattrapage horaire reprendra seul |
+| `[strava] réponse inattendue { status: 400 }` | Fenêtre de dates refusée | Vérifier `editions.starts_on` : une date postérieure à aujourd'hui produit une fenêtre impossible |
+| `[strava] appel injoignable { why: "TimeoutError" }` | Sortie réseau du VPS | Vérifier que le conteneur atteint `www.strava.com` |
+| `[strava] jetons refusés { status: 400 }` | Secret client faux, ou autorisation retirée | La liaison passe en « rompue » et l'écran le dit. Vérifier `STRAVA_CLIENT_SECRET` dans le fichier d'environnement du VPS |
+| `[jetons] liaison rompue` | Le participant a retiré l'accès depuis Strava | Il doit reconnecter son compte |
+| rien du tout | L'appel n'a pas eu lieu | Voir la liste ci-dessous |
+
+**« Une vérification est déjà en cours »** n'est pas une panne : deux appels se disputent
+le même rafraîchissement de jeton. Il se libère tout seul en deux minutes au maximum.
+
+### Si rien n'est appelé du tout
 
 Dans l'ordre :
 
@@ -612,8 +638,12 @@ Dans l'ordre :
    inscription par application Strava). L'environnement sans abonnement vit entièrement
    sur le rattrapage horaire — vérifier que la tâche planifiée `rattrapage` tourne.
 2. `GET /api/cron/rattrapage` rend un compte-rendu : `participants`, `stored`, `broken`,
-   `tooEarly`. Un `broken` non nul signifie une autorisation retirée côté Strava.
-3. Une activité met parfois plusieurs minutes à apparaître sur Strava elle-même. Le délai
+   `unavailable`, `tooEarly`. Un `broken` non nul signifie une autorisation retirée côté
+   Strava.
+3. **Le quota d'athlètes de l'application Strava.** Une application non relevée plafonne
+   le nombre de comptes qu'elle peut lire. C'est une demande à faire auprès de Strava, au
+   délai non maîtrisé.
+4. Une activité met parfois plusieurs minutes à apparaître sur Strava elle-même. Le délai
    de cinq minutes entre deux resynchronisations existe pour ça.
 
 ---

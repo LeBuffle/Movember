@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { requireAdmin } from "@/lib/admin/guard";
 import { getConnection, unlinkAccount } from "@/lib/activities/connection";
 import { readAccessToken } from "@/lib/activities/connection";
 import { activitySource } from "@/lib/activities/sources";
@@ -21,6 +22,15 @@ import { createClient } from "@/lib/supabase/server";
 export type SyncFormState = {
   message?: string;
   stored?: number;
+  /**
+   * The precise reason, for the organisation only.
+   *
+   * **Because the person testing cannot read the server logs.** The Product
+   * Owner runs the rehearsal from a phone; "Strava n'a pas répondu" is the
+   * right sentence for a participant and useless for whoever has to repair
+   * it. Shown to administrators, and to nobody else.
+   */
+  detail?: string;
 };
 
 /**
@@ -85,15 +95,37 @@ export async function resynchronise(
       };
     }
 
+    if (outcome.reason === "busy") {
+      return {
+        message:
+          "Une vérification est déjà en cours pour votre compte. Laissez-lui une minute, puis réessayez.",
+        detail: await adminDetail("busy"),
+      };
+    }
+
     return {
       message:
         outcome.reason === "broken"
           ? "Strava a refusé l’accès. Reconnectez votre compte."
           : "Strava n’a pas répondu. Ce n’est pas de votre fait : réessayez dans quelques minutes.",
+      detail: await adminDetail(outcome.reason),
     };
   }
 
   return { stored: outcome.stored };
+}
+
+/**
+ * The technical reason, for administrators only.
+ *
+ * @returns `undefined` for everybody else, so the participant's screen keeps
+ *   saying what a participant can act on.
+ */
+async function adminDetail(reason: string): Promise<string | undefined> {
+  const admin = await requireAdmin();
+  if (!admin) return undefined;
+
+  return `Raison technique : ${reason}. Le détail — code HTTP de Strava compris — est dans le journal du serveur, préfixe « [strava] ».`;
 }
 
 /**

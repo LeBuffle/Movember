@@ -61,6 +61,37 @@ describe("le rattrapage", () => {
     );
   });
 
+  it("dit pourquoi Strava a échoué, au lieu de l’avaler", () => {
+    // Tout statut autre que 401, 403, 404 et 429 devenait un « indisponible »
+    // sans trace nulle part : une vraie panne, une fenêtre malformée et un
+    // 500 de Strava étaient indiscernables depuis un téléphone.
+    const source = code("src/lib/activities/sources/strava.ts");
+
+    expect(source).toMatch(/\[strava\] réponse inattendue/);
+    expect(source).toMatch(/status: response\.status/);
+    expect(source).toMatch(/\[strava\] appel injoignable/);
+  });
+
+  it("distingue « déjà en cours » d’une panne de Strava", () => {
+    // `busy` se règle en quelques secondes ; le confondre avec une panne
+    // envoie le lecteur vers la mauvaise conclusion.
+    expect(sync).toMatch(/reason === "busy"/);
+    expect(code("src/lib/activities/sync-actions.ts")).toMatch(
+      /Une vérification est déjà en cours/,
+    );
+  });
+
+  it("et la raison technique ne sort que pour l’organisation", () => {
+    // Un participant n'a rien à faire d'un code HTTP ; celui qui doit
+    // réparer, si — et il teste depuis un téléphone, sans accès aux
+    // journaux du serveur.
+    const actions = code("src/lib/activities/sync-actions.ts");
+
+    expect(actions).toMatch(/async function adminDetail/);
+    expect(actions).toMatch(/const admin = await requireAdmin\(\);/);
+    expect(actions).toMatch(/if \(!admin\) return undefined;/);
+  });
+
   it("regarde deux jours en arrière, pas une heure", () => {
     // Une livraison perdue dans la nuit, ou un service coupé une matinée,
     // c'est exactement ce pour quoi il existe.

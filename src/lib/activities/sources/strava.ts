@@ -135,10 +135,16 @@ async function postTokens(
     // An authorisation code already used, or a refresh token the participant
     // revoked. Retrying will never help, and story 3.7 must be able to tell
     // this apart from "Strava is down".
+    console.warn("[strava] jetons refusés", { status: response.status });
     return sourceFailure("denied");
   }
 
-  if (!response.ok) return sourceFailure("unavailable");
+  if (!response.ok) {
+    console.error("[strava] réponse inattendue sur les jetons", {
+      status: response.status,
+    });
+    return sourceFailure("unavailable");
+  }
 
   const parsed = readTokens(await response.json().catch(() => null), scopes);
 
@@ -166,7 +172,12 @@ async function callStrava(
       headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch {
+  } catch (cause) {
+    // Network, DNS or timeout. Named, because "Strava n'a pas répondu" is
+    // also what a 502 produces, and the two are repaired differently.
+    console.error("[strava] appel injoignable", {
+      why: cause instanceof Error ? cause.name : "inconnu",
+    });
     return sourceFailure("unavailable");
   }
 
@@ -176,14 +187,31 @@ async function callStrava(
     return sourceFailure("denied");
   }
 
-  if (response.status === 404) return sourceFailure("invalid");
+  if (response.status === 404) {
+    console.warn("[strava] ressource introuvable", { url });
+    return sourceFailure("invalid");
+  }
 
   if (response.status === 429) {
     console.warn("[strava] quota d’appels atteint");
     return sourceFailure("unavailable");
   }
 
-  if (!response.ok) return sourceFailure("unavailable");
+  if (!response.ok) {
+    // **The hole this fills.** Every status that is not one of the four
+    // above used to become an unexplained "unavailable", with nothing
+    // written anywhere — so a real outage, a malformed window and a Strava
+    // 500 were indistinguishable from a phone. The body is read because
+    // Strava puts the actual complaint in it.
+    const detail = await response.text().catch(() => "");
+
+    console.error("[strava] réponse inattendue", {
+      status: response.status,
+      detail: detail.slice(0, 300),
+    });
+
+    return sourceFailure("unavailable");
+  }
 
   try {
     return { ok: true, value: await response.json() };

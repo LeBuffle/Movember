@@ -33,6 +33,8 @@ export type SyncOutcome =
         | "no-link"
         | "unavailable"
         | "broken"
+        /** Another caller holds the refresh claim. Retrying works. */
+        | "busy"
         /** The edition has not started: there is nothing to fetch yet. */
         | "before-edition";
     };
@@ -97,6 +99,11 @@ async function syncOne(
   const token = await validAccessToken(profileId, provider);
 
   if (!token.ok) {
+    // `busy` is not an outage: somebody else is refreshing this very link,
+    // and it clears in seconds. Told apart because "réessayez dans une
+    // minute" and "Strava est en panne" send the reader to different
+    // conclusions — and because it was the likeliest thing hiding behind the
+    // old catch-all.
     return {
       ok: false,
       reason:
@@ -104,7 +111,9 @@ async function syncOne(
           ? "broken"
           : token.reason === "missing"
             ? "no-link"
-            : "unavailable",
+            : token.reason === "busy"
+              ? "busy"
+              : "unavailable",
     };
   }
 
@@ -231,6 +240,10 @@ export async function runCatchUp(
     if (outcome.reason === "broken") report.broken += 1;
     else if (outcome.reason === "before-edition") report.tooEarly += 1;
     else report.unavailable += 1;
+
+    console.warn("[rattrapage] participant non synchronisé", {
+      reason: outcome.reason,
+    });
   }
 
   if (report.unavailable > 0) {
