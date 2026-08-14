@@ -499,10 +499,11 @@ Rien de technique, et c'est ce qui prend le plus de temps.
 
 - **60 à 80 défis** dans le catalogue, de tous les types.
 - **Une cinquantaine de visuels de cartes.**
-- **CGV et mentions légales définitives.** Quand elles le sont, passer `TERMS_VERSION`
-  dans `src/lib/legal/notices.ts` — c'est ce qui distingue les acceptations d'avant et
-  d'après. Même chose pour `CONSENT_VERSION` si le texte du consentement change sur le
-  fond. *(2.2, 3.2)*
+- ~~**CGV et mentions légales définitives.**~~ ✅ Validées par le PO le 14 août. Le
+  bandeau « document de travail » est retiré des trois pages et `TERMS_VERSION` est
+  passée à `2026-08-14`. Si le texte change **sur le fond** d'ici novembre, repasser
+  `TERMS_VERSION` — c'est ce qui distingue les acceptations d'avant et d'après. Même
+  chose pour `CONSENT_VERSION` si le texte du consentement change. *(2.2, 3.2)*
 - **Confirmer les durées de conservation** annoncées dans la politique de confidentialité :
   trois mois pour les adresses postales, six pour les activités. Elles sont générées depuis
   `src/lib/privacy/retention.ts`, donc exactes — mais ce sont des décisions, pas des

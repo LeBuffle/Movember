@@ -35,7 +35,7 @@ const TO_BE_PROVIDED = "à compléter";
 
 export default function LegalNoticePage() {
   return (
-    <LegalPage title="Mentions légales" updatedOn="2026-08-11">
+    <LegalPage title="Mentions légales" updatedOn="2026-08-14">
       <h2>Éditeur du site</h2>
       <ul>
         <li>Dénomination : {ASSOCIATION.name}</li>

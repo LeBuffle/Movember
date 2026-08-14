@@ -31,7 +31,7 @@ export const metadata = {
  */
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Politique de confidentialité" updatedOn="2026-08-08">
+    <LegalPage title="Politique de confidentialité" updatedOn="2026-08-14">
       <h2>Qui traite vos données</h2>
       <p>
         L’association <strong>{ASSOCIATION.name}</strong> (

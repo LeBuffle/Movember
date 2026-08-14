@@ -14,14 +14,14 @@
  * Which version of the terms a participant accepted.
  *
  * Stored with the acceptance, and that is the point: knowing *when* someone
- * accepted says nothing about *what*. The terms published in story 1.9 are a
- * working draft and will be rewritten before registration opens — an
- * acceptance without a version would prove nothing about either text.
+ * accepted says nothing about *what*. The draft published in story 1.9 was
+ * replaced by the text the PO validated on 14 August — an acceptance without
+ * a version would prove nothing about either one.
  *
  * **Bump this whenever the terms change in substance.** A wording fix does
  * not count; a change to what the association owes does.
  */
-export const TERMS_VERSION = "2026-08-08-brouillon";
+export const TERMS_VERSION = "2026-08-14";
 
 /**
  * The tax notice.
@@ -55,15 +55,3 @@ export const INDEPENDENCE_NOTICE =
   "Projet indépendant porté par RéACTION, association loi 1901. Ce site n’est " +
   "pas l’application officielle de la fondation Movember et n’utilise aucun de " +
   "ses logos ou visuels.";
-
-/**
- * Marks a legal page whose text is not final.
- *
- * Provisional legal pages are worse than absent ones if nothing says they are
- * provisional: a visitor takes them at face value. They must be replaced
- * before registration opens — see the deadline in `docs/plan-demarrage-dev.md`.
- */
-export const DRAFT_LEGAL_NOTICE =
-  "Ce texte est un document de travail, publié pour préparer l’ouverture des " +
-  "inscriptions. Il sera remplacé par sa version définitive avant tout paiement. " +
-  "Il n’a pas de valeur contractuelle en l’état.";

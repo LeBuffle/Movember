@@ -12,10 +12,10 @@ import {
 } from "@/lib/legal/association";
 
 import {
-  DRAFT_LEGAL_NOTICE,
   INDEPENDENCE_NOTICE,
   TAX_NOTICE,
   TAX_NOTICE_TITLE,
+  TERMS_VERSION,
 } from "@/lib/legal/notices";
 import { formatEuros } from "@/lib/registration/tiers";
 
@@ -255,19 +255,39 @@ describe("pages légales", () => {
     },
   );
 
-  it.each(pages)("/%s signale que son contenu est provisoire", (slug) => {
-    // Une page légale provisoire qui ne dit pas qu'elle l'est est pire qu'une
-    // page absente : le visiteur la lit comme engageante.
+  it.each(pages)("/%s passe par la coquille commune", (slug) => {
+    // Elle porte la date de dernière mise à jour, qui est ce qui permet de
+    // juger la fraîcheur d'un texte. Posée une seule fois, elle ne peut pas
+    // être oubliée sur l'une des trois.
     expect(read(`src/app/(public)/${slug}/page.tsx`)).toMatch(/<LegalPage/);
+    expect(read(`src/app/(public)/${slug}/page.tsx`)).toMatch(/updatedOn="/);
   });
 
-  it("le bandeau « document de travail » est porté par la coquille commune", () => {
-    // Posé une seule fois, il ne peut pas être oublié sur l'une des trois.
+  it("le bandeau « document de travail » a disparu des trois pages", () => {
+    // Les textes ont été validés par le PO le 14 août. Un bandeau qui dirait
+    // encore « sans valeur contractuelle » serait désormais faux, et faux
+    // précisément sur les pages sur lesquelles un visiteur doit pouvoir
+    // s'appuyer. Vérifié sur la coquille **et** sur les trois pages : le
+    // risque n'est pas qu'on le remette partout, c'est qu'on le recolle sur
+    // une seule.
     const shell = read("src/components/marketing/legal-page.tsx");
 
-    expect(shell).toMatch(/DRAFT_LEGAL_NOTICE/);
-    expect(DRAFT_LEGAL_NOTICE).toMatch(/document de travail/i);
-    expect(DRAFT_LEGAL_NOTICE).toMatch(/valeur contractuelle/i);
+    expect(shell).not.toMatch(/document de travail/i);
+    expect(shell).not.toMatch(/valeur contractuelle/i);
+
+    for (const [slug] of pages) {
+      const page = read(`src/app/(public)/${slug}/page.tsx`);
+
+      expect(page, slug).not.toMatch(/document de travail/i);
+      expect(page, slug).not.toMatch(/valeur contractuelle/i);
+    }
+  });
+
+  it("et la version des CGV enregistrée avec une acceptation n’est plus un brouillon", () => {
+    // C'est elle qui distingue le texte accepté avant validation de celui
+    // accepté après. La laisser marquée « brouillon » rendrait l'une des deux
+    // preuves illisible.
+    expect(TERMS_VERSION).not.toMatch(/brouillon/i);
   });
 });
 

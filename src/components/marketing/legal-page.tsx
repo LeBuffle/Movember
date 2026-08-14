@@ -2,20 +2,20 @@ import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { Alert } from "@/components/ui/alert";
-import { DRAFT_LEGAL_NOTICE } from "@/lib/legal/notices";
 
 /**
  * Shell shared by the three legal pages.
  *
- * Carries the draft banner, which is the point of it. A provisional legal
- * page that does not say it is provisional is worse than no page at all: a
- * visitor reads it as binding, and the association would be answering for
- * text nobody validated. The banner is not optional and not per-page, so it
- * cannot be forgotten on one of the three.
+ * It carried a "working draft" banner until the PO validated the three texts
+ * on 14 August. The banner is gone with them: a page that still warned it had
+ * no contractual value would now be a false statement on the very pages a
+ * visitor is meant to rely on — the mirror image of the risk the banner was
+ * there to cover.
  *
- * `tests/unit/legal.test.ts` fails if a legal page stops going through this
- * component while still carrying draft text.
+ * What stays is the last-updated date, which is what lets a reader judge the
+ * text's freshness. `tests/unit/legal.test.ts` pins both: that the three
+ * pages go through this shell, and that the draft wording is not reintroduced
+ * on one of them alone.
  */
 export function LegalPage({
   title,
@@ -44,10 +44,6 @@ export function LegalPage({
             })}
           </time>
         </p>
-
-        <Alert tone="warning" title="Document de travail" className="mt-6">
-          {DRAFT_LEGAL_NOTICE}
-        </Alert>
 
         {/*
           `space-y` rather than a typography plugin: three pages of plain

@@ -31,7 +31,7 @@ export const metadata = {
  */
 export default function TermsPage() {
   return (
-    <LegalPage title="Conditions générales de vente" updatedOn="2026-08-11">
+    <LegalPage title="Conditions générales de vente" updatedOn="2026-08-14">
       <h2>1. Objet</h2>
       <p>
         Les présentes conditions régissent l’inscription au DEFI Movember,
