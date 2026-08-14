@@ -4,6 +4,7 @@ import {
   RehearsalTools,
   StravaDiagnostic,
 } from "@/components/activities/strava-diagnostic";
+import { NotificationDiagnostic } from "@/components/notifications/notification-diagnostic";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,10 @@ import {
 } from "@/lib/activities/diagnostic-actions";
 import { activitySyncHealth } from "@/lib/activities/health";
 import { APP_ENVIRONMENT, APP_VERSION } from "@/lib/app-version";
+import {
+  diagnoseNotificationsAction,
+  sendTestNotificationAction,
+} from "@/lib/notifications/diagnostic-actions";
 
 export const metadata = {
   title: "État des intégrations — back-office",
@@ -128,6 +133,18 @@ export default async function IntegrationsPage() {
         <CardBody>
           <div className="mt-2">
             <StravaDiagnostic action={diagnoseStravaAction} />
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardTitle>Diagnostic des notifications</CardTitle>
+        <CardBody>
+          <div className="mt-2">
+            <NotificationDiagnostic
+              diagnose={diagnoseNotificationsAction}
+              test={sendTestNotificationAction}
+            />
           </div>
         </CardBody>
       </Card>

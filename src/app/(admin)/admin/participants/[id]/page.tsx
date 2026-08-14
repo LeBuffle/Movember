@@ -3,12 +3,17 @@ import { notFound } from "next/navigation";
 
 import { ParticipantStravaTools } from "@/components/activities/strava-diagnostic";
 import { SuspensionForm } from "@/components/admin/suspension-form";
+import { ParticipantNotificationTools } from "@/components/notifications/notification-diagnostic";
 import { Badge } from "@/components/ui/badge";
 import {
   diagnoseParticipantAction,
   reimportParticipantAction,
 } from "@/lib/activities/diagnostic-actions";
 import { getParticipant } from "@/lib/admin/participants";
+import {
+  diagnoseParticipantNotificationsAction,
+  sendTestToParticipantAction,
+} from "@/lib/notifications/diagnostic-actions";
 import { formatEuros } from "@/lib/registration/tiers";
 
 export const metadata = {
@@ -149,6 +154,19 @@ export default async function ParticipantPage({
             reimport={reimportParticipantAction}
           />
         )}
+      </Section>
+
+      <Section title="Notifications">
+        <p className="text-ink-muted text-sm">
+          « Je n’ai pas reçu mon défi ce matin » a trois causes différentes qui
+          se ressemblent toutes de l’extérieur. Le diagnostic dit laquelle.
+        </p>
+
+        <ParticipantNotificationTools
+          profileId={id}
+          diagnose={diagnoseParticipantNotificationsAction}
+          test={sendTestToParticipantAction}
+        />
       </Section>
 
       <Section title={`Défis — ${succeeded} réussi${succeeded > 1 ? "s" : ""}`}>

@@ -730,6 +730,66 @@ Deux réponses, selon qui en a besoin :
 
 ---
 
+## 12 septies. « J'ai activé les notifications, mais je reçois un e-mail »
+
+**Symptôme :** le participant a autorisé les notifications sur son téléphone, et les
+messages lui arrivent quand même par e-mail.
+
+### Ce n'est pas une panne, et c'est bien le problème
+
+**L'e-mail est ce que l'application fait, correctement, pour quiconque n'a pas
+d'appareil actif** (story 6.4). Le message reçu est donc rigoureusement le même dans
+trois situations sans rapport :
+
+| Cause | Réparation |
+| --- | --- |
+| L'abonnement n'a **jamais été enregistré** | Réactiver depuis le téléphone, en regardant le message rouge sous le bouton |
+| Il l'a été puis **retiré** (téléphone effacé, application désinstallée, abonnement remplacé) | Réactiver depuis le téléphone : le nouvel abonnement remplace l'ancien |
+| La **table des abonnements ne répond pas** | Rien à faire côté participant — ce cas bascule *tout le monde* sur l'e-mail |
+| Le **service worker n'est pas embarqué** dans l'application déployée | Défaut de construction : reconstruire et redéployer |
+
+Les deux derniers ne se voient sur aucune fiche, et le dernier est arrivé pour de bon :
+Next 16 construit sans le service worker si on ne le lui interdit pas, sans erreur ni
+avertissement.
+
+### Le diagnostic
+
+**Back-office → État des intégrations → Diagnostic des notifications.**
+
+Six étapes, un verdict en une ligne. Il ne montre ni adresse d'abonnement, ni clé, ni
+modèle de téléphone : il dit « iPhone ou iPad », pas davantage.
+
+### L'envoi de test
+
+Le bouton **« M'envoyer une notification de test »**, juste en dessous. C'est **la seule
+étape qui interroge vraiment le service de notification**, et il rend son code de
+réponse — c'est lui qui départage :
+
+| Réponse | Ce qu'elle veut dire |
+| --- | --- |
+| **201** | Le message est parti. S'il n'apparaît pas : mode Concentration, notifications de l'application coupées dans les réglages iOS, ou application retirée de l'écran d'accueil |
+| **404 / 410** | Ce téléphone n'existe plus pour le service. L'appareil vient d'être retiré ; réactiver depuis le téléphone |
+| **401 / 403** | Notre signature est refusée : les clés VAPID du serveur ne sont plus celles qui ont créé cet abonnement. **Après un changement de clés, chaque participant doit réactiver ses notifications** |
+| **429** | Ralentir. Réessayer dans quelques minutes |
+| aucune réponse | Le serveur ne joint pas le service de notification |
+
+Il est **relançable autant de fois que nécessaire** : contrairement à tous les autres
+envois, il ne passe pas par le registre anti-doublon.
+
+### Sur iPhone, avant tout le reste
+
+Les notifications web n'existent **que dans une application ajoutée à l'écran
+d'accueil**. Ouverte depuis Safari, l'application affiche « Installez d'abord
+l'application » et aucun bouton d'activation. C'est la première chose à vérifier.
+
+### Dépanner **un** participant
+
+Sa fiche : `/admin/participants`, son nom, section « Notifications ». Les deux mêmes
+boutons, sur son compte. L'envoi de test y est journalisé — il fait sonner le téléphone
+de quelqu'un d'autre.
+
+---
+
 ## 12 bis. Un visuel de carte ne s'affiche pas
 
 **Symptôme :** le visuel est correct au moment de l'import, la carte s'enregistre sans
@@ -895,6 +955,7 @@ d'une procédure d'urgence.
 | §11 Script d'alertes | oui, exécuté avec seuils abaissés et webhook réel |
 | §11 Tâches planifiées | fichier versionné et installé par le déploiement ; **l'appel réel reste à vérifier par le PO** |
 | §13 Restaurer une sauvegarde | `backup-database.sh` vérifié sur ses refus (dump vide, configuration absente) ; `restore-rehearsal.sh` vérifié syntaxiquement, **à lancer une fois sur le serveur par le PO** — c'est le critère de sortie de l'epic 11 |
+| §12 septies Notifications | diagnostic et envoi de test vérifiés structurellement ; **le premier lancement sur le serveur reste à faire par le PO** |
 | Durcissement du serveur | `check-hardening.sh` écrit et vérifié syntaxiquement ; **à lancer sur le serveur par le PO** |
 
 > **Une procédure écrite mais jamais exécutée est une procédure fausse.** Les lignes

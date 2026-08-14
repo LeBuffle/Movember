@@ -179,6 +179,164 @@ export async function sendPush(request: SendRequest): Promise<SendReport> {
   return report;
 }
 
+/**
+ * One send, to one person's devices, right now (story 6.9).
+ *
+ * **Deliberately outside the ledger**, which is the only reason it exists.
+ * Every ordinary send claims a delivery first, so relaunching it sends
+ * nothing — exactly what you want for the daily challenge, and exactly what
+ * makes a repair impossible to verify: the second attempt is silently skipped
+ * and reads as another failure.
+ *
+ * Safe to leave outside because nothing else can reach it: administrators
+ * only, one recipient, and the recipient is chosen on screen rather than
+ * carried by a schedule.
+ *
+ * Returns what the push service actually answered, per device. The status
+ * code is the whole point — 201 means it left, 410 means the phone is gone,
+ * 403 means our keys do not match the subscription. Three different repairs
+ * behind one "je n'ai rien reçu".
+ */
+export type TestSendReport = {
+  results: { device: string; status: number | null; detail: string }[];
+};
+
+export async function sendTestPush(
+  profileId: string,
+  payload: NotificationPayload,
+): Promise<TestSendReport> {
+  if (!configure()) {
+    return {
+      results: [
+        {
+          device: "—",
+          status: null,
+          detail: "Clés d’envoi absentes du serveur.",
+        },
+      ],
+    };
+  }
+
+  const admin = createAdminClient();
+
+  const { data, error } = await admin
+    .from("push_subscriptions")
+    .select("id, profile_id, endpoint, p256dh, auth, failure_count, user_agent")
+    .eq("profile_id", profileId)
+    .is("disabled_at", null);
+
+  if (error) {
+    return {
+      results: [
+        {
+          device: "—",
+          status: null,
+          detail: `Abonnements illisibles (code ${error.code}).`,
+        },
+      ],
+    };
+  }
+
+  const devices = (data ?? []) as (Device & { user_agent: string | null })[];
+
+  if (devices.length === 0) {
+    return {
+      results: [{ device: "—", status: null, detail: "Aucun appareil actif." }],
+    };
+  }
+
+  const body = JSON.stringify(payload);
+
+  // `allSettled` ici aussi. Le corps ci-dessous rattrape ses propres erreurs,
+  // mais `retire()` est appelé *dans* le rattrapage : s'il échouait, le second
+  // appareil de quelqu'un qui en a deux ne serait jamais interrogé, et l'écran
+  // afficherait une erreur au lieu d'un résultat.
+  const outcomes = await Promise.allSettled(
+    devices.map(async (device) => {
+      const label = describe(device.user_agent);
+
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: device.endpoint,
+            keys: { p256dh: device.p256dh, auth: device.auth },
+          },
+          body,
+          { TTL: 60 * 5 },
+        );
+
+        await admin
+          .from("push_subscriptions")
+          .update({
+            last_success_at: new Date().toISOString(),
+            failure_count: 0,
+          })
+          .eq("id", device.id);
+
+        return {
+          device: label,
+          status: 201,
+          detail:
+            "Le service de notification a accepté l’envoi. S’il n’apparaît pas sur le téléphone, le problème est sur l’appareil : mode Concentration, notifications de l’application coupées dans les réglages iOS, ou application retirée de l’écran d’accueil.",
+        };
+      } catch (error) {
+        const status = (error as { statusCode?: number }).statusCode;
+
+        // Traité comme un envoi ordinaire : un appareil réellement mort doit
+        // être retiré même quand c'est un test qui le découvre.
+        if (isGone(status)) await retire(device.id, status);
+
+        return {
+          device: label,
+          status: status ?? null,
+          detail: explain(status),
+        };
+      }
+    }),
+  );
+
+  return {
+    results: outcomes.map((outcome, index) =>
+      outcome.status === "fulfilled"
+        ? outcome.value
+        : {
+            device: describe(devices[index].user_agent),
+            status: null,
+            detail:
+              "L’envoi s’est interrompu avant d’obtenir une réponse. Réessayez ; si cela se répète, le détail est dans les journaux du serveur.",
+          },
+    ),
+  };
+}
+
+/** "iPhone ou iPad", "Android", "ordinateur" — jamais le modèle exact. */
+function describe(userAgent: string | null): string {
+  if (!userAgent) return "appareil inconnu";
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return "iPhone ou iPad";
+  if (/Android/i.test(userAgent)) return "Android";
+
+  return "ordinateur";
+}
+
+function explain(status: number | undefined): string {
+  if (status === 404 || status === 410)
+    return "L’adresse de cet appareil n’existe plus : application désinstallée, navigateur effacé, ou abonnement remplacé. L’appareil vient d’être retiré — il suffit de réactiver les notifications depuis le téléphone.";
+
+  if (status === 403 || status === 401)
+    return "Le service refuse notre signature. Les clés VAPID du serveur ne sont plus celles avec lesquelles cet abonnement a été créé : après un changement de clés, chaque participant doit réactiver ses notifications.";
+
+  if (status === 413)
+    return "Le message est trop volumineux pour le service de notification.";
+
+  if (status === 429)
+    return "Le service demande de ralentir. Réessayer dans quelques minutes.";
+
+  if (status === undefined)
+    return "La requête n’est jamais partie : le serveur ne joint pas le service de notification.";
+
+  return `Le service de notification répond ${status}.`;
+}
+
 function countWithoutDevice(profileIds: string[], devices: Device[]): number {
   const reachable = new Set(devices.map((device) => device.profile_id));
 
