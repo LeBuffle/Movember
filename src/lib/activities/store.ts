@@ -146,7 +146,10 @@ async function storeOne(activity: Activity): Promise<StoreResult> {
 
   // Somebody got there first — a replayed webhook, a catch-up overlapping an
   // initial import. The activity is in the game, which is all that matters.
-  if (error.code === "23505") return { outcome: "duplicate", id: null };
+  if (error.code === "23505") {
+    await reconcileVisibility(activity);
+    return { outcome: "duplicate", id: null };
+  }
 
   console.error("[activités] enregistrement impossible", {
     provider: activity.provider,
@@ -154,6 +157,45 @@ async function storeOne(activity: Activity): Promise<StoreResult> {
   });
 
   return { outcome: "failed", id: null };
+}
+
+/**
+ * Le seul champ qu'un doublon met à jour : sa visibilité.
+ *
+ * **Un réimport ne réécrit rien, et c'était un trou.** Une sortie déjà en
+ * base revient en doublon et le reste de la ligne est laissé tel quel — ce
+ * qui est voulu : réévaluer un mois d'activités à chaque rattrapage horaire
+ * coûterait cher pour ne rien changer.
+ *
+ * Mais `is_private` est arrivé après les sorties qu'il décrit. Les lignes
+ * antérieures valent « privée » faute de savoir (story 15.1), et aucun
+ * réimport ne pouvait les corriger : elles revenaient toutes en doublon. Le
+ * journal restait donc vide, définitivement, sans que rien ne le dise.
+ *
+ * Ce champ mérite ce traitement et les autres non : **il ne décide rien dans
+ * le jeu**. Le mettre à jour ne peut ni valider un défi, ni en invalider un,
+ * ni déplacer un rang — il change seulement ce qui est montré. C'est aussi le
+ * seul dont la valeur peut légitimement changer chez le fournisseur sans que
+ * la sortie elle-même ait bougé.
+ *
+ * Silencieux en cas d'échec : un rattrapage ne doit pas s'arrêter parce
+ * qu'une visibilité n'a pas pu être mise à jour.
+ */
+async function reconcileVisibility(activity: Activity): Promise<void> {
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("activities")
+    .update({ is_private: activity.isPrivate })
+    .eq("provider", activity.provider)
+    .eq("provider_activity_id", activity.id)
+    .neq("is_private", activity.isPrivate);
+
+  if (error) {
+    console.error("[activités] visibilité non réconciliée", {
+      code: error.code,
+    });
+  }
 }
 
 /**

@@ -86,6 +86,10 @@ traité comme privé. Un réimport les remplit — celui de `/admin/etat` pour s
 fiche participant pour les autres. En novembre le cas ne se posera pas, puisque tout
 arrivera après.
 
+Le compte-rendu du réimport dira **« N sorties lues, 0 enregistrée »** : c'est normal et
+c'est le bon résultat. Les sorties étaient déjà là ; le réimport ne les récrit pas, il
+corrige seulement leur visibilité — le seul champ qui ne décide rien dans le jeu.
+
 ⚠️ **La 38 recrée la vue des classements** — comme la 29. Quelques secondes sans
 classement pendant qu'elle tourne ; elle se rafraîchit elle-même à la fin.
 

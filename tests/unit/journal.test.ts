@@ -80,6 +80,27 @@ describe("une sortie masquée sur Strava reste masquée ici", () => {
     );
   });
 
+  it("un réimport corrige la visibilité d'une sortie déjà en base", () => {
+    // **Le trou que la recette a trouvé.** Une sortie déjà présente revient
+    // en doublon et le reste de la ligne est laissé tel quel — ce qui est
+    // voulu. Mais `is_private` est arrivé après les sorties qu'il décrit :
+    // les lignes antérieures valaient « privée » faute de savoir, et aucun
+    // réimport ne pouvait les corriger. Le journal restait vide pour
+    // toujours, sans que rien ne le dise.
+    expect(store).toMatch(/await reconcileVisibility\(activity\)/);
+
+    const start = store.indexOf("async function reconcileVisibility");
+    const fn = store.slice(
+      start,
+      store.indexOf("export async function updateActivity", start),
+    );
+
+    // Ce champ seulement : il ne décide rien dans le jeu. Mettre à jour la
+    // distance ou le sport rejouerait l'évaluation d'un mois de sorties.
+    expect(fn).toMatch(/\.update\(\{ is_private: activity\.isPrivate \}\)/);
+    expect(fn).not.toMatch(/distance_meters|sport_family|duration_seconds/);
+  });
+
   it("et une sortie repassée en publique le devient au passage suivant", () => {
     const update = store.slice(
       store.indexOf("export async function updateActivity"),

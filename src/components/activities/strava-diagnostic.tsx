@@ -30,6 +30,23 @@ function RunButton() {
 
 const MARK = { ok: "✅", warn: "⚠️", ko: "❌" } as const;
 
+/**
+ * Un bouton qui dit qu'il travaille.
+ *
+ * Séparé du formulaire parce que `useFormStatus` lit le formulaire *parent* :
+ * appelé dans le composant qui rend le `<form>`, il ne verrait jamais rien.
+ * Sans lui, un import de dix secondes ressemble à un bouton mort.
+ */
+function PendingButton({ idle, busy }: { idle: string; busy: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" variant="secondary" disabled={pending}>
+      {pending ? busy : idle}
+    </Button>
+  );
+}
+
 export function StravaDiagnostic({
   action,
 }: {
@@ -119,9 +136,13 @@ export function RehearsalTools({
     <div className="space-y-5">
       <div className="space-y-2">
         <form action={importAction}>
-          <Button type="submit" variant="secondary">
-            Réimporter mes sorties depuis le début de l’édition
-          </Button>
+          {/* `useFormStatus` lit le formulaire parent : le bouton doit être
+              un composant à lui, sinon il ne sait rien de l'envoi en cours —
+              et un bouton qui ne réagit pas à un clic passe pour désactivé. */}
+          <PendingButton
+            idle="Réimporter mes sorties depuis le début de l’édition"
+            busy="Import en cours…"
+          />
         </form>
 
         <p className="text-ink-muted text-sm">
@@ -137,9 +158,10 @@ export function RehearsalTools({
 
       <div className="space-y-2">
         <form action={refreshAction}>
-          <Button type="submit" variant="secondary">
-            Recalculer les classements maintenant
-          </Button>
+          <PendingButton
+            idle="Recalculer les classements maintenant"
+            busy="Recalcul en cours…"
+          />
         </form>
 
         <p className="text-ink-muted text-sm">
