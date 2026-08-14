@@ -642,11 +642,28 @@ Ce qu'on peut y lire, et ce que ça veut dire :
 | `[strava] réponse inattendue { status: 400 }` | Fenêtre de dates refusée | Vérifier `editions.starts_on` : une date postérieure à aujourd'hui produit une fenêtre impossible |
 | `[strava] appel injoignable { why: "TimeoutError" }` | Sortie réseau du VPS | Vérifier que le conteneur atteint `www.strava.com` |
 | `[strava] jetons refusés { status: 400 }` | Secret client faux, ou autorisation retirée | La liaison passe en « rompue » et l'écran le dit. Vérifier `STRAVA_CLIENT_SECRET` dans le fichier d'environnement du VPS |
+| `[strava] jetons injoignables` | Sortie réseau coupée pendant un rafraîchissement | Vérifier que le conteneur atteint `www.strava.com` |
+| `[strava] réponse de jetons illisible` | Strava a répondu 200 avec une charge utile inattendue | Rare. Relever la trace et réessayer |
 | `[jetons] liaison rompue` | Le participant a retiré l'accès depuis Strava | Il doit reconnecter son compte |
 | rien du tout | L'appel n'a pas eu lieu | Voir la liste ci-dessous |
 
 **« Une vérification est déjà en cours »** n'est pas une panne : deux appels se disputent
 le même rafraîchissement de jeton. Il se libère tout seul en deux minutes au maximum.
+
+### La portée accordée n'est pas la portée demandée
+
+L'application demande `activity:read_all`. **L'écran d'autorisation de Strava laisse
+décocher « voir vos activités »**, et une liaison ainsi réduite se comporte parfaitement :
+le compte est relié, le diagnostic passe, `/athlete` répond — jusqu'au premier appel qui
+demande des sorties, refusé en 401.
+
+Le diagnostic affiche désormais la portée réellement enregistrée. Si elle ne contient ni
+`activity:read_all` ni `activity:read`, il n'y a rien à réparer côté serveur : le
+participant doit **reconnecter son compte et accepter la case**.
+
+⚠️ Ne pas confondre avec l'écran « Mon application » de developers.strava.com, qui affiche
+« étendue : read » pour le jeton personnel du développeur. C'est un autre jeton, et il ne
+dit rien de ce qu'un participant a accordé.
 
 ### Si rien n'est appelé du tout
 

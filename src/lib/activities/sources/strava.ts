@@ -118,6 +118,7 @@ function readTokens(
   if (typeof payload !== "object" || payload === null) return null;
 
   const body = payload as TokenResponse;
+  // Présent à l'échange d'un code, absent d'un rafraîchissement.
   const athleteId = body.athlete?.id;
 
   if (
@@ -139,9 +140,24 @@ function readTokens(
   };
 }
 
+/**
+ * @param requireAthlete whether the athlete's identifier must be present.
+ *
+ * **Vrai à l'échange du code, faux au rafraîchissement — et c'est la
+ * différence qui manquait.** Strava renvoie l'athlète quand il échange un
+ * code d'autorisation ; sa réponse de rafraîchissement ne contient que
+ * `token_type`, `access_token`, `expires_at`, `expires_in` et
+ * `refresh_token`. L'exiger dans les deux cas faisait échouer *tous* les
+ * rafraîchissements sur un `invalid` que l'appelant traduisait en
+ * « Strava n'a pas répondu » — alors que Strava avait parfaitement répondu.
+ *
+ * Symptôme observé : une liaison qui marche jusqu'à l'expiration du jeton,
+ * six heures plus tard, puis plus rien jusqu'à une reconnexion manuelle.
+ */
 async function postTokens(
   body: Record<string, string>,
   scopes: string[],
+  requireAthlete: boolean,
 ): Promise<SourceResult<SourceCredentials>> {
   const client = credentials();
   if (!client) return sourceFailure("unsupported");
@@ -162,7 +178,12 @@ async function postTokens(
       // tab with no idea whether they are connected.
       signal: AbortSignal.timeout(15_000),
     });
-  } catch {
+  } catch (cause) {
+    // Le dernier point aveugle : ce `catch` ne disait rien, et c'est celui
+    // par lequel passe une coupure réseau pendant un rafraîchissement.
+    console.error("[strava] jetons injoignables", {
+      why: cause instanceof Error ? cause.name : "inconnu",
+    });
     return sourceFailure("unavailable");
   }
 
@@ -183,7 +204,15 @@ async function postTokens(
 
   const parsed = readTokens(await response.json().catch(() => null), scopes);
 
-  if (!parsed || !parsed.providerAccountId) return sourceFailure("invalid");
+  if (!parsed) {
+    console.error("[strava] réponse de jetons illisible");
+    return sourceFailure("invalid");
+  }
+
+  if (requireAthlete && !parsed.providerAccountId) {
+    console.error("[strava] athlète absent de l’échange de code");
+    return sourceFailure("invalid");
+  }
 
   return { ok: true, value: parsed };
 }
@@ -321,13 +350,16 @@ export const stravaSource: ActivitySource = {
   async exchangeCode(code: string, _redirectUri: string) {
     // Scopes are not in the token response — Strava reports them on the
     // callback query string, and the caller passes them on from there.
-    return postTokens({ code, grant_type: "authorization_code" }, []);
+    return postTokens({ code, grant_type: "authorization_code" }, [], true);
   },
 
   async refresh(refreshToken: string) {
+    // `false` : la réponse de rafraîchissement de Strava ne porte pas
+    // d'athlète, et l'exiger ici faisait échouer tous les rafraîchissements.
     return postTokens(
       { refresh_token: refreshToken, grant_type: "refresh_token" },
       [],
+      false,
     );
   },
 

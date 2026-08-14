@@ -162,6 +162,39 @@ describe("le rattrapage", () => {
     expect(actions).toMatch(/:\s*await importInitialActivities\(user\.id\)/);
   });
 
+  it("le rafraîchissement n’exige pas l’athlète, l’échange de code si", () => {
+    // **Le défaut qui cassait toute liaison au bout de six heures.** La
+    // réponse de rafraîchissement de Strava ne contient pas d'athlète — que
+    // des jetons et une échéance. L'exiger dans les deux cas faisait échouer
+    // tous les rafraîchissements sur un « invalid » que l'appelant traduisait
+    // en « Strava n'a pas répondu », alors que Strava avait répondu.
+    const source = code("src/lib/activities/sources/strava.ts");
+
+    expect(source).toMatch(/requireAthlete && !parsed\.providerAccountId/);
+    expect(source).toMatch(
+      /postTokens\(\{ code, grant_type: "authorization_code" \}, \[\], true\)/,
+    );
+    expect(source).toMatch(/grant_type: "refresh_token" \},\s*\[\],\s*false,/);
+  });
+
+  it("et l’échec du rafraîchissement laisse une trace", () => {
+    // Ce `catch` était le dernier point aveugle, et c'est celui par lequel
+    // passe une coupure réseau pendant un rafraîchissement.
+    expect(code("src/lib/activities/sources/strava.ts")).toMatch(
+      /\[strava\] jetons injoignables/,
+    );
+  });
+
+  it("le diagnostic dit la portée réellement accordée", () => {
+    // Demandée n'est pas accordée : l'écran d'autorisation de Strava laisse
+    // décocher la lecture des activités, et la liaison se comporte
+    // parfaitement jusqu'au premier appel qui en a besoin.
+    const diag = code("src/lib/activities/diagnostic.ts");
+
+    expect(diag).toMatch(/Portée accordée par le participant/);
+    expect(diag).toMatch(/scope === "activity:read_all"/);
+  });
+
   it("regarde deux jours en arrière, pas une heure", () => {
     // Une livraison perdue dans la nuit, ou un service coupé une matinée,
     // c'est exactement ce pour quoi il existe.

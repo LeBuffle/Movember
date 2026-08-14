@@ -101,7 +101,7 @@ export async function diagnoseStrava(profileId: string): Promise<Diagnostic> {
   const { data: link } = await admin
     .from("activity_connections")
     .select(
-      "id, access_token, refresh_token, expires_at, status, refreshing_at, last_synced_at",
+      "id, access_token, refresh_token, expires_at, status, refreshing_at, last_synced_at, scopes",
     )
     .eq("profile_id", profileId)
     .eq("provider", "strava")
@@ -129,6 +129,32 @@ export async function diagnoseStrava(profileId: string): Promise<Diagnostic> {
       (link.refreshing_at
         ? `⚠️ Un rafraîchissement est marqué en cours depuis le ${new Date(link.refreshing_at).toLocaleString("fr-FR")} — il se libère seul au bout de deux minutes.`
         : "Aucun rafraîchissement en cours."),
+  });
+
+  /* 4 bis — the scope actually granted -----------------------------------
+   *
+   * **Demandée n'est pas accordée.** L'écran d'autorisation de Strava laisse
+   * décocher la lecture des activités, et une liaison ainsi réduite se
+   * comporte parfaitement — jusqu'au moment où l'on demande des sorties, et
+   * où Strava répond 401. Le compte a l'air relié, et il l'est ; il ne donne
+   * simplement pas ce qu'il faut.
+   *
+   * L'écran des paramètres Strava affiche « étendue : read » pour le jeton
+   * personnel du développeur, ce qui n'est pas la même chose que la portée
+   * accordée par un participant — d'où l'intérêt de lire celle qu'on a
+   * réellement enregistrée plutôt que de la supposer. */
+
+  const scopes = link.scopes ?? [];
+  const canReadActivities = scopes.some(
+    (scope) => scope === "activity:read_all" || scope === "activity:read",
+  );
+
+  steps.push({
+    label: "Portée accordée par le participant",
+    state: canReadActivities ? "ok" : "ko",
+    detail: canReadActivities
+      ? `Accordée : ${scopes.join(", ")}.`
+      : `Accordée : ${scopes.join(", ") || "aucune"}. La lecture des activités n’en fait pas partie — l’autorisation a été donnée sans cocher « voir vos activités ». Il faut reconnecter le compte et accepter cette case.`,
   });
 
   /* 5 — can the stored tokens be read? ------------------------------------ */
@@ -205,6 +231,12 @@ export async function diagnoseStrava(profileId: string): Promise<Diagnostic> {
       ? "Strava répond normalement."
       : `Strava répond ${probe.status}. ${probe.detail}`,
   });
+
+  if (ok && !canReadActivities) {
+    return stop(
+      "Strava répond, mais l’autorisation ne couvre pas la lecture des activités. Reconnectez le compte en acceptant « voir vos activités ».",
+    );
+  }
 
   if (ok) {
     return stop(
