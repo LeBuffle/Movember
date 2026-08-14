@@ -782,6 +782,27 @@ Les notifications web n'existent **que dans une application ajoutée à l'écran
 d'accueil**. Ouverte depuis Safari, l'application affiche « Installez d'abord
 l'application » et aucun bouton d'activation. C'est la première chose à vérifier.
 
+### Quand le diagnostic dit « aucun appareil enregistré »
+
+C'est le cas rencontré le 14 août, et le seul que le serveur ne peut pas expliquer :
+tout ce qui a échoué s'est passé dans le navigateur.
+
+**Refaire l'activation sur le téléphone**, dans *Mon compte → Mes notifications*, et lire
+ce que l'écran affiche cette fois. Chaque étape rend maintenant son propre message, et un
+dépliant **« État de cet appareil »** apparaît sous l'erreur avec quatre faits que seul le
+navigateur connaît :
+
+| Ce que dit le dépliant | Ce qu'il faut faire |
+| --- | --- |
+| Ouverture : **dans le navigateur** | Ajouter l'application à l'écran d'accueil et la rouvrir de là. C'est la cause la plus fréquente sur iPhone |
+| Service d'arrière-plan : **absent** ou **pas encore actif** | Fermer complètement l'application (glisser vers le haut) et la rouvrir depuis l'écran d'accueil |
+| Abonnement sur l'appareil : **oui**, mais rien côté serveur | L'enregistrement n'est pas arrivé jusqu'à nous : réessayer, le message dira si c'est le réseau ou le serveur |
+| Un nom d'erreur entre parenthèses (`AbortError`, `NotAllowedError`…) | C'est le navigateur qui refuse ; le message qui l'accompagne dit le geste |
+
+⚠️ **Le bouton bloqué sur « … » n'existe plus.** L'attente du service d'arrière-plan a
+maintenant une échéance de dix secondes : elle pouvait durer indéfiniment, sans message,
+ce qui se racontait exactement comme « j'ai validé et il ne s'est rien passé ».
+
 ### Dépanner **un** participant
 
 Sa fiche : `/admin/participants`, son nom, section « Notifications ». Les deux mêmes

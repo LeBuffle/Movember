@@ -213,3 +213,73 @@ describe("la demande d'autorisation", () => {
     expect(permission).toMatch(/if \(!publicKey\)/);
   });
 });
+
+/* -------------------------------------------------------------------------
+ * Ce que l'écran dit quand ça rate
+ *
+ * **La panne du 14 août.** Le PO autorise les notifications sur son iPhone,
+ * l'écran ne dit rien, et le serveur n'enregistre aucun abonnement — ni
+ * actif, ni retiré. Le diagnostic du back-office pouvait constater l'absence
+ * et jamais l'expliquer : tout ce qui échoue ici se passe dans le navigateur,
+ * où le serveur ne voit rien.
+ * ---------------------------------------------------------------------- */
+
+describe("chaque étape de l’activation rend son propre échec", () => {
+  const enable = permission.slice(
+    permission.indexOf("const enable = async"),
+    permission.indexOf("const disable = async"),
+  );
+
+  it("l’attente du service worker a une échéance", () => {
+    // `navigator.serviceWorker.ready` n'échoue pas quand le service worker ne
+    // s'active pas : elle attend indéfiniment. Le bouton restait alors sur
+    // « … » pour toujours — ce qui se raconte exactement comme « j'ai validé
+    // et il ne s'est rien passé ».
+    expect(enable).toMatch(/deadline\(\s*navigator\.serviceWorker\.ready/);
+    expect(permission).toMatch(/const WORKER_TIMEOUT_MS = /);
+  });
+
+  it("les trois étapes sont rattrapées séparément", () => {
+    // Autorisation, service worker, abonnement, enregistrement : quatre
+    // pannes qui se réparent différemment. Une seule phrase pour les quatre
+    // envoyait chercher au mauvais endroit.
+    const catches = enable.match(/\} catch/g) ?? [];
+
+    expect(catches.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("le nom de l’erreur du navigateur est montré", () => {
+    // `AbortError` n'est pas beau à lire, et c'est ce qui permet de dire quoi
+    // faire plutôt que de demander de réessayer en espérant.
+    expect(permission).toMatch(/function name\(error: unknown\)/);
+    expect(enable).toMatch(/\$\{name\(error\)\}/);
+  });
+
+  it("un abonnement créé mais non enregistré ne se lit pas comme un refus", () => {
+    // Les deux moitiés du geste échouent pour des raisons opposées : l'une
+    // est le téléphone, l'autre le serveur.
+    expect(enable).toMatch(/créé sur le téléphone/);
+  });
+});
+
+describe("l’état de l’appareil, que seul le navigateur connaît", () => {
+  it("n’apparaît que sous un message d’erreur", () => {
+    // Personne n'a besoin de lire ça quand tout marche.
+    expect(permission).toMatch(/<DeviceState \/>/);
+
+    const block = permission.slice(permission.indexOf("<DeviceState />") - 400);
+
+    expect(block.slice(0, 400)).toMatch(/message &&/);
+  });
+
+  it("dit si l’application a été ouverte depuis l’écran d’accueil", () => {
+    // La cause la plus fréquente sur iPhone, et la seule que le serveur ne
+    // peut pas deviner.
+    expect(permission).toMatch(/display-mode: standalone/);
+  });
+
+  it("et si le service d’arrière-plan est actif", () => {
+    expect(permission).toMatch(/getRegistration\("\/"\)/);
+    expect(permission).toMatch(/getSubscription\(\)/);
+  });
+});

@@ -38,6 +38,38 @@ type Support =
   | "granted"
   | "denied";
 
+/**
+ * Combien de temps on laisse au service worker pour s'activer.
+ *
+ * Dix secondes est long pour quelqu'un qui regarde son téléphone, et court
+ * pour une première installation sur une mauvaise connexion. Le compromis
+ * penche vers le message : attendre sans rien dire est le seul résultat qu'il
+ * ne faut pas produire.
+ */
+const WORKER_TIMEOUT_MS = 10_000;
+
+function deadline<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms),
+    ),
+  ]);
+}
+
+/**
+ * Le nom que le navigateur donne à sa panne.
+ *
+ * `NotAllowedError`, `AbortError`, `NotSupportedError` — ce n'est pas beau à
+ * lire, et c'est exactement ce qui permet de dire au participant quoi faire
+ * plutôt que de lui demander de réessayer en espérant.
+ */
+function name(error: unknown): string {
+  if (error instanceof Error && error.name) return error.name;
+
+  return "erreur inconnue";
+}
+
 export function PushPermission({
   publicKey,
   subscribed,
@@ -88,25 +120,77 @@ export function PushPermission({
     setBusy(true);
     setMessage(null);
 
+    // Asked inside the click handler, never anywhere else: browsers tie the
+    // prompt to a user gesture, and some ignore a request made outside one.
+    let permission: NotificationPermission;
+
     try {
-      // Asked inside the click handler, never anywhere else: browsers tie the
-      // prompt to a user gesture, and some ignore a request made outside one.
-      const permission = await Notification.requestPermission();
+      permission = await Notification.requestPermission();
+    } catch (error) {
+      setMessage(
+        `Votre navigateur a refusé la demande d’autorisation (${name(error)}).`,
+      );
+      setBusy(false);
+      return;
+    }
 
-      if (permission !== "granted") {
-        setSupport(permission as "denied" | "default");
-        return;
-      }
+    if (permission !== "granted") {
+      setSupport(permission as "denied" | "default");
+      setBusy(false);
+      return;
+    }
 
-      const registration = await navigator.serviceWorker.ready;
+    /* **Chaque étape rend son propre échec, et c'est le sujet.**
+     *
+     * Les trois qui suivent échouent de trois façons qui se réparent
+     * différemment, et une seule phrase pour les trois envoyait le
+     * participant — ou le bénévole qui l'aide — chercher au mauvais endroit.
+     * Le 14 août, une autorisation acceptée n'a rien enregistré du tout, et
+     * l'écran n'avait rien à en dire. */
 
-      const subscription = await registration.pushManager.subscribe({
+    let registration: ServiceWorkerRegistration;
+
+    try {
+      /* **Avec une échéance, parce que cette promesse peut ne jamais se
+         tenir.** `ready` n'échoue pas quand le service worker ne s'active
+         pas : elle attend, indéfiniment. Le bouton restait alors sur « … »
+         pour toujours, ce qui se raconte exactement comme « j'ai validé et
+         il ne s'est rien passé ». */
+      registration = await deadline(
+        navigator.serviceWorker.ready,
+        WORKER_TIMEOUT_MS,
+      );
+    } catch {
+      setMessage(
+        "Le service d’arrière-plan de l’application ne s’est pas activé sur cet appareil. " +
+          "Fermez complètement l’application (glissez-la vers le haut), rouvrez-la depuis " +
+          "l’écran d’accueil, puis réessayez.",
+      );
+      setBusy(false);
+      return;
+    }
+
+    let subscription: PushSubscription;
+
+    try {
+      subscription = await registration.pushManager.subscribe({
         // Required by every browser: a push may only ever result in something
         // the participant sees. We would not want a silent one anyway.
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+    } catch (error) {
+      setMessage(
+        `Votre téléphone n’a pas pu créer l’abonnement (${name(error)}). ` +
+          "Sur iPhone, cela arrive quand l’application a été ouverte depuis Safari " +
+          "plutôt que depuis l’écran d’accueil, ou juste après une réinstallation : " +
+          "fermez-la complètement et rouvrez-la depuis l’écran d’accueil.",
+      );
+      setBusy(false);
+      return;
+    }
 
+    try {
       const json = subscription.toJSON();
 
       const form = new FormData();
@@ -122,12 +206,13 @@ export function PushPermission({
         setDone(true);
       } else {
         setMessage(
-          result.message ?? "L’abonnement n’a pas pu être enregistré.",
+          result.message ??
+            "L’abonnement a bien été créé sur le téléphone, mais le serveur ne l’a pas enregistré. Réessayez dans un instant.",
         );
       }
-    } catch {
+    } catch (error) {
       setMessage(
-        "Votre navigateur n’a pas pu créer l’abonnement. Réessayez dans un instant.",
+        `L’abonnement a été créé sur le téléphone mais n’a pas pu être envoyé au serveur (${name(error)}). Réessayez.`,
       );
     } finally {
       setBusy(false);
@@ -230,10 +315,85 @@ export function PushPermission({
       </Button>
 
       {message && (
-        <p role="alert" className="text-danger text-sm">
-          {message}
-        </p>
+        <>
+          <p role="alert" className="text-danger text-sm">
+            {message}
+          </p>
+
+          <DeviceState />
+        </>
       )}
     </div>
+  );
+}
+
+/**
+ * Ce que seul le téléphone sait, affiché seulement quand ça a raté.
+ *
+ * Le diagnostic du back-office s'arrête à la frontière du serveur : il sait
+ * dire « aucun abonnement enregistré », jamais pourquoi. Les trois faits
+ * ci-dessous vivent dans le navigateur et nulle part ailleurs, et ce sont eux
+ * qui distinguent une application ouverte depuis Safari d'un service worker
+ * qui ne s'active pas.
+ *
+ * Sous le message d'erreur, et jamais autrement : personne n'a besoin de lire
+ * ça quand tout marche.
+ */
+function DeviceState() {
+  const [lines, setLines] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const read = async () => {
+      const standalone =
+        typeof window !== "undefined" &&
+        window.matchMedia("(display-mode: standalone)").matches;
+
+      const found: string[] = [
+        `Ouverture : ${standalone ? "depuis l’écran d’accueil" : "dans le navigateur — c’est la cause la plus fréquente sur iPhone"}`,
+        `Autorisation : ${Notification.permission}`,
+      ];
+
+      try {
+        const registration = await navigator.serviceWorker.getRegistration("/");
+
+        found.push(
+          `Service d’arrière-plan : ${
+            registration?.active
+              ? "actif"
+              : registration
+                ? "enregistré mais pas encore actif"
+                : "absent"
+          }`,
+        );
+
+        const existing = await registration?.pushManager.getSubscription();
+        found.push(`Abonnement sur l’appareil : ${existing ? "oui" : "non"}`);
+      } catch (error) {
+        found.push(`Service d’arrière-plan : illisible (${name(error)})`);
+      }
+
+      if (!cancelled) setLines(found);
+    };
+
+    void read();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!lines) return null;
+
+  return (
+    <details className="text-ink-muted text-sm">
+      <summary className="cursor-pointer">État de cet appareil</summary>
+      <ul className="mt-2 space-y-1">
+        {lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </details>
   );
 }
