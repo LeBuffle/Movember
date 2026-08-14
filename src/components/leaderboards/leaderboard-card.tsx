@@ -85,7 +85,18 @@ export function LeaderboardCard({
       </div>
 
       {journal && (
+        /* **`key` sur la catégorie, et ce n'est pas décoratif.** Changer
+           d'onglet est une navigation côté client : le serveur renvoie une
+           nouvelle liste, mais React réutilise le composant qui occupe la
+           même place — et un composant réutilisé garde son état. Un journal
+           de vélo ouvert restait donc affiché sous le classement Course,
+           avec les sorties de la mauvaise catégorie, jusqu'à un
+           rechargement complet de la page.
+
+           La clé force le remontage : l'état repart à zéro, le bouton
+           réapparaît, et la prochaine ouverture demande la bonne catégorie. */
         <ActivityJournal
+          key={definition.key}
           action={readJournalAction}
           profileId={row.profileId}
           category={definition.key}

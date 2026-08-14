@@ -204,6 +204,28 @@ describe("le journal suit la catégorie consultée", () => {
   });
 });
 
+describe("changer d'onglet ne laisse pas un journal périmé", () => {
+  it("le dépliant est remonté quand la catégorie change", () => {
+    // Changer d'onglet est une navigation côté client : React réutilise le
+    // composant qui occupe la même place, et un composant réutilisé garde son
+    // état. Un journal de vélo ouvert restait affiché sous le classement
+    // Course, avec les sorties de la mauvaise catégorie.
+    const card = code(read("src/components/leaderboards/leaderboard-card.tsx"));
+    const block = card.slice(card.indexOf("<ActivityJournal"));
+
+    expect(block).toMatch(/key=\{definition\.key\}/);
+  });
+
+  it("et la catégorie voyage avec la demande, pas seulement à l'affichage", () => {
+    // Sans quoi le remontage corrigerait l'écran et pas la requête.
+    const component = code(
+      read("src/components/activities/activity-journal.tsx"),
+    );
+
+    expect(component).toMatch(/name="categorie" value=\{category\}/);
+  });
+});
+
 /* -------------------------------------------------------------------------
  * Le réglage
  * ---------------------------------------------------------------------- */
