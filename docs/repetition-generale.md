@@ -148,7 +148,8 @@ critère de sortie de l'epic 8.
 
 - [ ] Suivre `docs/runbook.md` §3 : redémarrer l'application
 - [ ] Suivre §5 : revenir à la version précédente, puis revenir en avant
-- [ ] Suivre §13 : **restaurer une sauvegarde** dans une base d'essai — critère de sortie
+- [ ] **Répéter une restauration** : `sudo bash /opt/defi-movember/deploy/scripts/restore-rehearsal.sh`
+      — critère de sortie de l'epic 11, lecture du résultat en §13
 - [ ] Provoquer une alerte disque (`check-resources.sh` avec un seuil abaissé) et vérifier
       qu'elle arrive sur le téléphone
 

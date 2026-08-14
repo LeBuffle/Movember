@@ -295,6 +295,33 @@ describe("les sauvegardes", () => {
     expect(backupHour).toBeLessThan(purgeHour);
   });
 
+  it("la répétition de restauration ne peut pas atteindre la production", () => {
+    // Le danger d'une restauration n'est pas qu'elle échoue, c'est qu'elle
+    // réussisse sur la mauvaise base. La protection n'est donc pas un
+    // avertissement dans la documentation : le script n'a aucun moyen de
+    // savoir où est la production, parce qu'il ne lit jamais la seule
+    // variable qui le lui dirait.
+    const rehearsal = read("deploy/scripts/restore-rehearsal.sh");
+
+    expect(rehearsal).not.toMatch(/\$\{?DATABASE_URL/);
+    expect(rehearsal).not.toMatch(/source\s+"?\$ENV_FILE/);
+
+    // Et la seule base qu'il écrit est celle qu'il vient de créer lui-même.
+    for (const write of rehearsal.matchAll(
+      /psql\s+-U\s+postgres\s+-d\s+(\w+)/g,
+    )) {
+      expect(write[1]).toBe("repetition");
+    }
+  });
+
+  it("et elle ne laisse pas la base d’essai derrière elle", () => {
+    // Un conteneur Postgres oublié consomme de la mémoire sur une machine qui
+    // n'en a pas de trop, et personne ne le remarque avant novembre.
+    const rehearsal = read("deploy/scripts/restore-rehearsal.sh");
+
+    expect(rehearsal).toMatch(/trap cleanup EXIT INT TERM/);
+  });
+
   it("le mot de passe de la base n’est jamais dans le dépôt", () => {
     // Il vit dans deploy/.env sur le serveur, en chmod 600.
     const example = read("deploy/.env.example");

@@ -469,8 +469,13 @@ sortie de l'epic 11.
    serveur**, jamais dans une conversation ni dans un e-mail. *(11.5)*
 3. **Lancer une première sauvegarde** :
    `sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh` *(11.5)*
-4. **⭐ Restaurer une sauvegarde** dans une base d'essai, en suivant `docs/runbook.md` §13.
-   ⚠️ Jamais sur la base de production. **C'est le critère de sortie de l'epic.** *(11.5)*
+4. **⭐ Répéter une restauration** :
+   `sudo bash /opt/defi-movember/deploy/scripts/restore-rehearsal.sh`
+   Le script crée une base d'essai jetable, y restaure la dernière sauvegarde, compte ce
+   qui est revenu et détruit la base. Il ne lit jamais `DATABASE_URL` : **il n'a aucun
+   moyen d'atteindre la production.** Des lignes `ERROR` pendant la restauration sont
+   normales — voir `docs/runbook.md` §13 pour lire le résultat.
+   **C'est le critère de sortie de l'epic.** *(11.5)*
 5. **⭐ Auditer le durcissement du serveur** :
    `sudo bash /opt/defi-movember/deploy/scripts/check-hardening.sh`
    Corriger les lignes rouges, en gardant une session SSH de secours ouverte pour les deux

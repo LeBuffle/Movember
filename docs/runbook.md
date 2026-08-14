@@ -803,27 +803,54 @@ sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh --check
 Sept copies quotidiennes, la plus récente datée du matin même. Si la liste est vide ou
 ancienne, **s'arrêter là** et lire §11 : la tâche planifiée ne tourne pas.
 
-### La répétition (à faire une fois, en octobre)
-
-**Ne jamais répéter sur la base de production.** Créer un projet Supabase gratuit
-temporaire, ou une base Postgres locale, et restaurer dedans :
+### La répétition — une seule commande
 
 ```bash
-# 1. Choisir une sauvegarde
-ls -lh /var/backups/defi-movember/
-
-# 2. La restaurer dans la base D'ESSAI (jamais celle de production)
-gunzip -c /var/backups/defi-movember/defi-movember-2026-10-15.sql.gz \
-  | psql "$URL_DE_LA_BASE_D_ESSAI"
-
-# 3. Vérifier qu'on a bien récupéré quelque chose
-psql "$URL_DE_LA_BASE_D_ESSAI" -c "select count(*) from public.profiles;"
-psql "$URL_DE_LA_BASE_D_ESSAI" -c "select count(*) from public.payments;"
+sudo bash /opt/defi-movember/deploy/scripts/restore-rehearsal.sh
 ```
 
+C'est tout. Le script prend la sauvegarde la plus récente, démarre une base Postgres
+jetable dans un conteneur, y déverse la sauvegarde, compte ce qui est revenu, affiche
+le résultat et détruit le conteneur. Compter deux à trois minutes.
+
+**Il ne peut pas toucher la production** : la seule base qu'il écrit est celle qu'il
+vient de créer, et il ne lit jamais `DATABASE_URL`. C'est la protection qui compte —
+le danger d'une restauration n'est pas qu'elle échoue, c'est qu'elle réussisse sur la
+mauvaise base.
+
+Pour répéter sur une sauvegarde plus ancienne, lui passer le fichier :
+
+```bash
+sudo bash /opt/defi-movember/deploy/scripts/restore-rehearsal.sh \
+  /var/backups/defi-movember/defi-movember-2026-10-15.sql.gz
+```
+
+#### Lire le résultat
+
+```
+Contenu restauré
+────────────────
+  ✓ public.profiles — 143 ligne(s)
+  ✓ public.registrations — 143 ligne(s)
+  ✓ public.payments — 141 ligne(s)
+  ✓ public.activities — 2 806 ligne(s)
+  ...
+ ✓ restauration réussie — 7 table(s) avec des données
+```
+
+- **Des lignes `ERROR` s'affichent pendant la restauration : c'est normal.** La
+  sauvegarde contient les schémas internes de Supabase (`auth`, `storage`, les
+  extensions maison), qui n'ont aucune raison d'exister dans un Postgres ordinaire.
+  Le script en affiche cinq pour information et ne s'en sert pas pour juger.
+- **Ce qui compte est la liste des tables.** Un `✗ table absente` est le seul vrai
+  échec : il veut dire que la sauvegarde est incomplète, et le script sort en erreur.
+- `· 0 ligne` sur une table est normal avant le lancement (aucune carte tirée, aucun
+  paiement) — c'est l'état réel de la base au moment de la copie.
+
 Le dump est fait avec `--clean --if-exists` : il supprime avant de recréer, donc il
-s'applique sur une base déjà peuplée sans erreur de doublon. C'est aussi pourquoi il est
-dangereux : appliqué à la bonne base, il fait exactement ce qu'on lui demande.
+s'applique sur une base déjà peuplée sans erreur de doublon. C'est aussi pourquoi une
+restauration à la main est dangereuse : appliquée à la mauvaise base, elle fait
+exactement ce qu'on lui demande.
 
 ### La vraie restauration, le jour où
 
@@ -867,7 +894,7 @@ d'une procédure d'urgence.
 | §9 Disque plein | commandes vérifiées, situation non provoquée |
 | §11 Script d'alertes | oui, exécuté avec seuils abaissés et webhook réel |
 | §11 Tâches planifiées | fichier versionné et installé par le déploiement ; **l'appel réel reste à vérifier par le PO** |
-| §13 Restaurer une sauvegarde | script vérifié sur ses refus (dump vide, configuration absente) ; **la restauration elle-même reste à répéter par le PO** — c'est le critère de sortie de l'epic 11 |
+| §13 Restaurer une sauvegarde | `backup-database.sh` vérifié sur ses refus (dump vide, configuration absente) ; `restore-rehearsal.sh` vérifié syntaxiquement, **à lancer une fois sur le serveur par le PO** — c'est le critère de sortie de l'epic 11 |
 | Durcissement du serveur | `check-hardening.sh` écrit et vérifié syntaxiquement ; **à lancer sur le serveur par le PO** |
 
 > **Une procédure écrite mais jamais exécutée est une procédure fausse.** Les lignes
