@@ -46,6 +46,11 @@ export function InstallGuide({ compact = false }: { compact?: boolean }) {
   const [prompt, setPrompt] = useState<InstallPromptEvent | null>(null);
 
   useEffect(() => {
+    // Même raison que dans `push-permission.tsx` : `navigator` n'existe pas
+    // au rendu initial, qui est fait sur le serveur. La règle
+    // `react-hooks/set-state-in-effect` est arrivée avec Next 16 et ne
+    // distingue pas ce cas d'un enchaînement de rendus évitable.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(
       detectPlatform({
         userAgent: navigator.userAgent,

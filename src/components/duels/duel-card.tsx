@@ -112,9 +112,18 @@ function Remaining({
   expiresAt: string;
   side: "received" | "sent";
 }) {
+  /* `react-hooks/purity` (nouveau avec Next 16) signale l'appel à l'horloge
+     pendant le rendu. Il a raison dans un composant client, où le serveur et
+     le navigateur calculeraient deux heures différentes de part et d'autre
+     d'une heure pleine. Celui-ci n'existe que sur le serveur — aucun
+     `"use client"` dans sa chaîne, la page est rendue à la demande — et la
+     règle ne sait pas faire la différence. */
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+
   const hours = Math.max(
     0,
-    Math.round((Date.parse(expiresAt) - Date.now()) / 3_600_000),
+    Math.round((Date.parse(expiresAt) - now) / 3_600_000),
   );
 
   if (side === "sent") {

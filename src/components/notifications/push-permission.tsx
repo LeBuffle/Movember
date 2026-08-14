@@ -68,6 +68,13 @@ export function PushPermission({
       // On an iPhone that has not installed the app, the push API is simply
       // absent — so this branch and the next describe the same device at two
       // moments, and only the second is actionable.
+      //
+      // `react-hooks/set-state-in-effect` (nouveau avec Next 16) préférerait
+      // que cet état soit calculé pendant le rendu. Il ne peut pas l'être :
+      // `navigator` et `Notification` n'existent pas sur le serveur, et le
+      // rendu initial est fait là-bas. Un effet est le seul moment où la
+      // question a une réponse.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSupport(displayMode === "browser" ? "needs-install" : "unsupported");
       return;
     }

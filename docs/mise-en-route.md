@@ -518,9 +518,25 @@ Rien de technique, et c'est ce qui prend le plus de temps.
 
 ---
 
-## Une dette technique, à trancher à froid
+## La dette technique — soldée le 14 août
 
-`npm audit` signale **trois vulnérabilités « high »** (postcss, sharp), héritées de
-Next.js 15. Les corriger suppose de passer à Next.js 16 — une montée de version majeure.
-Ce n'est ni urgent ni anodin : à décider hors d'une session de développement, et pas en
-octobre.
+`npm audit` signalait **quatre vulnérabilités « high »** (postcss, sharp), héritées de
+Next.js 15, et le seul correctif proposé était la montée en version majeure. Elle est
+faite : **Next.js 16.3.1, `npm audit` ne signale plus rien**.
+
+Ce qu'il faut en retenir, et qui n'est pas visible à l'écran :
+
+- **La construction reste sur webpack** (`next build --webpack`). Next 16 est passé à
+  Turbopack par défaut, et Turbopack ne sait pas fabriquer notre service worker : le
+  premier essai a produit une application sans mode hors-ligne ni notifications, **sans
+  la moindre erreur**. Le drapeau est ce qui l'empêche. Un test le retient.
+- **L'application pèse 27 ko de plus** à la première visite (159 ko au lieu de 132 ko,
+  compressés). C'est le prix de Next 16 lui-même. Payé une fois par téléphone et par
+  déploiement, puis mis en cache par le service worker.
+- **Le fichier `src/middleware.ts` est annoncé comme déprécié** par Next 16, au profit
+  d'un `src/proxy.ts`. Il fonctionne toujours et sera retiré dans une version 17 dont
+  nous n'avons pas besoin. C'est lui qui garde toutes les pages du jeu : le renommer se
+  fera à froid, après novembre, jamais dans le même lot qu'autre chose.
+
+Pour reprendre la mesure du poids après un changement, la méthode est dans
+`tests/unit/build-config.test.ts`.

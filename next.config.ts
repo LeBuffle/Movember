@@ -36,30 +36,6 @@ const nextConfig: NextConfig = {
      */
     serverActions: { bodySizeLimit: "3mb" },
   },
-
-  /**
-   * Removes the parts of the error reporter we do not use.
-   *
-   * Sentry ships performance tracing and a debug logger in the same bundle
-   * as error reporting. Both are dead weight here — tracing is off
-   * (`tracesSampleRate: 0`) and the logger only speaks in development — but
-   * they are only actually dropped when these flags are defined, because
-   * they sit behind runtime checks the bundler cannot otherwise resolve.
-   *
-   * This matters on the participant side: the application is opened on a
-   * phone, often on a poor connection, sometimes mid-run. Every kilobyte
-   * here is paid by someone standing in the cold.
-   */
-  webpack: (config, { webpack }) => {
-    config.plugins.push(
-      new webpack.DefinePlugin({
-        __SENTRY_DEBUG__: false,
-        __SENTRY_TRACING__: false,
-      }),
-    );
-
-    return config;
-  },
 };
 
 /**
@@ -68,6 +44,12 @@ const nextConfig: NextConfig = {
  * Compiles `src/app/sw.ts` into `public/sw.js` and injects its registration
  * into the client bundle. What the worker may cache is decided in
  * `src/lib/pwa/cache-policy.ts`, which is an allow-list on purpose.
+ *
+ * **This is why the build runs `next build --webpack`.** Next 16 bundles with
+ * Turbopack by default, Serwist does not support it, and the failure is
+ * silent: the build succeeds, every route is there, and the application ships
+ * with no service worker at all — no offline page, no push registration.
+ * `tests/unit/build-config.test.ts` holds the flag in place.
  */
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -114,10 +96,30 @@ export default withSentryConfig(withSerwist(nextConfig), {
      served publicly would hand our whole source to anyone asking for it. */
   sourcemaps: { deleteSourcemapsAfterUpload: true },
 
+  /**
+   * Removes the parts of the error reporter we do not use.
+   *
+   * Sentry ships performance tracing and a debug logger in the same bundle as
+   * error reporting. Both are dead weight here — tracing is off
+   * (`tracesSampleRate: 0`) and the logger only speaks in development — but
+   * they are only dropped when these flags are set, because they sit behind
+   * runtime checks a bundler cannot otherwise resolve.
+   *
+   * This used to be a hand-written `webpack.DefinePlugin` in the Next
+   * configuration above. The SDK now does exactly the same thing under its
+   * own option, and having it here rather than there means the day Sentry
+   * renames a flag, it renames it for us too.
+   *
+   * It matters on the participant side: the application is opened on a phone,
+   * often on a poor connection, sometimes mid-run. Every kilobyte here is
+   * paid by someone standing in the cold.
+   */
+  webpack: {
+    treeshake: { removeDebugLogging: true, removeTracing: true },
+  },
+
   /* Routes the browser's reports through our own domain, so an ad blocker
      does not silently swallow them — which would leave us believing there
      are no client-side errors. */
   tunnelRoute: "/monitoring",
-
-  disableLogger: true,
 });

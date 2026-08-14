@@ -103,7 +103,6 @@ async function deleteForEdition(
      all of them have an `id` — `leaderboard_snapshots` is keyed on the trio
      (édition, participant, jour) — and a purge that failed on that table would
      have failed silently, months after anybody was watching. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (admin.from(table as any) as any)
     .delete()
     .eq("edition_id", editionId)

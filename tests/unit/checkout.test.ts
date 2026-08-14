@@ -76,7 +76,6 @@ function stubStripe(
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const asStripe = (client: unknown) => client as any;
 
 beforeEach(() => {

@@ -1,20 +1,35 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import eslintConfigPrettier from "eslint-config-prettier";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/**
+ * Depuis Next 16, `eslint-config-next` est publié directement au format plat :
+ * il s'importe, il ne se traduit plus. Le pont `FlatCompat` qui servait à le
+ * charger échouait dès la montée de version — et son échec ressemblait à un
+ * bug d'ESLint plutôt qu'à une configuration à mettre à jour.
+ *
+ * `core-web-vitals` embarque déjà `next/typescript` : le lister une seconde
+ * fois chargerait les mêmes règles deux fois.
+ */
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+/**
+ * En format plat, une règle n'est reconnue que dans un objet qui déclare le
+ * greffon qui la porte. On réutilise l'instance déjà chargée par la
+ * configuration de Next plutôt que d'ajouter une dépendance de plus : deux
+ * copies de `@typescript-eslint` à des versions différentes se comporteraient
+ * différemment sur le même fichier.
+ */
+const typescriptPlugins = nextCoreWebVitals.find(
+  (entry) => entry.name === "next/typescript",
+)?.plugins;
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
   // Disables ESLint rules that conflict with Prettier. Must stay last.
   eslintConfigPrettier,
   {
+    name: "defi-movember/typescript",
+    files: ["**/*.ts", "**/*.tsx"],
+    plugins: typescriptPlugins,
     rules: {
       /*
        * An underscore says "I know, and it is on purpose".
