@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* =========================================================================
+ * DEFI Movember — design tokens
+ *
+ * Brand colours are blue and orange (CLAUDE.md §5). Identity is specific to
+ * this project: no Movember Foundation logo, imagery or brand element is
+ * ever used.
+ *
+ * CONTRAST — read before changing any value.
+ * Every colour below that can carry text has been checked against WCAG 2.1
+ * AA (4.5:1 for body text, 3:1 for large text and UI boundaries), and
+ * `tests/unit/contrast.test.ts` reads THIS FILE and fails the build if a
+ * ratio regresses.
+ *
+ * The trap is orange. `--color-brand-orange` (#fb5a0c) only reaches 3.20:1
+ * on white: it is an ACCENT — fills, borders, decoration — and must never
+ * carry small text, nor be used as a background behind white text. When
+ * orange has to carry text, use `--color-brand-orange-ink` (5.43:1).
+ *
+ * The two brand colours are read from the official logo
+ * (`public/brand/logo-source.jpeg`), not chosen beside it. A site whose blue
+ * is nearly the logo's blue looks like a printing error — the eye catches the
+ * near-miss far more easily than it would notice a deliberate contrast.
+ * ========================================================================= */
+
+@theme {
+  /* --- Brand ----------------------------------------------------------- */
+  /* The logo's navy, sampled from the artwork. 14.73:1 on white — safe for
+     text and as a button fill behind white text, with room to spare. */
+  --color-brand-blue: #01294d;
+  --color-brand-blue-dark: #011f3c;
+  --color-brand-blue-soft: #eef3f9;
+
+  /* The logo's orange. 3.20:1 on white — ACCENT ONLY, never small text,
+     never behind white text. */
+  --color-brand-orange: #fb5a0c;
+  /* 5.43:1 on white — the orange to use whenever text is involved. A darker
+     shade of the logo orange rather than a different hue. */
+  --color-brand-orange-ink: #b8440a;
+  --color-brand-orange-soft: #fff5ee;
+  /* The palette above is built for dark-on-white. This one is the reverse
+     case: 8.73:1 ON THE BRAND BLUE, for accent text over a blue surface —
+     the social sharing image today, any blue panel later. Unreadable on
+     white (1.70:1), which is why it is named for where it belongs.
+
+     The accent orange now clears 4.5:1 on the navy, so it is usable there
+     too; this lighter tone stays because small text on a dark panel wants
+     more than the minimum. */
+  --color-brand-orange-on-blue: #fdba74;
+
+  /* --- Neutrals -------------------------------------------------------- */
+  --color-ink: #171717;
+  --color-ink-muted: #525252;
+  --color-line: #e5e5e5;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #fafafa;
+
+  /* --- Semantic states -------------------------------------------------- */
+  /* Never used alone: every state also carries an icon and a label (AC 6) */
+  --color-success: #15803d;
+  --color-success-soft: #f0fdf4;
+  --color-danger: #b91c1c;
+  --color-danger-soft: #fef2f2;
+
+  /* --- Card proportions --------------------------------------------------
+     The real artwork's ratio, measured on the delivered files (1040 × 1500),
+     and not the 3/4 that was guessed before any card existed. Guessing left
+     a band of empty colour above and below every visual.
+
+     Declared once because four screens draw a card — the album, the reveal,
+     the public gallery and the back-office preview — and a ratio that drifts
+     between them is a catalogue that looks wrong on one screen out of four. */
+  --aspect-carte: 1040 / 1500;
+
+  /* --- Typography ------------------------------------------------------- */
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  /* A single, consistent focus ring across the whole app. Never remove it:
+     the admin back-office and the payment flow must stay keyboard-usable. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-blue);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* =========================================================================
+ * Card reveal (story 5.5)
+ *
+ * Written in CSS rather than in JavaScript on purpose, and it is not a
+ * stylistic preference. The animation has to run even when the script never
+ * arrives — a phone in a cold pocket on a poor connection is the normal case
+ * here — and `both` means the last keyframe is also the resting state. So the
+ * page ends on the revealed card whether the animation played, was skipped,
+ * or never started.
+ *
+ * Short: 700 ms. An animation you cannot skip becomes a chore on the third
+ * day, and one you can skip but that drags is worse — it teaches people to
+ * skip it.
+ * ========================================================================= */
+
+@keyframes carte-revelation {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(1.5rem);
+  }
+
+  65% {
+    opacity: 1;
+    transform: scale(1.04) translateY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.carte-revelation {
+  animation: carte-revelation 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Skipped. Set by the reveal component on the first tap or key press — and
+   the selector wins over the rule above without needing !important. */
+.carte-revelation[data-vue="oui"] {
+  animation: none;
+}
+
+/* Somebody who asked their system for less movement asked for a reason:
+   vestibular disorders, migraine, motion sickness. The card simply appears. */
+@media (prefers-reduced-motion: reduce) {
+  .carte-revelation {
+    animation: none;
+  }
+}

@@ -1,0 +1,166 @@
+name: Déploiement — production
+
+# A merge into `main` puts the site live. Nothing else does.
+#
+# `workflow_dispatch` exists for the case that matters at 22:00 on a Sunday:
+# redeploying the current `main` without inventing a commit to push.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Two production deployments must never overlap — they would fight over the
+# same container. Unlike staging, an in-flight one is NOT cancelled: it may
+# already have applied a migration, and killing it there leaves the database
+# ahead of the code.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Vérifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+  # Separate job, before the deployment, and that ordering is the whole point
+  # of AC 3: a migration that fails must stop everything WITHOUT touching the
+  # running containers. The site stays up on the previous version, which is
+  # the correct outcome — old code against an unchanged schema.
+  #
+  # Run from here rather than from the VPS: the runner already has Node, and
+  # the database is reached over the network in either case. One less thing
+  # to install and keep updated on the server.
+  migrations:
+    name: Migrations de base de données
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Lister ce qui sera appliqué
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          # Dry run first, so the log says what changed even when the apply
+          # succeeds — the record of what a deployment did to the schema.
+          supabase migration list --db-url "$SUPABASE_DB_URL" || true
+
+      - name: Appliquer les migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
+
+  deploy:
+    name: Déployer en production
+    needs: migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://defi-movember.fr
+
+    steps:
+      - name: Préparer la clé SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # `ssh-keyscan` gives up after five seconds by default, and a VPS
+          # that is busy — rebuilding an image, running a scheduled task — can
+          # take longer than that to answer on port 22. Four staging
+          # deployments out of thirty died here, each of them reporting
+          # nothing at all, because the reason went to /dev/null.
+          #
+          # So: a longer wait, several attempts, and the reason kept and
+          # printed when they all fail. Retrying is safe — a fingerprint
+          # collected twice is a duplicate line in a file read top to bottom.
+          #
+          # **Twelve attempts over five minutes, and the figure comes from a
+          # real failure.** The window was 100 seconds; on 11 August a
+          # deployment exhausted all five attempts on a VPS that was back a few
+          # minutes later. A reboot takes one to three minutes, so a window
+          # shorter than that turns an ordinary restart into a red
+          # deployment — and a red deployment nobody can explain is one the
+          # Product Owner has to escalate on a Sunday.
+          #
+          # The cost of waiting is five minutes of runner time on a deployment
+          # that was going to fail anyway. The cost of not waiting is a
+          # deployment declared broken while the server is merely rebooting.
+          for attempt in $(seq 1 12); do
+            if ssh-keyscan -T 15 -H "$VPS_HOST" >> ~/.ssh/known_hosts 2> /tmp/keyscan.err \
+              && [ -s ~/.ssh/known_hosts ]; then
+              echo "✓ empreinte du serveur relevée (tentative $attempt)"
+              exit 0
+            fi
+            echo "  tentative $attempt/12 — pas de réponse sur le port 22, nouvel essai dans 10s"
+            sleep 10
+          done
+
+          echo "✗ Le serveur n'a pas répondu sur le port 22 en cinq minutes." >&2
+          echo "  Le code n'est pas en cause : c'est le serveur qui est injoignable." >&2
+          echo "  Marche à suivre : docs/runbook.md, section « 12 quater »." >&2
+          cat /tmp/keyscan.err >&2 || true
+          exit 1
+
+      - name: Déployer
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$VPS_USER@$VPS_HOST" \
+            "bash /opt/defi-movember/deploy/scripts/deploy.sh '${{ github.sha }}' production"
+
+      - name: Vérifier que le site répond vraiment
+        run: |
+          # The deep check, not the shallow one: at this point the question is
+          # not "does a process answer" — the deployment script already waited
+          # for that — but "does the site work, database included". This is the
+          # last chance to catch a deployment that is technically successful
+          # and practically broken.
+          #
+          # Retried: on the very first deployment for a host name, Traefik
+          # still has to obtain its Let's Encrypt certificate.
+          for attempt in $(seq 1 12); do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' --max-time 15 \
+              https://defi-movember.fr/api/health?deep=1) || true
+
+            if [[ "$code" == "200" ]]; then
+              echo "✓ production en ligne et saine (tentative $attempt)"
+              cat /tmp/health.json
+              exit 0
+            fi
+
+            echo "tentative $attempt : HTTP $code"
+            [[ -s /tmp/health.json ]] && cat /tmp/health.json
+            sleep 10
+          done
+
+          echo "::error::La production ne répond pas correctement après le déploiement."
+          echo "Le script de déploiement a déjà rétabli la version précédente s'il"
+          echo "le pouvait. Vérifiez l'état avec :"
+          echo "  ssh <utilisateur>@<hôte> 'cd /opt/defi-movember/deploy && docker compose ps'"
+          echo "Puis, si besoin : bash deploy/scripts/rollback.sh production"
+          exit 1

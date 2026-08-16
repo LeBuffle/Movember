@@ -1,0 +1,559 @@
+# Mise en route — l'ordre des opérations
+
+Ce document est la liste unique de ce qui reste à faire côté PO, dans l'ordre où il faut le
+faire. Chaque ligne renvoie à la story qui la détaille.
+
+Il est écrit pour être suivi **sur ordinateur**, sauf les points explicitement marqués
+« téléphone » — et ceux-là ne se vérifient nulle part ailleurs.
+
+---
+
+## Étape 0 — Savoir où on en est
+
+Avant tout, vérifier ce qui est déjà en base. Dans Supabase → **SQL Editor** :
+
+```sql
+select table_name
+from information_schema.tables
+where table_schema = 'public'
+order by table_name;
+```
+
+La liste attendue une fois **toutes** les migrations passées :
+
+`activities`, `activity_connections`, `activity_consents`, `admin_audit_log`,
+`card_grants`, `card_rarities`, `cards`, `challenge_assignments`, `challenges`,
+`common_challenges`, `editions`, `leaderboard_settings`, `news_posts`,
+`notification_deliveries`, `notification_preferences`, `payments`, `profiles`,
+`push_subscriptions`, `registration_tiers`, `registrations`, `shipping_addresses`,
+`team_members`, `teams`, `activity_flags`, `integrity_settings`, `card_packs`,
+`pack_purchases`, `super_teams`.
+
+Ce qui manque dans cette liste indique par où reprendre.
+
+---
+
+## Étape 1 — Les migrations, dans l'ordre du nom de fichier
+
+Supabase → **SQL Editor** → **New query** → coller le contenu du fichier → **Run**.
+Puis la suivante. **L'ordre compte** : chaque migration suppose les précédentes.
+
+| # | Fichier | Story |
+| --- | --- | --- |
+| 1 | `20260803000000_initial_schema.sql` | 1.6 |
+| 2 | `20260804000000_admin_audit_log.sql` | 1.10 |
+| 3 | `20260804100000_registrations_payments.sql` | 2.1 |
+| 4 | `20260804110000_terms_acceptance.sql` | 2.2 |
+| 5 | `20260804120000_challenges.sql` | 4.1 |
+| 6 | `20260805100000_shipping_addresses.sql` | 2.7 |
+| 7 | `20260805110000_refunds.sql` | 2.8 |
+| 8 | `20260805120000_challenge_evidence.sql` | 4.3 |
+| 9 | `20260805130000_catchup_assignments.sql` | 4.4 |
+| 10 | `20260805140000_common_challenges.sql` | 4.8 |
+| 11 | `20260805150000_challenge_arbitration.sql` | 4.10 |
+| 12 | `20260805160000_activities.sql` | 3.1 |
+| 13 | `20260805170000_activity_consent.sql` | 3.2 |
+| 14 | `20260806100000_activity_connections.sql` | 3.3 |
+| 15 | `20260806110000_connection_refresh.sql` | 3.7 |
+| 16 | `20260806120000_activity_minimisation.sql` | 3.4 |
+| 17 | `20260806130000_cards.sql` | 5.1 |
+| 18 | `20260806140000_grant_card_with_completion.sql` | 5.3 |
+| 19 | `20260806150000_card_images.sql` | 5.6 |
+| 20 | `20260806160000_card_reveal.sql` | 5.5 |
+| 21 | `20260806170000_push_subscriptions.sql` | 6.1 |
+| 22 | `20260806180000_notification_deliveries.sql` | 6.3 |
+| 23 | `20260806190000_notification_preferences.sql` | 6.7 |
+| 24 | `20260806200000_teams.sql` | 7.1 |
+| 25 | `20260806210000_leaderboards.sql` | 7.3 |
+| 26 | `20260806220000_news_posts.sql` | 7.8 |
+| 27 | `20260806230000_display_name_is_final.sql` | 1.13 |
+| 28 | `20260806240000_card_image_size.sql` | 5.6 |
+| 29 | `20260806250000_participant_suspension.sql` | 8.7 |
+| 30 | `20260806260000_activity_flags.sql` | 9.6 |
+| 31 | `20260806270000_card_packs.sql` | 10.1 |
+| 32 | `20260806280000_account_deletion.sql` | 11.2 |
+| 33 | `20260806290000_leaderboard_snapshots.sql` | 13.1 |
+| 34 | `20260806300000_player_duels.sql` | 12.1 |
+| 35 | `20260806310000_duel_notifications.sql` | 12.7 |
+| 36 | `20260813000000_super_teams.sql` | 14.1 |
+| 37 | `20260813010000_team_logos.sql` | 14.4 |
+| 38 | `20260813020000_walk_leaderboard.sql` | 7.4 (révisée) |
+| 39 | `20260813030000_activity_visibility.sql` | 15.1, 15.2 |
+
+⚠️ **Après la 39, les journaux de sorties sont vides pour tout le monde**, et c'est voulu :
+aucune sortie déjà en base ne porte le drapeau « privée », et ce qu'on ne sait pas est
+traité comme privé. Un réimport les remplit — celui de `/admin/etat` pour soi, celui de la
+fiche participant pour les autres. En novembre le cas ne se posera pas, puisque tout
+arrivera après.
+
+Le compte-rendu du réimport dira **« N sorties lues, 0 enregistrée »** : c'est normal et
+c'est le bon résultat. Les sorties étaient déjà là ; le réimport ne les récrit pas, il
+corrige seulement leur visibilité — le seul champ qui ne décide rien dans le jeu.
+
+⚠️ **La 38 recrée la vue des classements** — comme la 29. Quelques secondes sans
+classement pendant qu'elle tourne ; elle se rafraîchit elle-même à la fin.
+
+⚠️ **La 37 crée le seau `logos`.** Sans elle, un capitaine qui envoie un logo reçoit un
+message d'erreur de stockage : la table accepte l'adresse, mais le fichier n'a nulle part
+où aller.
+
+⚠️ **La 29 reconstruit la vue des classements** : quelques secondes sans classement pendant
+qu'elle tourne. Elle se rafraîchit elle-même à la fin — rien à lancer après.
+
+Puis, **en dernier**, rejouer `seed.sql`. Il est rejouable sans risque et crée l'édition
+2026, les trois niveaux d'inscription, les deux packs de cartes, les trois défis entre
+joueurs et les deux lots de crédits.
+
+⚠️ **Le seed après les migrations, jamais avant.** Il remplit des tables que les migrations
+créent. Lancé trop tôt, il s'arrête sur un message de ce genre :
+
+```
+ERROR: 42P01: relation "public.duel_types" does not exist
+```
+
+Ce n'est pas une erreur du seed : c'est la migration correspondante qui n'a pas encore été
+appliquée. Appliquer les migrations manquantes, puis relancer le seed en entier — il
+reprend tout depuis le début sans rien dupliquer.
+
+### Le logo et les icônes
+
+Le logo officiel vit dans `public/brand/logo-source.jpeg`. **Tout le reste en est
+dérivé** — les quatre déclinaisons web, les icônes de l'application, l'image de partage —
+par deux scripts, dans cet ordre :
+
+```bash
+npm install --no-save sharp
+node scripts/prepare-brand.mjs   # détoure le fond, découpe la marque, taille pour le web
+node scripts/generate-icons.mjs  # icônes, favicon, image de partage
+npm uninstall --no-save sharp
+```
+
+Les fichiers produits sont versionnés : ce sont des entrées de construction, pas des
+artefacts, et les régénérer à chaque déploiement serait du gaspillage. **À relancer
+uniquement si le logo change.**
+
+`sharp` n'est volontairement pas une dépendance du projet : c'est un module natif de
+poids, utile trois fois dans la vie du projet, et l'ajouter ralentirait chaque
+construction pour rien.
+
+### Le catalogue de défis
+
+Une fois le seed passé, importer `supabase/challenges-2026.sql` : **70 défis**, répartis
+sur les six familles de sport, du 3 km au fil rouge de vingt-cinq jours.
+
+Il est rejouable — un défi déjà présent sous le même titre n'est pas réinséré — et il se
+termine par un contrôle qui affiche la répartition obtenue. Le total attendu est 70.
+
+Un seuil se change en une instruction SQL. Un défi se retire du tirage avec
+`is_active = false`, **jamais avec un DELETE** : la suppression emporterait les
+attributions et les résultats qui le référencent.
+
+⚠️ **Sans catalogue, le tirage du matin n'attribue rien** et personne n'a de défi. En
+dessous de 30 défis actifs, il tourne mais se répète ; l'écran du back-office le signale.
+
+Deux commandes à passer **une seule fois**, après la migration 25 :
+
+```sql
+-- Peuple la vue des classements. Elle est vide tant qu'on ne l'a pas fait,
+-- et tous les écrans de classement afficheront un classement vide.
+select public.refresh_leaderboards();
+```
+
+Enfin, se donner le rôle administrateur — après s'être inscrit par l'application :
+
+```sql
+update public.profiles set role = 'admin' where email = 'votre@email.fr';
+```
+
+---
+
+## Étape 2 — Les secrets sur le serveur de préproduction
+
+Tous dans `deploy/.env.staging`, sur le VPS, en `chmod 600`.
+**Aucune de ces valeurs ne doit passer par notre conversation ni par le dépôt.**
+
+| Variable | Comment l'obtenir | Story |
+| --- | --- | --- |
+| `TOKEN_ENCRYPTION_KEY` | `openssl rand -hex 32` | 3.3 |
+| `CRON_SECRET` | `openssl rand -base64 32` | 1.4 |
+| `ACCESS_CODE` | au choix, 6 caractères minimum. **Jamais en production** | 1.3 |
+| `STRIPE_SECRET_KEY` | Stripe → Développeurs → Clés d'API, **mode test** (`sk_test_`) | 2.3 |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | même page (`pk_test_`) | 2.3 |
+| `STRIPE_WEBHOOK_SECRET` | après l'étape 3 ci-dessous (`whsec_`) | 2.4 |
+| `STRAVA_CLIENT_ID` / `STRAVA_CLIENT_SECRET` | réglages de l'application Strava | 3.3 |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN` | au choix, une chaîne quelconque | 3.5 |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` | 6.1 |
+| `RESEND_API_KEY` / `RESEND_FROM_ADDRESS` | compte Resend — **septembre** | 6.4 |
+
+⚠️ **Les clés VAPID se génèrent une seule fois.** Les changer invalide silencieusement tous
+les abonnements existants : les navigateurs continuent de fonctionner, les envois
+continuent d'être rejetés, et rien ne dit pourquoi.
+
+---
+
+## Étape 3 — Les services extérieurs
+
+> ✅ **Resend est branché et vérifié** (8 août). Domaine `defi-movember.fr` authentifié,
+> SMTP de Supabase configuré, variables posées sur la préproduction. La confirmation
+> d'inscription et l'e-mail de bienvenue après paiement arrivent tous les deux.
+>
+> La fiche complète reste dans [`resend.md`](resend.md) — elle servira à refaire la même
+> chose pour la production, et elle porte le **calcul de quota à faire avant novembre**,
+> qui est le seul point encore ouvert sur ce sujet.
+
+### Stripe (mode test)
+
+1. Développeurs → Webhooks → **Ajouter un point de terminaison**
+   - Adresse : `https://staging.defi-movember.fr/api/webhooks/stripe`
+   - Événements : `checkout.session.completed`,
+     `checkout.session.async_payment_succeeded`, `charge.succeeded`, `charge.updated`,
+     `charge.refunded`
+2. Ouvrir le point de terminaison → **Secret de signature** → Révéler → le poser dans
+   `STRIPE_WEBHOOK_SECRET`, puis redéployer.
+
+*(stories 2.4, 2.6, 2.8)*
+
+### Strava
+
+1. Réglages de l'application → **Authorization Callback Domain** : `staging.defi-movember.fr`
+   — sans `https://`, sans chemin. Strava refuse la redirection sinon.
+2. Créer l'abonnement au webhook. **Un seul abonnement par application** : préproduction
+   **ou** production, jamais les deux.
+
+   ```bash
+   curl -X POST https://www.strava.com/api/v3/push_subscriptions \
+     -F client_id=VOTRE_ID \
+     -F client_secret=VOTRE_SECRET \
+     -F callback_url=https://staging.defi-movember.fr/api/webhooks/strava \
+     -F verify_token=LA_VALEUR_DE_STRAVA_WEBHOOK_VERIFY_TOKEN
+   ```
+
+*(stories 3.3, 3.5)*
+
+### La politique de sécurité — ⚠️ à faire, sinon aucun visuel de carte ne s'affiche
+
+Dans `deploy/.env` sur le VPS, deux variables qui prennent la **même valeur** — l'URL du
+projet Supabase :
+
+```
+CSP_CONNECT_SRC=https://xxxx.supabase.co
+CSP_IMG_SRC=https://xxxx.supabase.co
+```
+
+Puis `docker compose up -d --force-recreate` : la politique est posée par Traefik depuis ce
+fichier, un simple redémarrage ne la relit pas.
+
+> **Le défaut qu'elle provoque est trompeur** et a été rencontré le 11 août : le visuel est
+> correct à l'import, la carte s'enregistre, et l'image apparaît ensuite cassée — comme si
+> le téléversement avait échoué. Il avait réussi. L'aperçu à l'import affiche le fichier
+> local ; c'est seulement après enregistrement que le navigateur va chercher l'image chez
+> Supabase, et la refuse. Voir `runbook.md` §12 bis.
+
+*(story 5.6)*
+
+### Supabase
+
+Ajouter les adresses de retour aux **Redirect URLs** : celle de la préproduction, et
+`https://defi-movember.fr/**` avant la mise en production. *(story 1.4)*
+
+### Resend — fait ✅
+
+Compte créé, domaine `defi-movember.fr` authentifié (DKIM, SPF, DMARC), SMTP branché dans
+**Authentication → Emails → SMTP Settings**, et les trois variables posées dans
+`deploy/.env.staging`.
+
+Vérifié de bout en bout : e-mail de confirmation à la création de compte, et e-mail de
+bienvenue après un paiement de test.
+
+**Ce qu'il reste sur ce sujet**, et ce n'est plus un blocage technique :
+
+1. **Refaire les trois variables dans `deploy/.env.production`** avant la mise en
+   production, et vérifier que le Site URL de Supabase pointe sur le domaine de production.
+2. **Trancher le palier Resend** avant l'ouverture. Le gratuit est 3 000 e-mails par mois
+   et **100 par jour**. Les confirmations et les e-mails de bienvenue tiennent largement ;
+   ce qui déborde, c'est le rappel quotidien pour qui n'a pas installé l'application —
+   200 personnes concernées font 6 000 e-mails sur le mois. Détail du calcul dans
+   [`resend.md`](resend.md).
+3. **Monter la limite d'envoi de Supabase** (Authentication → Rate Limits). Elle est
+   indépendante de celle de Resend et reste basse par défaut : c'est elle qui bloquerait le
+   premier jour d'inscriptions, pas Resend.
+
+*(stories 2.5, 6.4)*
+
+---
+
+## Étape 4 — Les tâches planifiées
+
+**Ne jamais ajouter une ligne de cron à la main sur le serveur** : le déploiement suivant
+l'effacerait sans rien dire. Tout passe par deux fichiers du dépôt — `deploy/crontab`
+pour la production, `deploy/crontab.staging` pour la préproduction — qui s'installent
+**ensemble**, à chaque déploiement, quel que soit l'environnement.
+
+> **Depuis le 14 août, la préproduction a ses propres tâches.** Elle n'en avait aucune :
+> aucun défi distribué, aucun jeton renouvelé, aucun classement recalculé — tout n'y
+> arrivait que si quelqu'un appuyait sur un bouton. La répétition générale était donc
+> incapable de prouver la seule chose qu'elle existe pour prouver : que le mois se
+> déroule tout seul. La préproduction ayant son propre projet Supabase, rien de ce qui y
+> tourne ne touche aux données de production.
+
+Pour en déclencher une à la main malgré tout :
+
+```bash
+source /opt/defi-movember/deploy/.env.staging
+curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/<tâche>
+```
+
+Les minutes de la préproduction sont décalées de celles de la production (voir
+`deploy/crontab.staging`), et ses journaux sont séparés :
+`/var/log/defi-movember-cron-staging.log`.
+
+| Tâche | Quand | Ce qu'elle fait | Story |
+| --- | --- | --- | --- |
+| `ping` | 5:07 | Preuve que le mécanisme marche | 1.4 |
+| `defis-du-jour` | 5:04 | Attribue et notifie le défi du jour | 4.4, 6.5 |
+| `jetons` | :41 | Renouvelle les jetons Strava avant expiration | 3.7 |
+| `rattrapage` | :17 | Récupère les sorties que le webhook a perdues | 3.6 |
+| `rapprochement` | :23 | Complète les frais Stripe réels | 2.6 |
+| `classements` | :03, :18, :33, :48 | Rafraîchit les huit classements | 7.3 |
+| `purge` | 4:34 | Applique la politique de conservation. **Répond « rien à faire » onze mois par an** | 11.4 |
+| `photographie` | 5:02 | Enregistre les rangs du jour, repère du « +3 places » | 13.1 |
+| `defis-joueurs` | :19, de 8 h à 22 h | Clôt les défis entre joueurs échus, rappelle ceux qui courent encore | 12.5, 12.7 |
+
+Et une tâche qui n'est pas un appel HTTP mais un script :
+
+| Script | Quand | Ce qu'il fait | Story |
+| --- | --- | --- | --- |
+| `backup-database.sh` | 3:12 | Sauvegarde la base, sept copies conservées | 11.5 |
+| `check-resources.sh` | toutes les 10 min | Surveille disque et mémoire | 1.11 |
+
+**Ces deux-là ne sont volontairement pas repris en préproduction** : le premier
+sauvegarde la base nommée dans `deploy/.env`, c'est-à-dire la production, et le second
+surveille la machine et non un environnement. Les dupliquer écrirait deux fois le même
+fichier et enverrait deux alertes pour un seul disque plein.
+
+⚠️ La sauvegarde passe **avant** la purge, et cet ordre est vérifié par un test : une
+sauvegarde prise après la purge serait la sauvegarde de l'état déjà purgé.
+
+---
+
+## Étape 5 — La recette, dans l'ordre du parcours d'un participant
+
+À faire sur la préproduction, avec **deux comptes de test** — c'est la condition de la
+moitié de ces vérifications.
+
+### Paiement et inscription
+
+- [ ] Payer une inscription avec `4242 4242 4242 4242`. Attendu au retour :
+      « votre inscription est confirmée », et `/jeu` accessible. *(2.4)*
+- [ ] Abandonner un paiement (flèche retour de Stripe) : « rien n'a été prélevé ». *(2.3)*
+- [ ] Carte refusée `4000 0000 0000 0002` : rien ne change chez nous. *(2.3)*
+- [ ] **Renvoyer deux ou trois fois** l'événement `checkout.session.completed` depuis
+      Stripe. Attendu : toujours **une seule** ligne dans `payments`. *(2.4)*
+- [ ] Avec un compte qui n'a pas payé : `/jeu` doit être refusé. *(2.4)*
+- [ ] `/admin/collecte` : montant encaissé, frais réels, taux constaté. Rapprocher au
+      centime contre Stripe. *(2.6)*
+- [ ] Rembourser un paiement de test, vérifier les **deux** lignes comptables, puis
+      vérifier qu'un second remboursement est refusé. *(2.8)*
+- [ ] Niveau 2 ou 3 : le rappel d'adresse apparaît, le formulaire s'enregistre.
+      Niveau 1 : rien. Puis `/admin/livraisons` → CSV → **ouvrir dans Excel et vérifier les
+      accents**. *(2.7)*
+
+### Défis
+
+- [ ] Créer un défi de **chaque type** depuis `/admin/defis`, **sur téléphone** — c'est le
+      vrai test de l'écran. *(4.2, 4.7)*
+- [ ] Le banc d'essai : mettre `0,005` en distance et voir que tout passe. C'est la faute
+      d'unité rendue visible. *(4.3)*
+- [ ] Lancer l'attribution du jour, puis **l'appuyer une seconde fois** : zéro nouvelle
+      attribution. *(4.4)*
+- [ ] Injecter les activités simulées : le défi doit se valider tout seul. *(3.1)*
+- [ ] Programmer un défi commun, vérifier le refus d'une date passée, annuler. *(4.8)*
+- [ ] Arbitrer un défi à la main : valider puis invalider, et vérifier qu'il ne se
+      revalide pas tout seul ensuite. *(4.10)*
+
+### Strava
+
+- [ ] Autoriser, connecter, annuler chez Strava, reconnecter, déconnecter. *(3.3, 3.8)*
+- [ ] Vérifier qu'un second compte ne peut pas relier le même compte Strava. *(3.3)*
+- [ ] Après déconnexion, vérifier dans les réglages Strava que l'application **n'y figure
+      plus** — c'est ce qui distingue une vraie déconnexion. *(3.8)*
+- [ ] **Vérifier que la liaison survit à la nuit** : reconnecter, revenir le lendemain. *(3.7)*
+- [ ] `/admin/etat` : l'écran de santé des remontées. *(3.9)*
+
+### Cartes
+
+- [ ] Vérifier que le seau `cartes` apparaît dans Storage, marqué « Public ». *(5.6)*
+- [ ] Créer une carte avec son visuel, la publier, vérifier qu'elle apparaît après un défi
+      validé. *(5.6)*
+- [ ] Vérifier qu'une carte **publiée** ne propose plus de bouton de suppression. *(5.6)*
+- [ ] La révélation : interrompre l'animation d'un appui, puis « ajouter à ma
+      collection ». *(5.5)*
+- [ ] **Sur iPhone**, Réglages → Accessibilité → Mouvement → Réduire les animations : la
+      carte doit apparaître sans animation. *(5.5)*
+- [ ] `/cartes` en navigation privée. *(5.8)*
+
+### Notifications — **sur de vrais appareils, un iPhone et un Android**
+
+Un émulateur n'installe pas sur un écran d'accueil ; cette partie ne se vérifie nulle part
+ailleurs.
+
+- [ ] **iPhone / Safari** : `/installer`, les cinq étapes, rouvrir depuis l'écran
+      d'accueil. *(6.2)*
+- [ ] **Android / Chrome** : le bouton « Installer » apparaît, et les étapes écrites
+      restent justes s'il n'apparaît pas. *(6.2)*
+- [ ] Activer les notifications, puis lancer l'attribution du jour et constater la
+      notification. *(6.1, 6.5)*
+- [ ] Injecter une activité qui valide **plusieurs** défis d'un coup : **une seule**
+      notification doit arriver. *(6.6)*
+- [ ] Décocher une catégorie, enregistrer, recharger : elle doit rester décochée. *(6.7)*
+- [ ] `/admin/notifications` : s'envoyer un message, puis **appuyer sur retour et
+      renvoyer** — aucune seconde notification ne doit arriver. *(6.8)*
+- [ ] Une fois Resend en place : e-mail de repli, puis le lien de désabonnement **en
+      navigation privée**. *(6.4)*
+
+### Équipes et classements
+
+- [ ] Créer une équipe, relever le code, la rejoindre avec le second compte. Puis vérifier
+      que le second compte **ne voit pas** le code. *(7.1, 7.9)*
+- [ ] Exclure, transmettre le rôle de capitaine, quitter. *(7.2)*
+- [ ] `/admin/equipes` : créer une équipe d'entreprise, désigner un capitaine. *(7.2)*
+- [ ] Depuis un compte au milieu du classement : la ligne personnelle apparaît en bas avec
+      son rang réel. *(7.4)*
+- [ ] Lire la phrase d'explication de la normalisation d'équipe telle qu'elle s'affiche. *(7.5)*
+- [ ] Tableau de bord avec un compte actif, puis avec un compte sans activité. *(7.6)*
+- [ ] Page d'accueil **en navigation privée** : comparer le montant affiché au total de
+      `/admin/collecte`. Identiques au centime. *(7.7)*
+- [ ] Écrire un message d'actualité **depuis un téléphone**, avec une photo prise sur
+      place. Épingler, publier, modifier, dépublier. *(7.8)*
+
+### ⚠️ La vérification qui reste due depuis l'epic 4
+
+- [ ] **Avec deux comptes réels, vérifier qu'un participant ne voit pas les données de
+      l'autre** : historique de défis, collection, activités, adresse, code d'équipe.
+      C'est la sécurité au niveau des lignes, et c'est le seul type de défaut qui ne
+      produit **aucun symptôme visible** jusqu'au jour où il est public.
+      **À faire avant l'ouverture des inscriptions.** *(story 11.9, notée depuis 4.9)*
+
+---
+
+## Étape 6 — Les décisions qui n'attendent que vous
+
+Aucune ne bloque le code aujourd'hui, toutes changent le contenu de septembre.
+
+| Décision | Pourquoi maintenant | Story |
+| --- | --- | --- |
+| **Cumul des distances** : « Parcourir 5 km » = une sortie de 5 km (actuel) ou plusieurs sorties additionnées dans la journée ? | Change la rédaction des 60–80 défis | 4.3 |
+| **Durée de conservation des données d'activité** : 12 mois après l'édition (actuel) ou moins ? | Une ligne à changer aujourd'hui ; une reprise de tous les consentements plus tard | 3.2 |
+| **Exposant de normalisation d'équipe** : 0,5 par défaut | `update public.leaderboard_settings set team_exponent = …;` — effet immédiat, sans déploiement | 7.5 |
+| **Le « 100 % reversé »** au vu du taux de frais Stripe réellement constaté | L'écran `/admin/collecte` vous donne le chiffre | 2.6 |
+| **Participants hors métropole ?** Le jour d'une sortie est calculé à l'heure de Paris | Seule situation où ça se remarque | 3.4 |
+
+---
+
+## Étape 7 — Avant la production
+
+1. **DNS** : `defi-movember.fr` et `www` pointent sur le VPS. Sans quoi Traefik ne peut pas
+   obtenir de certificat. *(1.4)*
+2. **`deploy/.env.production`** renseigné, dont `CRON_SECRET`. **Sans `ACCESS_CODE`.** *(1.4)*
+3. **Secret GitHub `SUPABASE_DB_URL`** — sans lui le job de migrations échoue et rien ne se
+   déploie. *(1.4)*
+4. **`https://defi-movember.fr/**` dans les Redirect URLs de Supabase.** *(1.4)*
+5. **Déplacer l'abonnement webhook Strava** de la préproduction vers la production — il n'y
+   en a qu'un. *(3.5)*
+6. **Déclarer le webhook Stripe de production**, en **mode réel** cette fois, et récupérer
+   son propre secret de signature. *(2.4)*
+7. **Compte de surveillance externe** (uptime) et **projet Sentry**, avec une erreur
+   provoquée pour vérifier. *(1.11)*
+8. **Vérifier le redémarrage automatique** par un arrêt provoqué (`docker kill`). *(1.11)*
+9. **Éprouver le runbook** et recevoir les accès. *(1.11)*
+10. **Fusionner `main`.** Rien n'est en ligne avant : la mise en production est une
+    décision, pas un effet de bord. *(1.4)*
+11. **Éprouver le retour arrière pour de vrai**, une fois qu'il existe deux versions en
+    production. *(1.4)*
+
+---
+
+## Étape 8 — La conformité et le lancement (epic 11)
+
+Ces points ne peuvent pas être faits à votre place. Les trois premiers sont les critères de
+sortie de l'epic 11.
+
+1. **Installer le client Postgres** sur le VPS : `apt install -y postgresql-client`. *(11.5)*
+2. **Renseigner `DATABASE_URL`** dans `deploy/.env`, en `chmod 600`.
+   Supabase → Project Settings → Database → Connection string → **URI**, connexion
+   **directe** et non le pooler.
+   ⚠️ Cette chaîne contient le mot de passe de la base : **elle ne se colle que sur le
+   serveur**, jamais dans une conversation ni dans un e-mail. *(11.5)*
+3. **Lancer une première sauvegarde** :
+   `sudo bash /opt/defi-movember/deploy/scripts/backup-database.sh` *(11.5)*
+4. **⭐ Répéter une restauration** :
+   `sudo bash /opt/defi-movember/deploy/scripts/restore-rehearsal.sh`
+   Le script crée une base d'essai jetable, y restaure la dernière sauvegarde, compte ce
+   qui est revenu et détruit la base. Il ne lit jamais `DATABASE_URL` : **il n'a aucun
+   moyen d'atteindre la production.** Des lignes `ERROR` pendant la restauration sont
+   normales — voir `docs/runbook.md` §13 pour lire le résultat.
+   **C'est le critère de sortie de l'epic.** *(11.5)*
+5. **⭐ Auditer le durcissement du serveur** :
+   `sudo bash /opt/defi-movember/deploy/scripts/check-hardening.sh`
+   Corriger les lignes rouges, en gardant une session SSH de secours ouverte pour les deux
+   qui touchent SSH. Puis le relancer jusqu'au tout-vert. *(11.8)*
+6. **Remplir les mentions légales** : dénomination, siège, numéro RNA, directeur de
+   publication, contact, hébergeur. Elles affichent « à compléter » — visiblement, plutôt
+   que d'inventer des valeurs que personne ne remarquerait fausses. *(11.6)*
+7. **Trancher la politique de remboursement** (point P6). La section 9 des CGV porte une
+   proposition, marquée en italique. *(11.6)*
+8. **Relire les trois pages légales** de bout en bout. Ce sont les seuls textes qui engagent
+   l'association devant chaque participant. *(11.6)*
+9. **Effacer un compte de test relié à Strava**, puis vérifier dans les réglages Strava que
+   l'autorisation a disparu, et dans l'écran Collecte que la ligne comptable subsiste sans
+   désigner personne. *(11.2)*
+10. **Télécharger l'export de ses données** et l'ouvrir. *(11.1)*
+11. **Un parcours au clavier** (Tab uniquement) et **un parcours au lecteur d'écran** sur
+    téléphone. Une demi-heure, et elle vaut tous les tests structurels. *(11.7)*
+12. **⭐ La répétition générale**, autour du 8 octobre : `docs/repetition-generale.md`, de
+    bout en bout, en cochant. C'est la story la plus importante de tout le projet. *(11.9)*
+
+---
+
+## Le travail de contenu — septembre
+
+Rien de technique, et c'est ce qui prend le plus de temps.
+
+- **60 à 80 défis** dans le catalogue, de tous les types.
+- **Une cinquantaine de visuels de cartes.**
+- ~~**CGV et mentions légales définitives.**~~ ✅ Validées par le PO le 14 août. Le
+  bandeau « document de travail » est retiré des trois pages et `TERMS_VERSION` est
+  passée à `2026-08-14`. Si le texte change **sur le fond** d'ici novembre, repasser
+  `TERMS_VERSION` — c'est ce qui distingue les acceptations d'avant et d'après. Même
+  chose pour `CONSENT_VERSION` si le texte du consentement change. *(2.2, 3.2)*
+- **Confirmer les durées de conservation** annoncées dans la politique de confidentialité :
+  trois mois pour les adresses postales, six pour les activités. Elles sont générées depuis
+  `src/lib/privacy/retention.ts`, donc exactes — mais ce sont des décisions, pas des
+  contraintes techniques. *(11.4)*
+- **Confirmer le prix des packs** (point P3) : deux packs proposés à 3 € et 6 €. Ils vivent
+  en base : les changer prend une instruction SQL. *(10.1)*
+
+---
+
+## La dette technique — soldée le 14 août
+
+`npm audit` signalait **quatre vulnérabilités « high »** (postcss, sharp), héritées de
+Next.js 15, et le seul correctif proposé était la montée en version majeure. Elle est
+faite : **Next.js 16.3.1, `npm audit` ne signale plus rien**.
+
+Ce qu'il faut en retenir, et qui n'est pas visible à l'écran :
+
+- **La construction reste sur webpack** (`next build --webpack`). Next 16 est passé à
+  Turbopack par défaut, et Turbopack ne sait pas fabriquer notre service worker : le
+  premier essai a produit une application sans mode hors-ligne ni notifications, **sans
+  la moindre erreur**. Le drapeau est ce qui l'empêche. Un test le retient.
+- **L'application pèse 27 ko de plus** à la première visite (159 ko au lieu de 132 ko,
+  compressés). C'est le prix de Next 16 lui-même. Payé une fois par téléphone et par
+  déploiement, puis mis en cache par le service worker.
+- **Le fichier `src/middleware.ts` est annoncé comme déprécié** par Next 16, au profit
+  d'un `src/proxy.ts`. Il fonctionne toujours et sera retiré dans une version 17 dont
+  nous n'avons pas besoin. C'est lui qui garde toutes les pages du jeu : le renommer se
+  fera à froid, après novembre, jamais dans le même lot qu'autre chose.
+
+Pour reprendre la mesure du poids après un changement, la méthode est dans
+`tests/unit/build-config.test.ts`.
