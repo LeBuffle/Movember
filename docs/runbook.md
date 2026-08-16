@@ -350,6 +350,12 @@ seul geste, depuis n'importe quel déploiement.
 seul des deux effacerait les tâches de l'autre environnement — et si c'est la production
 qui les perd, ça se découvre un matin de novembre, quand personne ne reçoit son défi.
 
+⚠️ **Une modification de `deploy/scripts/deploy.sh` ne prend effet qu'au déploiement
+suivant** — le script en cours d'exécution est celui d'avant la récupération du code.
+Depuis le 16 août il se relance tout seul avec la version qu'il vient de récupérer, ce
+qui supprime le décalage ; avant cette date, une correction du déploiement passait
+inaperçue pendant un tour complet, sans le moindre message.
+
 Pour voir ce qui est réellement installé :
 
 ```bash

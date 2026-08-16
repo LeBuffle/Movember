@@ -68,6 +68,32 @@ git checkout --quiet --force "$GIT_REF"
 SHORT_SHA="$(git rev-parse --short HEAD)"
 ok "$SHORT_SHA — $(git log -1 --pretty=%s | cut -c1-60)"
 
+# --- Reprendre avec la version qu'on vient de récupérer ---------------------
+#
+# **Le script en cours d'exécution est celui d'AVANT le `git checkout`.** Bash
+# lit un script au fil de son exécution, depuis le fichier : la partie déjà
+# lue est celle de l'ancienne version, et la suite est relue dans le fichier
+# qui vient de changer sous lui — à des positions d'octets qui ne
+# correspondent plus.
+#
+# Deux conséquences, toutes deux constatées le 16 août :
+#
+#   1. **Une modification de ce script ne prend effet qu'au déploiement
+#      suivant.** L'installation des tâches planifiées ajoutée ce jour-là n'a
+#      rien fait, sans le moindre message — le déploiement a été annoncé
+#      réussi, et il l'était : il exécutait l'ancien script.
+#   2. Pire, et silencieux : si le fichier change de longueur, bash peut
+#      reprendre la lecture au milieu d'une ligne.
+#
+# On se relance donc une fois, avec la version qui vient d'être récupérée.
+# `DEPLOY_RELOADED` empêche la boucle : la seconde exécution ne se relance
+# pas.
+if [[ -z "${DEPLOY_RELOADED:-}" ]]; then
+  export DEPLOY_RELOADED=1
+  ok "reprise avec le script de cette version"
+  exec bash "$APP_DIR/deploy/scripts/deploy.sh" "$GIT_REF" "$ENVIRONMENT"
+fi
+
 # --- Build ----------------------------------------------------------------
 #
 # The image is built here rather than pulled from a registry. At 12 GB of RAM

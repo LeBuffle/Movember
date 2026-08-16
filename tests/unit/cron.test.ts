@@ -177,6 +177,28 @@ describe("production et préproduction ne s’effacent pas l’une l’autre", (
     expect(deploy).toMatch(/Crontab laissé intact/);
   });
 
+  it("le script se relance avec la version qu’il vient de récupérer", () => {
+    // **La panne du 16 août, et elle était muette.** Bash lit un script au
+    // fil de son exécution, depuis le fichier : après le `git checkout`, la
+    // suite est relue dans un fichier qui a changé sous lui. L'installation
+    // des tâches ajoutée ce jour-là n'a donc rien fait, et le déploiement a
+    // été annoncé réussi — il l'était, il exécutait l'ancien script.
+    expect(deploy).toMatch(
+      /exec bash "\$APP_DIR\/deploy\/scripts\/deploy\.sh"/,
+    );
+
+    // Après la récupération du code, jamais avant : se relancer plus tôt
+    // reprendrait la même version.
+    expect(deploy.indexOf("git checkout")).toBeLessThan(
+      deploy.indexOf("exec bash"),
+    );
+  });
+
+  it("et il ne se relance qu’une fois", () => {
+    expect(deploy).toMatch(/if \[\[ -z "\$\{DEPLOY_RELOADED:-\}" \]\]/);
+    expect(deploy).toMatch(/export DEPLOY_RELOADED=1/);
+  });
+
   it("l’installation ne dépend plus de l’environnement déployé", () => {
     // Un déploiement de préproduction doit reposer les tâches de production
     // à l'identique, sinon il les emporte.
