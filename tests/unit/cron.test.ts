@@ -148,3 +148,102 @@ describe("le fichier crontab versionné", () => {
     expect(crontab).not.toMatch(/CRON_SECRET=\S/);
   });
 });
+
+/* =========================================================================
+ * Les deux environnements et leurs tâches (14 août)
+ *
+ * La préproduction n'avait aucune tâche planifiée : elle ne distribuait aucun
+ * défi, ne renouvelait aucun jeton et ne recalculait aucun classement. **Ce
+ * qui rendait la répétition générale incapable de prouver la seule chose
+ * qu'elle existe pour prouver** — que le mois se déroule tout seul.
+ *
+ * Le danger de la correction est plus grand que le trou qu'elle bouche :
+ * `crontab <fichier>` remplace tout. Deux fichiers posés séparément
+ * s'effaceraient l'un l'autre, et la production perdrait ses tâches un matin
+ * de novembre sans que rien ne le dise.
+ * ====================================================================== */
+
+describe("production et préproduction ne s’effacent pas l’une l’autre", () => {
+  const deploy = read("deploy/scripts/deploy.sh");
+
+  it("les deux fichiers sont posés d’un seul geste", () => {
+    expect(deploy).toMatch(/cat "\$\{CRON_FILES\[@\]\}" \| crontab -/);
+  });
+
+  it("et rien n’est posé s’il en manque un", () => {
+    // Poser celui qui se trouve là effacerait les tâches de l'autre
+    // environnement — précisément l'accident que le geste unique évite.
+    expect(deploy).toMatch(/\(\( \$\{#CRON_FILES\[@\]\} == 2 \)\)/);
+    expect(deploy).toMatch(/Crontab laissé intact/);
+  });
+
+  it("l’installation ne dépend plus de l’environnement déployé", () => {
+    // Un déploiement de préproduction doit reposer les tâches de production
+    // à l'identique, sinon il les emporte.
+    const block = deploy.slice(deploy.indexOf("# --- Scheduled tasks"));
+
+    expect(block).not.toMatch(/if \[\[ "\$ENVIRONMENT" == "production" \]\]/);
+  });
+});
+
+describe("les tâches de préproduction", () => {
+  const staging = read("deploy/crontab.staging");
+  const lines = staging
+    .split("\n")
+    .filter((line) => /^[0-9*]/.test(line.trim()));
+
+  it("visent toutes la préproduction, jamais la production", () => {
+    // Une seule ligne mal recopiée distribuerait les défis des vrais
+    // participants une seconde fois, dix minutes après les leurs.
+    for (const line of lines) {
+      expect(line, line.slice(0, 60)).toContain("staging.defi-movember.fr");
+      expect(line, line.slice(0, 60)).toContain(".env.staging");
+      expect(line, line.slice(0, 60)).not.toContain(".env.production");
+    }
+  });
+
+  it("ne sauvegardent ni ne surveillent une seconde fois", () => {
+    // `backup-database.sh` sauvegarde la base nommée dans `deploy/.env`,
+    // c'est-à-dire la production : la relancer écrirait le même fichier deux
+    // fois par nuit. `check-resources.sh` surveille la machine, pas un
+    // environnement — deux alertes pour un seul disque plein.
+    expect(staging).not.toMatch(/^\s*[0-9*].*backup-database\.sh/m);
+    expect(staging).not.toMatch(/^\s*[0-9*].*check-resources\.sh/m);
+  });
+
+  it("portent les trois tâches que la répétition doit prouver", () => {
+    expect(staging).toMatch(/api\/cron\/defis-du-jour/);
+    expect(staging).toMatch(/api\/cron\/jetons/);
+    expect(staging).toMatch(/api\/cron\/classements/);
+  });
+
+  it("passent le secret en en-tête, et aucun secret n’est écrit ici", () => {
+    expect(staging).toMatch(/x-cron-secret/i);
+    expect(staging).not.toMatch(/CRON_SECRET=\S/);
+  });
+
+  it("ne tombent jamais à la même minute que leur équivalent de production", () => {
+    // Deux tâches lourdes lancées à la même seconde se gênent sur un petit
+    // VPS, et deux journaux entrelacés se lisent mal un dimanche soir.
+    const schedules = (source: string) =>
+      new Map(
+        source
+          .split("\n")
+          .filter((line) => /^[0-9*]/.test(line))
+          .map((line) => {
+            const task = line.match(/api\/cron\/([a-z-]+)/)?.[1] ?? "";
+            const when = line.split(/\s+/).slice(0, 5).join(" ");
+
+            return [task, when] as const;
+          })
+          .filter(([task]) => task.length > 0),
+      );
+
+    const production = schedules(read("deploy/crontab"));
+    const preproduction = schedules(staging);
+
+    for (const [task, when] of preproduction) {
+      expect(production.get(task), task).not.toBe(when);
+    }
+  });
+});

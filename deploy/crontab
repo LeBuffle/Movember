@@ -1,11 +1,16 @@
 # DEFI Movember — scheduled tasks
 #
-# INSTALLED BY `deploy/scripts/deploy.sh`, on every production deployment.
-# It replaces the `deploy` user's crontab wholesale, which is the point: a
-# task added by hand on the server would vanish at the next deployment
-# without anyone noticing, and a task removed from this file would keep
-# running for months. Either way the server and the repository would disagree
-# about what is running — and the repository would be wrong.
+# INSTALLED BY `deploy/scripts/deploy.sh`, on every deployment, **concatenated
+# with `deploy/crontab.staging`**. The pair replaces the `deploy` user's
+# crontab wholesale, which is the point: a task added by hand on the server
+# would vanish at the next deployment without anyone noticing, and a task
+# removed from this file would keep running for months. Either way the server
+# and the repository would disagree about what is running — and the repository
+# would be wrong.
+#
+# ⚠️ **The two files are always laid down together.** Installing this one
+# alone would erase every preproduction task, and installing the other alone
+# would erase every production task — silently, one morning in November.
 #
 # **Therefore: never edit the crontab on the server. Edit this file.**
 #

@@ -337,10 +337,18 @@ les cinq minutes et prévient par e-mail et SMS. À configurer sur un service gr
 
 **Alertes disque et mémoire** — un script tourne toutes les dix minutes sur le serveur.
 
-> **N'éditez jamais le crontab sur le serveur.** Il est réinstallé depuis
-> `deploy/crontab` à chaque déploiement en production : une ligne ajoutée à la main
+> **N'éditez jamais le crontab sur le serveur.** Il est réinstallé depuis le dépôt à
+> chaque déploiement, quel que soit l'environnement : une ligne ajoutée à la main
 > disparaîtrait au déploiement suivant, sans que personne s'en aperçoive. Les tâches
 > planifiées se modifient dans le dépôt, pas sur la machine.
+
+**Deux fichiers, posés ensemble** — `deploy/crontab` pour la production,
+`deploy/crontab.staging` pour la préproduction. Ils sont concaténés et installés d'un
+seul geste, depuis n'importe quel déploiement.
+
+⚠️ **C'est le point à ne pas contourner.** `crontab <fichier>` remplace tout. Poser un
+seul des deux effacerait les tâches de l'autre environnement — et si c'est la production
+qui les perd, ça se découvre un matin de novembre, quand personne ne reçoit son défi.
 
 Pour voir ce qui est réellement installé :
 
@@ -348,11 +356,14 @@ Pour voir ce qui est réellement installé :
 crontab -l
 ```
 
-Si la liste est vide — parce qu'aucun déploiement en production n'a encore eu lieu :
+Si la liste est vide — parce qu'aucun déploiement n'a encore eu lieu :
 
 ```bash
-crontab /opt/defi-movember/deploy/crontab
+cat /opt/defi-movember/deploy/crontab /opt/defi-movember/deploy/crontab.staging | crontab -
 ```
+
+Les journaux sont séparés : `/var/log/defi-movember-cron.log` pour la production,
+`/var/log/defi-movember-cron-staging.log` pour la préproduction.
 
 Pour l'essayer tout de suite, sans rien envoyer :
 

@@ -178,29 +178,46 @@ ok "${KEEP_IMAGES} images les plus récentes conservées"
 
 # --- Scheduled tasks ------------------------------------------------------
 #
-# Installed from the repository, on production deployments only, replacing
-# whatever was there. That is deliberate: a task added by hand on the server
-# would vanish at the next deployment without anyone noticing, and a task
-# removed from the repository would keep running for months. Installing it
-# every time is what keeps the server and `deploy/crontab` in agreement.
+# Installed from the repository on EVERY deployment, whichever environment,
+# replacing whatever was there. That is deliberate: a task added by hand on
+# the server would vanish at the next deployment without anyone noticing, and
+# a task removed from the repository would keep running for months. Installing
+# it every time is what keeps the server and the repository in agreement.
 #
-# Staging is left alone — it has no business running scheduled tasks against
-# a database it shares with production.
-if [[ "$ENVIRONMENT" == "production" ]]; then
-  info "Installation des tâches planifiées"
+# **The two files always go together, and that is the whole point.**
+# `crontab <file>` replaces the user's crontab wholesale. Installing
+# production's from a production deployment and staging's from a staging
+# deployment would mean each one silently erasing the other's tasks — and the
+# first to suffer would be production, one morning in November, with nothing
+# to say so. So both are concatenated and laid down in a single gesture, from
+# either environment.
+#
+# Staging has its own Supabase project (PO decision, 14 August): nothing that
+# runs there touches production data. Without its own tasks it distributed no
+# challenge, renewed no token and recomputed no ranking — which made the dress
+# rehearsal unable to prove the one thing it exists to prove.
+info "Installation des tâches planifiées"
 
-  if [[ -f "$APP_DIR/deploy/crontab" ]]; then
-    if crontab "$APP_DIR/deploy/crontab"; then
-      ok "$(crontab -l 2>/dev/null | grep -cE '^[^#[:space:]]' || echo 0) tâches installées"
-    else
-      # Not fatal: the application is deployed and serving. Scheduled tasks
-      # matter from epic 4 onwards, and failing the whole deployment over
-      # them would be the wrong trade — but it must be said loudly.
-      printf '  \033[1;31m✗\033[0m Le crontab n'"'"'a pas pu être installé. Les tâches planifiées ne tourneront pas.\n' >&2
-    fi
+CRON_FILES=()
+for candidate in "$APP_DIR/deploy/crontab" "$APP_DIR/deploy/crontab.staging"; do
+  [[ -f "$candidate" ]] && CRON_FILES+=("$candidate")
+done
+
+if (( ${#CRON_FILES[@]} == 2 )); then
+  if cat "${CRON_FILES[@]}" | crontab -; then
+    ok "$(crontab -l 2>/dev/null | grep -cE '^[^#[:space:]]' || echo 0) lignes installées (production + préproduction)"
   else
-    echo "  deploy/crontab est absent — aucune tâche planifiée installée." >&2
+    # Not fatal: the application is deployed and serving. Scheduled tasks
+    # matter from epic 4 onwards, and failing the whole deployment over them
+    # would be the wrong trade — but it must be said loudly.
+    printf '  \033[1;31m✗\033[0m Le crontab n'"'"'a pas pu être installé. Les tâches planifiées ne tourneront pas.\n' >&2
   fi
+else
+  # Refuses rather than installs half of it. Laying down only the file that
+  # happens to be present would erase the other environment's tasks — the
+  # exact accident the single gesture above exists to prevent.
+  printf '  \033[1;31m✗\033[0m Un fichier de tâches manque (%s trouvé sur 2). Crontab laissé intact.\n' \
+    "${#CRON_FILES[@]}" >&2
 fi
 
 printf '\n\033[1;32m✓ Déploiement %s réussi — %s\033[0m\n\n' "$ENVIRONMENT" "$SHORT_SHA"

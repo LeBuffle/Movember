@@ -78,12 +78,32 @@ mentale.**
       les réglages Strava, pas seulement chez nous)
 - [ ] Relier à nouveau
 
+### 2 bis. Les tâches planifiées tournent-elles vraiment ?
+
+**À vérifier avant tout le reste, et c'est nouveau.** Jusqu'au 14 août, la préproduction
+n'avait aucune tâche planifiée : la répétition ne pouvait donc rien prouver de ce qui
+compte le plus, à savoir que le mois se déroule sans personne.
+
+- [ ] Le lendemain matin, sans rien avoir déclenché : **le défi du jour est là** sur les
+      deux comptes
+- [ ] `crontab -l` sur le serveur liste les lignes de production **et** celles de
+      préproduction
+- [ ] `tail -20 /var/log/defi-movember-cron-staging.log` ne montre aucune erreur
+- [ ] L'écran **État des intégrations** affiche les activités en vert, sans qu'on ait
+      appuyé sur un bouton dans les trois heures
+
+⚠️ Le dernier point est celui qui a révélé le trou : le badge restait rouge en
+permanence, et c'était exact — aucune tâche n'atteignait cet environnement.
+
 ### 3. Le mois compressé
 
 Répéter le bloc suivant **au moins cinq fois**, en faisant varier les cas :
 
 - [ ] Déclencher la distribution des défis à la main :
       `curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/defis-du-jour`
+      *(la préproduction a maintenant ses propres tâches planifiées : celle-ci tourne
+      seule à 5:14. Le déclenchement manuel sert à compresser le mois, pas à pallier une
+      absence.)*
 - [ ] Le défi du jour apparaît sur l'écran de jeu des deux comptes, et **ce n'est pas le
       même** (défis individualisés)
 - [ ] Injecter une sortie qui valide le défi

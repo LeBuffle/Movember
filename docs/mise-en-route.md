@@ -285,15 +285,27 @@ bienvenue après un paiement de test.
 ## Étape 4 — Les tâches planifiées
 
 **Ne jamais ajouter une ligne de cron à la main sur le serveur** : le déploiement suivant
-l'effacerait sans rien dire. Tout passe par `deploy/crontab`, qui s'installe seul au
-déploiement de production.
+l'effacerait sans rien dire. Tout passe par deux fichiers du dépôt — `deploy/crontab`
+pour la production, `deploy/crontab.staging` pour la préproduction — qui s'installent
+**ensemble**, à chaque déploiement, quel que soit l'environnement.
 
-En préproduction, elles ne tournent pas. Pour en déclencher une à la main :
+> **Depuis le 14 août, la préproduction a ses propres tâches.** Elle n'en avait aucune :
+> aucun défi distribué, aucun jeton renouvelé, aucun classement recalculé — tout n'y
+> arrivait que si quelqu'un appuyait sur un bouton. La répétition générale était donc
+> incapable de prouver la seule chose qu'elle existe pour prouver : que le mois se
+> déroule tout seul. La préproduction ayant son propre projet Supabase, rien de ce qui y
+> tourne ne touche aux données de production.
+
+Pour en déclencher une à la main malgré tout :
 
 ```bash
 source /opt/defi-movember/deploy/.env.staging
 curl -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/<tâche>
 ```
+
+Les minutes de la préproduction sont décalées de celles de la production (voir
+`deploy/crontab.staging`), et ses journaux sont séparés :
+`/var/log/defi-movember-cron-staging.log`.
 
 | Tâche | Quand | Ce qu'elle fait | Story |
 | --- | --- | --- | --- |
@@ -313,6 +325,11 @@ Et une tâche qui n'est pas un appel HTTP mais un script :
 | --- | --- | --- | --- |
 | `backup-database.sh` | 3:12 | Sauvegarde la base, sept copies conservées | 11.5 |
 | `check-resources.sh` | toutes les 10 min | Surveille disque et mémoire | 1.11 |
+
+**Ces deux-là ne sont volontairement pas repris en préproduction** : le premier
+sauvegarde la base nommée dans `deploy/.env`, c'est-à-dire la production, et le second
+surveille la machine et non un environnement. Les dupliquer écrirait deux fois le même
+fichier et enverrait deux alertes pour un seul disque plein.
 
 ⚠️ La sauvegarde passe **avant** la purge, et cet ordre est vérifié par un test : une
 sauvegarde prise après la purge serait la sauvegarde de l'état déjà purgé.
