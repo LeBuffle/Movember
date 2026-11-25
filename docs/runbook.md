@@ -971,6 +971,164 @@ exactement ce qu'on lui demande.
 
 ---
 
+## 14. Mettre le projet en sommeil sur le VPS
+
+> Écrit le 25 novembre 2026, quand le projet a été suspendu et sa base
+> Supabase supprimée pour arrêter les 10 $ par mois.
+
+**Le serveur héberge d'autres projets.** Tout ce qui suit ne touche que
+Movember : ni Traefik, ni n8n, ni les conteneurs des autres piles. Chaque
+étape se vérifie avant de passer à la suivante.
+
+### D'abord : la clé de déploiement ne fonctionne plus
+
+Constaté le 25 novembre, dans le journal du dernier déploiement :
+
+```
+✓ empreinte du serveur relevée (tentative 1)
+deploy@…: Permission denied (publickey,password).
+```
+
+**Le serveur répond** — le port 22 est ouvert, son empreinte a été relevée du
+premier coup. C'est **la clé SSH de GitHub Actions qui est refusée**. Le
+dernier déploiement réussi date du 16 août : la clé a cessé d'être acceptée
+entre les deux, sans que personne le voie, puisque plus rien n'était poussé.
+
+Trois causes possibles, par ordre de vraisemblance : le serveur a été
+reconstruit, l'utilisateur `deploy` a été supprimé, ou sa clé a été retirée de
+`~/.ssh/authorized_keys`.
+
+**Conséquence rassurante :** le redéploiement automatique ne peut déjà plus
+rien remettre en route, faute de pouvoir se connecter. Couper les workflows
+reste utile — pour arrêter des exécutions qui échouent à chaque commit, et
+pour éviter la surprise le jour où la clé sera rétablie.
+
+**Conséquence à vérifier :** commencez par ouvrir `https://defi-movember.fr`
+et `https://staging.defi-movember.fr` depuis un téléphone.
+
+| Ce que vous voyez | Ce que ça veut dire |
+| --- | --- |
+| L'application s'affiche | Les conteneurs tournent toujours : la suite de cette section s'applique |
+| `404`, `502`, ou rien | La pile est déjà arrêtée. Il ne reste que le crontab (étape 2) et les images (étape 3) — **si** vous arrivez encore à vous connecter en SSH |
+
+Si votre propre clé SSH est refusée elle aussi, il n'y a rien à arrêter depuis
+ce document : c'est un accès à récupérer auprès de l'hébergeur, et cela peut
+attendre la reprise du projet. Un conteneur oublié ne coûte que de la mémoire
+sur une machine que vous payez de toute façon pour vos autres projets.
+
+### Avant tout : couper le redéploiement automatique
+
+**À faire en premier, sinon le reste se défait tout seul.** Un push sur la
+branche de travail redéploie la préproduction — y compris un commit qui ne
+touche qu'un fichier de documentation. C'est arrivé deux fois le jour même de
+la mise en pause.
+
+Sur GitHub, onglet **Actions**, dans la colonne de gauche :
+
+1. **Déploiement — préproduction** → bouton `···` en haut à droite →
+   **Disable workflow**
+2. **Déploiement — production** → `···` → **Disable workflow**
+
+Aucun fichier n'est modifié : c'est un interrupteur, et **Enable workflow** au
+même endroit remet tout en marche le jour de la reprise.
+
+### 1. Arrêter les conteneurs
+
+```bash
+ssh deploy@VOTRE-ADRESSE-IP
+cd /opt/defi-movember/deploy
+docker compose ps
+```
+
+Notez ce qui tourne (normalement `app` et `app-staging`), puis :
+
+```bash
+docker compose down
+```
+
+`down` ne supprime que ce que cette pile a créé. **Le réseau de Traefik est
+déclaré `external` dans `docker-compose.yml`** : Docker Compose ne le
+supprime jamais, et les autres projets qui s'y rattachent continuent.
+
+Vérifier que rien d'autre n'a bougé :
+
+```bash
+docker compose ps                       # vide
+docker ps --format '{{.Names}}'         # les conteneurs des autres projets
+curl -s -o /dev/null -w '%{http_code}\n' https://defi-movember.fr/api/health
+```
+
+Le dernier doit répondre `404` ou `502` : Traefik ne trouve plus de route vers
+Movember, ce qui est le résultat attendu.
+
+### 2. Retirer les tâches planifiées — sauf une
+
+Le crontab de l'utilisateur `deploy` ne contient **que** Movember : il est
+réécrit en entier à chaque déploiement depuis `deploy/crontab` et
+`deploy/crontab.staging`. Le vider est donc sans effet sur les autres projets.
+
+**Une ligne mérite de rester** : `check-resources.sh`. Elle surveille le
+disque et la mémoire **de la machine**, pas de Movember, et elle prévient par
+webhook. La retirer ferait perdre cette alerte à n8n aussi. Elle ne dépend que
+de `deploy/.env`, qui reste en place.
+
+Sauvegarder l'existant, puis n'en garder que cette ligne :
+
+```bash
+crontab -l > ~/crontab-movember-$(date +%F).txt
+wc -l < ~/crontab-movember-$(date +%F).txt     # 22 lignes environ
+
+crontab -l | grep -E '^(SHELL|PATH)=|check-resources\.sh' | crontab -
+crontab -l
+```
+
+La dernière commande doit afficher trois lignes : `SHELL=`, `PATH=` et la
+surveillance des ressources. Plus aucune ligne `curl` vers
+`defi-movember.fr` ni `staging.defi-movember.fr`.
+
+> La sauvegarde dans `~/crontab-movember-AAAA-MM-JJ.txt` permet de tout
+> remettre d'un seul geste — mais inutile : un déploiement réinstalle les deux
+> fichiers du dépôt automatiquement.
+
+### 3. Récupérer la place disque *(facultatif)*
+
+Les images Docker de Movember pèsent plusieurs centaines de mégaoctets.
+
+```bash
+docker images defi-movember --format '{{.Repository}}:{{.Tag}}\t{{.Size}}'
+```
+
+Si vous voulez les supprimer — **uniquement celles-là** :
+
+```bash
+docker images defi-movember --format '{{.Repository}}:{{.Tag}}' | xargs -r docker rmi
+```
+
+⚠️ **N'utilisez pas `docker system prune -a`** : cette commande-là emporterait
+aussi les images des autres projets du serveur.
+
+### 4. Ce qu'on ne touche pas, et pourquoi
+
+| Élément | Décision |
+| --- | --- |
+| `deploy/.env`, `.env.production`, `.env.staging` | **Laissés en place**, en `chmod 600`. Les clés Supabase y sont mortes avec le projet, mais Stripe, Strava et Resend restent valides, et leur structure fait gagner une heure à la reprise |
+| Le dossier `/opt/defi-movember` | Laissé. Il contient le dépôt cloné, les scripts et la sauvegarde du crontab |
+| Les enregistrements DNS | Laissés. Ils ne coûtent rien et les réactiver demanderait d'attendre la propagation |
+| Le certificat TLS de Traefik | Laissé. Il se renouvelle seul tant que le DNS pointe ici |
+| L'application Strava, le compte Stripe | Rien à faire, aucun frais récurrent |
+
+### 5. Reprendre, le jour venu
+
+1. Recréer le projet Supabase — `supabase/contenu/README.md`.
+2. Mettre les nouvelles clés dans `deploy/.env.production` et
+   `deploy/.env.staging` sur le serveur, en `chmod 600`.
+3. Réactiver les deux workflows sur GitHub (**Enable workflow**).
+4. Pousser un commit, ou lancer le workflow à la main : le déploiement
+   reconstruit l'image, redémarre les conteneurs **et réinstalle les tâches
+   planifiées** tout seul.
+
+---
+
 ## Ce qui n'est PAS dans ce document
 
 **La création d'un projet Supabase de secours.** Elle relève d'une décision du PO, pas
@@ -993,6 +1151,7 @@ d'une procédure d'urgence.
 | §11 Script d'alertes | oui, exécuté avec seuils abaissés et webhook réel |
 | §11 Tâches planifiées | fichier versionné et installé par le déploiement ; **l'appel réel reste à vérifier par le PO** |
 | §13 Restaurer une sauvegarde | `backup-database.sh` vérifié sur ses refus (dump vide, configuration absente) ; `restore-rehearsal.sh` vérifié syntaxiquement, **à lancer une fois sur le serveur par le PO** — c'est le critère de sortie de l'epic 11 |
+| §14 Mise en sommeil du VPS | commandes écrites et vérifiées contre `docker-compose.yml` (réseau Traefik `external`, services `app` / `app-staging`) et contre `check-resources.sh` ; **non exécutées** — la clé de déploiement est refusée par le serveur depuis le 16 août |
 | §12 septies Notifications | diagnostic et envoi de test vérifiés structurellement ; **le premier lancement sur le serveur reste à faire par le PO** |
 | Durcissement du serveur | `check-hardening.sh` écrit et vérifié syntaxiquement ; **à lancer sur le serveur par le PO** |
 
