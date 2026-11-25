@@ -53,6 +53,9 @@ Compter une demi-heure. La procédure détaillée est dans
 `docs/mise-en-route.md` ; voici l'ordre, et ce dossier à la fin.
 
 1. **Créer un projet Supabase**, région `eu-west-3`.
+   Un seul suffit pour redémarrer. L'ancien montage n'en avait qu'un, partagé
+   par la production et la préproduction — si vous voulez à nouveau séparer
+   les deux, il faut en créer un second, et c'est un second abonnement.
 2. **Passer les 39 migrations** de `supabase/migrations/`, dans l'ordre du nom
    de fichier, dans l'éditeur SQL.
 3. **Passer `supabase/seed.sql`.**
