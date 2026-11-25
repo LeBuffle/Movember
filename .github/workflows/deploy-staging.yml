@@ -1,0 +1,134 @@
+name: Déploiement — préproduction
+
+# Every push to the working branch lands on staging, so the Product Owner can
+# review the result on his phone. This replaces the per-pull-request preview
+# deployments that a managed platform would have provided (architecture §9.1).
+on:
+  push:
+    branches:
+      - claude/defi-movember-bmad-init-qa6h3c
+  workflow_dispatch:
+
+# A newer push makes an in-flight deployment pointless; cancel it rather than
+# let two deployments race for the same container.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Vérifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+  deploy:
+    name: Déployer sur la préproduction
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: staging
+      url: https://staging.defi-movember.fr
+
+    steps:
+      - name: Préparer la clé SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # `ssh-keyscan` gives up after five seconds by default, and a VPS
+          # that is busy — rebuilding an image, running a scheduled task — can
+          # take longer than that to answer on port 22. Four staging
+          # deployments out of thirty died here, each of them reporting
+          # nothing at all, because the reason went to /dev/null.
+          #
+          # So: a longer wait, several attempts, and the reason kept and
+          # printed when they all fail. Retrying is safe — a fingerprint
+          # collected twice is a duplicate line in a file read top to bottom.
+          #
+          # **Twelve attempts over five minutes, and the figure comes from a
+          # real failure.** The window was 100 seconds; on 11 August a
+          # deployment exhausted all five attempts on a VPS that was back a few
+          # minutes later. A reboot takes one to three minutes, so a window
+          # shorter than that turns an ordinary restart into a red
+          # deployment — and a red deployment nobody can explain is one the
+          # Product Owner has to escalate on a Sunday.
+          #
+          # The cost of waiting is five minutes of runner time on a deployment
+          # that was going to fail anyway. The cost of not waiting is a
+          # deployment declared broken while the server is merely rebooting.
+          for attempt in $(seq 1 12); do
+            if ssh-keyscan -T 15 -H "$VPS_HOST" >> ~/.ssh/known_hosts 2> /tmp/keyscan.err \
+              && [ -s ~/.ssh/known_hosts ]; then
+              echo "✓ empreinte du serveur relevée (tentative $attempt)"
+              exit 0
+            fi
+            echo "  tentative $attempt/12 — pas de réponse sur le port 22, nouvel essai dans 10s"
+            sleep 10
+          done
+
+          echo "✗ Le serveur n'a pas répondu sur le port 22 en cinq minutes." >&2
+          echo "  Le code n'est pas en cause : c'est le serveur qui est injoignable." >&2
+          echo "  Marche à suivre : docs/runbook.md, section « 12 quater »." >&2
+          cat /tmp/keyscan.err >&2 || true
+          exit 1
+
+      - name: Déployer
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes "$VPS_USER@$VPS_HOST" \
+            "bash /opt/defi-movember/deploy/scripts/deploy.sh '${{ github.sha }}' staging"
+
+      - name: Vérifier que le site répond
+        run: |
+          # Retried rather than checked once: on the very first deployment for
+          # a host name, Traefik still has to obtain the Let's Encrypt
+          # certificate, which takes a few seconds to a minute. Asking
+          # immediately after the container goes healthy reports a failure for
+          # a deployment that actually worked.
+          #
+          # 401 is the expected answer: staging sits behind basic auth. It
+          # proves Traefik routes to the right container and that TLS works,
+          # which is what this step checks.
+          for attempt in $(seq 1 12); do
+            # No `|| echo` fallback here: curl already prints 000 on a
+            # connection failure, so adding one concatenated the two into an
+            # unreadable "000000".
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://staging.defi-movember.fr/api/health) || true
+
+            case "$code" in
+              401|200)
+                echo "✓ La préproduction répond (HTTP $code) après $attempt tentative(s)"
+                exit 0
+                ;;
+            esac
+
+            echo "  tentative $attempt/12 — HTTP $code, nouvel essai dans 10s"
+            sleep 10
+          done
+
+          echo "✗ La préproduction n'a pas répondu (dernier code : HTTP $code)" >&2
+          echo "  Le déploiement lui-même a réussi — le problème est dans le routage." >&2
+          echo "  HTTP 404 : Traefik n'a trouvé aucune route. Voir docs/runbook.md §12 ter." >&2
+          echo "  HTTP 502/503 : la route existe, le conteneur ne répond pas. Voir §3 et §4." >&2
+          echo "  HTTP 000 : ni DNS ni TLS. Voir §8." >&2
+          exit 1
+
+      - name: Effacer la clé
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

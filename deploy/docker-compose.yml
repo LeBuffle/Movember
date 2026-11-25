@@ -1,0 +1,247 @@
+# DEFI Movember — server stack
+#
+# Run from this directory:
+#   docker compose up -d
+#
+# This VPS already runs Traefik (the `n8n-traefik-1` container), which owns
+# ports 80 and 443 and holds the Let's Encrypt certificates for every other
+# project on the machine. DEFI Movember therefore plugs into it rather than
+# bringing its own reverse proxy: one proxy, one certificate store, no port
+# conflict, and one less moving part to operate in November.
+#
+# Traefik runs with `exposedbydefault=false`, so nothing is published unless
+# it carries `traefik.enable=true`.
+#
+# Production and staging run side by side in separate containers, with
+# separate databases and separate key sets. Traefik tells them apart by host
+# name (architecture §9.1).
+#
+# PostgreSQL is deliberately absent: the database stays on Supabase. We take
+# on what is simple and stateless — serving a web app — and delegate what is
+# critical and operational (architecture §2.3).
+
+name: defi-movember
+
+# Header policy shared by both sites, so production and staging can never
+# drift apart on security headers.
+#
+# The CSP still allows `unsafe-inline`, which Next.js requires as configured
+# today: it emits inline bootstrap scripts and styles without a nonce.
+# Tightening it to a nonce-based policy is a deliberate task of the security
+# review (story 11.8) — doing it blind here would break hydration.
+#
+# CSP_CONNECT_SRC widens `connect-src` as integrations land:
+#   Supabase (story 1.6), Stripe (epic 2).
+#
+# Sentry is not in that list on purpose: the browser's error reports go
+# through our own domain, so they need no exception — see deploy/.env.example.
+#
+# `form-action` names Stripe explicitly (story 2.3). Paying is a redirect to
+# `checkout.stripe.com`, and where JavaScript is not running that redirect
+# follows a native form submission — which several browsers check against
+# this directive. Without the exception, payment would work in most browsers
+# and fail silently in the rest, which is the worst way for it to fail.
+# `connect-src` needs nothing: Checkout is hosted on Stripe's own pages, so
+# no Stripe code ever runs in ours (NFR14).
+# The header values, defined once.
+#
+# Anchored as scalars so the two middlewares below cannot drift: there is one
+# CSP string in this file, referenced twice.
+x-csp: &csp "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: ${CSP_IMG_SRC:-}; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC:-}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; object-src 'none'"
+x-permissions-policy: &permissions-policy "camera=(), microphone=(), geolocation=(), payment=()"
+x-sts-seconds: &sts-seconds "31536000"
+x-referrer-policy: &referrer-policy "strict-origin-when-cross-origin"
+
+# **One middleware per environment, and the names must stay distinct.**
+#
+# They used to share a single `movember-security`, defined by both containers.
+# That worked only for as long as the two definitions were identical — and a
+# deployment makes them differ by construction: one container is recreated
+# with the new policy while the other still runs the old one. Traefik then
+# sees the same middleware declared twice with different values, refuses to
+# choose, and the routers that reference it are dropped.
+#
+# The symptom is a **404 on the environment that was NOT deployed**, which
+# points nowhere near the cause. It happened on 11 August: adding one origin
+# to `img-src` took the staging site off the air, and the deployment logs said
+# the deployment had succeeded — because it had.
+#
+# In November the same defect would have taken PRODUCTION down on a staging
+# deployment. Distinct names make the situation impossible rather than
+# unlikely.
+x-security-headers: &security-headers
+  traefik.http.middlewares.movember-security.headers.stsSeconds: *sts-seconds
+  traefik.http.middlewares.movember-security.headers.stsIncludeSubdomains: "true"
+  traefik.http.middlewares.movember-security.headers.frameDeny: "true"
+  traefik.http.middlewares.movember-security.headers.contentTypeNosniff: "true"
+  traefik.http.middlewares.movember-security.headers.referrerPolicy: *referrer-policy
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Permissions-Policy: *permissions-policy
+  traefik.http.middlewares.movember-security.headers.customResponseHeaders.Content-Security-Policy: *csp
+
+x-security-headers-staging: &security-headers-staging
+  traefik.http.middlewares.movember-security-staging.headers.stsSeconds: *sts-seconds
+  traefik.http.middlewares.movember-security-staging.headers.stsIncludeSubdomains: "true"
+  traefik.http.middlewares.movember-security-staging.headers.frameDeny: "true"
+  traefik.http.middlewares.movember-security-staging.headers.contentTypeNosniff: "true"
+  traefik.http.middlewares.movember-security-staging.headers.referrerPolicy: *referrer-policy
+  traefik.http.middlewares.movember-security-staging.headers.customResponseHeaders.Permissions-Policy: *permissions-policy
+  traefik.http.middlewares.movember-security-staging.headers.customResponseHeaders.Content-Security-Policy: *csp
+
+# Log rotation.
+#
+# Docker's default `json-file` driver has NO size limit. A container that
+# logs steadily fills the disk until nothing can be written any more — and
+# the first symptom is not "the logs are large", it is the site refusing
+# requests for reasons that make no sense. On a 12 GB VPS during a month-long
+# operation, this is not a hypothetical.
+#
+# 10 MB × 3 files per container caps the whole stack at 90 MB, and still
+# holds enough history to investigate an incident from the night before.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Liveness only — see `src/app/api/health/route.ts`.
+#
+# Deliberately NOT the deep check: Supabase is not ours, and an outage on
+# their side would make this container report unhealthy. The deployment
+# script would then roll back perfectly good code to a version just as unable
+# to reach Supabase. The deep check is what the external monitor watches.
+x-healthcheck: &healthcheck
+  test:
+    [
+      "CMD",
+      "node",
+      "-e",
+      "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+    ]
+  interval: 30s
+  timeout: 5s
+  start_period: 20s
+  retries: 3
+
+services:
+  app:
+    image: ${APP_IMAGE:-defi-movember:local}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-local}
+    restart: always
+    # Never published to the host: reachable only through Traefik.
+    expose:
+      - "3000"
+    env_file:
+      - .env.production
+    environment:
+      APP_ENVIRONMENT: production
+    healthcheck: *healthcheck
+    logging: *logging
+    # No memory limit yet, on purpose: the app has never run under real load,
+    # so any ceiling set today would be a guess. A guessed limit is worse than
+    # none — it can kill a healthy container without warning. It gets measured
+    # and set during the dress rehearsal (story 11.9).
+    networks:
+      - proxy
+    labels:
+      <<: *security-headers
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
+      # Serves both the bare domain and www, with www permanently redirected
+      # to the bare one so a single canonical address is shared and indexed.
+      traefik.http.routers.movember.rule: Host(`${APP_DOMAIN}`) || Host(`www.${APP_DOMAIN}`)
+      traefik.http.routers.movember.entrypoints: websecure
+      traefik.http.routers.movember.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
+      traefik.http.routers.movember.middlewares: movember-www@docker,movember-security@docker
+      # Only rewrites hosts starting with `www.`; the bare domain passes
+      # through untouched. `$$` escapes the capture group for Compose.
+      traefik.http.middlewares.movember-www.redirectregex.regex: ^https://www\.(.*)
+      traefik.http.middlewares.movember-www.redirectregex.replacement: https://$${1}
+      traefik.http.middlewares.movember-www.redirectregex.permanent: "true"
+      traefik.http.services.movember.loadbalancer.server.port: "3000"
+
+  app-staging:
+    image: ${STAGING_IMAGE:-defi-movember:staging}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: ${STAGING_APP_VERSION:-staging}
+    restart: always
+    expose:
+      - "3000"
+    env_file:
+      - .env.staging
+    environment:
+      APP_ENVIRONMENT: staging
+    healthcheck: *healthcheck
+    logging: *logging
+    networks:
+      - proxy
+    labels:
+      <<: *security-headers-staging
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-n8n_default}
+      traefik.http.routers.movember-staging.rule: Host(`${STAGING_DOMAIN}`)
+      traefik.http.routers.movember-staging.entrypoints: websecure
+      traefik.http.routers.movember-staging.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-mytlschallenge}
+      # Excluded from search engines. Staging runs against test payment keys
+      # and must never be publicly reachable.
+      #
+      # **The entry code is no longer here.** It used to be an HTTP password
+      # on this router, and that had one consequence nobody anticipated: an
+      # application added to a phone's home screen does not share the
+      # browser's credential store and has no address bar to ask for it, so
+      # it answered 401 and stopped. The one environment where the installed
+      # application can be checked was the one place it could not be checked
+      # (story 1.8). The code now lives in the application itself, on
+      # `/acces`, driven by `ACCESS_CODE` in `.env.staging`.
+      #
+      # The icon exemption that used to sit here went with it: a phone
+      # fetching an icon outside the page context is let through by the
+      # application's own middleware.
+      traefik.http.routers.movember-staging.middlewares: movember-staging-noindex@docker,movember-security-staging@docker
+      traefik.http.middlewares.movember-staging-noindex.headers.customResponseHeaders.X-Robots-Tag: "noindex, nofollow, noarchive"
+      traefik.http.services.movember-staging.loadbalancer.server.port: "3000"
+
+  # Background queue: Strava activity ingestion, push and e-mail delivery.
+  #
+  # Declared now so the stack does not have to be reshaped later, but held
+  # behind a profile so it does not run as an empty container until epic 3
+  # gives it something to do. Start it with:
+  #   docker compose --profile worker up -d
+  worker:
+    image: ${APP_IMAGE:-defi-movember:local}
+    restart: always
+    profiles:
+      - worker
+    env_file:
+      - .env.production
+    environment:
+      APP_ENVIRONMENT: production
+    logging: *logging
+    labels:
+      traefik.enable: "false"
+    # Placeholder entry point, replaced in epic 3 by the queue runner.
+    # It fails loudly on purpose: reusing the web server command here would
+    # silently start a second, pointless web server if the profile were
+    # enabled by mistake.
+    command:
+      [
+        "node",
+        "-e",
+        "console.error('worker: not implemented yet, see epic 3'); process.exit(1)",
+      ]
+    networks:
+      - proxy
+
+networks:
+  # Traefik's network, created by another project on this host. Declared
+  # external so this stack never tries to create or delete it — nothing here
+  # may disturb the services already running on the VPS.
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-n8n_default}

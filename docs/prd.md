@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| **Version** | v1 — Phase 2 BMAD (Product Manager) |
+| **Version** | v1.1 — Phase 2 BMAD (Product Manager) |
 | **Date** | 3 août 2026 |
 | **Auteur** | Agent PM (BMAD), sur la base du Project Brief v1.1 |
 | **Statut** | En attente de validation PO |
@@ -49,6 +49,7 @@ collecte se joue sur le panier moyen bien plus que sur le volume** : passer de 1
 | Date | Version | Description | Auteur |
 | --- | --- | --- | --- |
 | 2026-08-03 | v1 | Rédaction initiale à partir du Brief v1.1 | Agent PM |
+| 2026-08-03 | v1.1 | Règles du jeu précisées par le PO : défis individualisés tirés d'un catalogue, défis cumulables et sans blocage, sept classements, une carte par défi réussi, raretés commune/rare/épique/légendaire, packs de 5 cartes, thème moustache des cartes. Hébergement sur VPS Hostinger. | Agent PM |
 
 ---
 
@@ -74,12 +75,19 @@ seul chiffre du modèle qui manque, et le seul capable de le rendre déficitaire
 Les 30 défis du mois sont réalisables avec la seule inscription de niveau 1. Les packs
 sont un bonus pour les joueurs les plus enthousiastes.
 
-**Conséquence produit non négociable :** le classement officiel se fonde sur la
-performance sportive et les défis réussis, **jamais sur les cartes possédées**. La
-collection est un objectif personnel, affiché séparément du classement. Aucun avantage
-compétitif ne peut être acheté.
+**Conséquence produit non négociable :** aucun avantage compétitif ne peut être acheté.
 
-### D3 — Les défis sont courts et le jeu pardonne les jours manqués
+- Le **classement général** se fonde sur les points des défis réussis, **jamais sur les
+  cartes possédées**.
+- Le **classement collection**, souhaité par le PO, ne compte que les **cartes gagnées par
+  le jeu** — les cartes issues d'un pack acheté ou du bonus de niveau 3 en sont exclues.
+  Acheter un pack aide à compléter son album, mais ne fait pas gagner une place au
+  classement.
+
+L'album affiche donc deux compteurs distincts : « cartes gagnées » (celle qui compte) et
+« collection complète » (achats inclus).
+
+### D3 — Les défis sont courts, cumulables, et le jeu pardonne les jours manqués
 
 Le participant médian fait 17 minutes de sport par jour. Un défi quotidien exigeant
 45 minutes d'effort exclurait la majorité des participants. Le jeu doit donc :
@@ -87,6 +95,15 @@ Le participant médian fait 17 minutes de sport par jour. Un défi quotidien exi
 - proposer des défis atteignables par le participant médian ;
 - ne jamais pénaliser durablement une journée manquée ;
 - proposer des défis « régularité » qui récompensent la constance sans exiger 30/30.
+
+**Trois règles posées par le PO en découlent :**
+
+- **Aucun défi n'en bloque un autre.** Ne pas avoir réussi le défi du jour n'empêche pas
+  de recevoir et de réussir celui du lendemain.
+- **Un défi manqué reste ouvert** et peut être validé plus tard.
+- **Une même sortie peut valider plusieurs défis à la fois.** Une sortie vélo de 30 km
+  valide simultanément « 20 km à vélo » et « 1 heure d'activité ». C'est ce qui rend le
+  rattrapage possible pour quelqu'un qui a pris du retard.
 
 ### D4 — Le back-office est un produit à part entière, pas une page d'administration
 
@@ -111,6 +128,54 @@ mention doit être visible **avant le paiement**, pas seulement dans les CGV.
 Charte propre bleu / orange, thème sport et moustache. Aucun logo, visuel ou élément
 d'identité de la fondation Movember. Une mention d'indépendance est visible sur les pages
 publiques et dans l'application.
+
+### D8 — Chaque participant reçoit son propre défi
+
+L'administrateur n'écrit pas « le défi du 12 novembre ». Il constitue un **catalogue de
+défis** — types d'activité variés (course, vélo, natation, renforcement musculaire,
+marche…), difficultés et durées variables — dans lequel le système tire chaque jour un
+défi pour chaque participant.
+
+**Deux conséquences importantes.**
+
+D'abord, **l'organisation n'a pas à produire un défi chaque matin de novembre.** Le
+catalogue se constitue en septembre et octobre ; le mois se déroule ensuite tout seul. Le
+back-office sert à ajuster et à animer, pas à alimenter en urgence.
+
+Ensuite, **le classement ne peut plus compter le nombre de défis réussis** : celui qui
+tire des défis faciles serait avantagé. Chaque défi porte donc une **valeur en points**
+reflétant sa difficulté et sa durée, et le classement général cumule ces points.
+
+L'administrateur conserve la possibilité d'**imposer un défi commun à tous** pour une
+journée — c'est le mécanisme des défis collectifs et des animations spéciales.
+
+### D9 — La difficulté d'un défi ne détermine pas la rareté de la carte
+
+Règle explicite du PO : la carte obtenue est **tirée au sort**, indépendamment de la
+difficulté du défi. Un défi difficile peut donner une carte commune, un défi facile une
+carte épique.
+
+**Conséquence à surveiller :** la seule récompense d'un défi difficile étant les points,
+l'écart de points entre facile et difficile doit être assez marqué pour qu'il vaille la
+peine d'être tenté. Un rapport de 1 à 3 sert de point de départ, ajustable en cours
+d'édition.
+
+### D10 — L'économie des cartes
+
+| Règle | Valeur retenue |
+| --- | --- |
+| Attribution | **1 carte tirée au sort par défi réussi.** Rattraper trois défis en retard donne donc trois cartes |
+| Raretés | **4 niveaux, du plus courant au plus rare** : commune → rare → épique → **légendaire** |
+| Volume au lancement | ~50 cartes, collection extensible en cours de mois |
+| Thème | Moustaches : formes, couleurs, noms fantaisistes (« mono moustache », « moustache girlie », « moustache fine », « moustache touffue », « moustache cowboy », « moustache d'or », « moustache teinte », « moustache blanche »…) |
+| Pack booster | **5 cartes** par pack |
+| Bonus niveau 3 | 2 packs, dont **une carte légendaire garantie** |
+
+> La rareté « légendaire » est le sommet de la collection et n'est garantie que par le
+> bonus du niveau 3 — ce qui donne sa valeur à la contrepartie du « Sportif légendaire »
+> sans pour autant procurer d'avantage au classement (décision D2). Les cartes légendaires
+> restent accessibles gratuitement par le tirage des défis, simplement avec une
+> probabilité faible.
 
 ---
 
@@ -180,100 +245,112 @@ cette édition.
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR37 | Un défi est publié chaque jour du mois de novembre, visible par tous les participants. | M |
-| FR38 | Le moteur évalue automatiquement chaque défi à partir des activités synchronisées, sans intervention. | M |
+| FR37 | Chaque participant se voit attribuer un défi par jour, **tiré individuellement** dans le catalogue — les participants n'ont pas tous le même défi. | M |
+| FR38 | Le moteur évalue automatiquement les défis à partir des activités synchronisées, sans intervention. | M |
 | FR39 | Types de défis couverts : distance, durée, dénivelé, régularité, multi-sports, collectif, surprise. | M |
-| FR40 | Le participant voit le défi du jour, sa progression et son statut (à faire, réussi, manqué). | M |
-| FR41 | Le participant consulte l'historique des défis passés et son résultat sur chacun. | M |
-| FR42 | Un défi réussi déclenche l'attribution d'une ou plusieurs cartes selon des règles paramétrables. | M |
-| FR43 | Les défis peuvent être créés et programmés à l'avance sur tout le mois depuis le back-office. | M |
-| FR44 | Un défi peut être créé, modifié ou publié en cours de mois sans redéploiement de l'application. | M |
-| FR45 | Un défi collectif agrège les contributions de tous les participants vers un objectif commun affiché. | M |
-| FR46 | Un défi manqué ne bloque ni les défis suivants ni la progression générale. | M |
-| FR47 | Le participant est notifié du résultat de l'évaluation de son défi. | M |
-| FR48 | L'administrateur peut valider ou invalider manuellement un défi pour un participant donné, avec motif tracé. | M |
-| FR49 | Un défi peut être restreint à une équipe ou à un groupe de participants. | C |
-| FR50 | Un mécanisme de rattrapage permet de valider un défi passé sous conditions (joker). | C |
+| FR40 | Les défis couvrent des types d'activité variés : course, vélo, natation, renforcement musculaire, marche, et autres sports remontés par Strava. | M |
+| FR41 | Chaque défi porte une **difficulté** et une **durée** (journalier ou sur plusieurs jours), ainsi qu'une **valeur en points** reflétant l'effort demandé. | M |
+| FR42 | Le participant voit ses défis en cours, leur progression et leur statut (ouvert, réussi, expiré). | M |
+| FR43 | Le participant consulte l'historique de ses défis et son résultat sur chacun. | M |
+| FR44 | **Un défi n'en bloque jamais un autre** : ne pas avoir réussi celui du jour n'empêche pas de recevoir et de réussir le suivant. | M |
+| FR45 | **Un défi non réussi reste ouvert** et peut être validé ultérieurement. | M |
+| FR46 | **Une même activité peut valider plusieurs défis ouverts simultanément.** | M |
+| FR47 | Un défi réussi déclenche l'attribution d'**une carte tirée au sort**, indépendamment de la difficulté du défi. | M |
+| FR48 | L'administrateur alimente le catalogue de défis depuis le back-office, sans redéploiement de l'application. | M |
+| FR49 | L'administrateur peut **imposer un défi commun à tous les participants** pour une journée donnée. | M |
+| FR50 | L'attribution évite d'attribuer deux fois le même défi à un participant, et tient compte des sports qu'il pratique. | M |
+| FR51 | Un défi collectif agrège les contributions de tous les participants vers un objectif commun affiché. | M |
+| FR52 | Le participant est notifié de son défi du jour, puis du résultat de son évaluation. Plusieurs défis validés simultanément donnent lieu à une **notification groupée**. | M |
+| FR53 | L'administrateur peut valider ou invalider manuellement un défi pour un participant donné, avec motif tracé. | M |
+| FR54 | Le système alerte les administrateurs si le catalogue est épuisé ou passe sous un seuil critique. | M |
+| FR55 | Un défi peut être restreint à une équipe ou à un groupe de participants. | C |
+| FR56 | Un mécanisme de joker permet de valider un défi expiré sous conditions. | C |
 
 ### 3.6 Cartes et collection
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR51 | La collection compte environ 50 cartes au lancement, réparties en 3 à 5 niveaux de rareté. | M |
-| FR52 | Le participant consulte son album : cartes obtenues, cartes manquantes, taux de complétion. | M |
-| FR53 | L'attribution d'une carte suit des règles de tirage paramétrables tenant compte de la rareté. | M |
-| FR54 | L'obtention d'une carte est mise en scène (animation de révélation) et notifiée. | M |
-| FR55 | De nouvelles cartes peuvent être ajoutées à la collection en cours de mois depuis le back-office. | M |
-| FR56 | Le participant peut consulter le détail d'une carte : visuel, nom, rareté, date d'obtention. | M |
-| FR57 | Les participants de niveau 3 reçoivent automatiquement leurs 2 packs, dont une carte légendaire garantie. | M |
-| FR58 | Le participant peut acheter des packs de cartes en cours de jeu, par paiement Stripe. | S |
-| FR59 | Un pack acheté suit des règles de composition paramétrables et garantit sa contrepartie annoncée. | S |
-| FR60 | Le participant peut partager le visuel d'une carte obtenue sur les réseaux sociaux. | C |
-| FR61 | Les participants peuvent échanger des cartes entre eux. | W |
+| FR57 | La collection compte environ 50 cartes au lancement, réparties en **4 niveaux de rareté** : commune, rare, épique, légendaire. | M |
+| FR58 | Les cartes sont sur le thème de la moustache — formes, couleurs, noms fantaisistes — et regroupées en séries. | M |
+| FR59 | Le participant consulte son album : cartes obtenues, manquantes, taux de complétion, avec **deux compteurs distincts** — « cartes gagnées » et « collection complète ». | M |
+| FR60 | L'attribution d'une carte suit des règles de tirage paramétrables tenant compte de la rareté. | M |
+| FR61 | L'obtention d'une carte est mise en scène (animation de révélation) et notifiée. | M |
+| FR62 | De nouvelles cartes peuvent être ajoutées à la collection en cours de mois depuis le back-office. | M |
+| FR63 | Le participant peut consulter le détail d'une carte : visuel, nom, rareté, série, date d'obtention. | M |
+| FR64 | Les participants de niveau 3 reçoivent automatiquement leurs **2 packs de 5 cartes**, dont **une carte légendaire garantie**. | M |
+| FR65 | Le participant peut acheter des **packs de 5 cartes** en cours de jeu, par paiement Stripe. | S |
+| FR66 | Un pack acheté suit des règles de composition paramétrables et garantit sa contrepartie annoncée. | S |
+| FR67 | Le participant peut partager le visuel d'une carte obtenue sur les réseaux sociaux. | C |
+| FR68 | Les participants peuvent échanger des cartes entre eux. | W |
 
 ### 3.7 Équipes, classements et progression
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR62 | Un participant peut créer une équipe ou rejoindre une équipe existante via un lien ou un code. | M |
-| FR63 | Un classement individuel est calculé et affiché, fondé exclusivement sur la performance sportive et les défis réussis. | M |
-| FR64 | Un classement par équipe est calculé et affiché, en tenant compte de la taille des équipes pour ne pas désavantager les petites. | M |
-| FR65 | Le participant consulte son tableau de bord personnel : défis réussis, kilomètres, heures, cartes, position. | M |
-| FR66 | Les compteurs collectifs (km, heures, montant) sont visibles dans l'application et sur la page publique. | M |
-| FR67 | Un participant peut quitter une équipe ; le capitaine peut en exclure un membre. | S |
-| FR68 | Une équipe dispose d'une page dédiée avec ses membres, sa progression et son classement. | S |
-| FR69 | L'administrateur peut créer une équipe pour le compte d'une entreprise ou d'une association. | S |
+| FR69 | Un participant peut créer une équipe ou rejoindre une équipe existante via un lien ou un code. | M |
+| FR70 | Le **classement général** est calculé sur les **points** des défis réussis, jamais sur les cartes possédées. | M |
+| FR71 | Six **classements secondaires** sont calculés et affichés : défis réalisés, cartes gagnées, kilomètres en course, kilomètres en vélo, nombre d'activités, temps d'activité. | M |
+| FR72 | Le **classement des cartes ne compte que les cartes gagnées par le jeu** — les cartes issues d'un pack acheté ou du bonus de niveau 3 en sont exclues. | M |
+| FR73 | Un classement par équipe est calculé et affiché, **normalisé par le nombre de membres** pour ne pas désavantager les petites équipes. | M |
+| FR74 | Le participant consulte son tableau de bord personnel : points, défis réussis, kilomètres, heures, cartes, et sa position dans chaque classement. | M |
+| FR75 | Les compteurs collectifs (km, heures, montant) sont visibles dans l'application et sur la page publique. | M |
+| FR76 | Un participant peut quitter une équipe ; le capitaine peut en exclure un membre. | S |
+| FR77 | Une équipe dispose d'une page dédiée avec ses membres, sa progression et son classement. | S |
+| FR78 | L'administrateur peut créer une équipe pour le compte d'une entreprise ou d'une association. | S |
 
 ### 3.8 Notifications
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR70 | Le participant reçoit une notification push à la publication du défi du jour. | M |
-| FR71 | Le participant reçoit une notification à la validation d'un défi et à l'obtention d'une carte. | M |
-| FR72 | L'onboarding guide explicitement l'installation de la PWA sur l'écran d'accueil, avec des instructions distinctes pour iPhone et Android. | M |
-| FR73 | Tout participant n'ayant pas activé les notifications push reçoit les messages équivalents par e-mail. | M |
-| FR74 | L'administrateur peut envoyer une notification à tous les participants, à une équipe ou à un segment. | M |
-| FR75 | Le participant peut activer ou désactiver les notifications par catégorie. | M |
-| FR76 | Une relance automatique est envoyée aux participants inactifs depuis plusieurs jours. | S |
-| FR77 | Les notifications peuvent être programmées à l'avance. | S |
+| FR79 | Le participant reçoit une notification push à l'attribution de son défi du jour. | M |
+| FR80 | Le participant reçoit une notification à la validation d'un défi et à l'obtention d'une carte, **groupée si plusieurs défis sont validés en même temps**. | M |
+| FR81 | L'onboarding guide explicitement l'installation de la PWA sur l'écran d'accueil, avec des instructions distinctes pour iPhone et Android. | M |
+| FR82 | Tout participant n'ayant pas activé les notifications push reçoit les messages **essentiels** par e-mail (défi du jour, annonces, relances). | M |
+| FR83 | L'administrateur peut envoyer une notification à tous les participants, à une équipe ou à un segment. | M |
+| FR84 | Le participant peut activer ou désactiver les notifications par catégorie. | M |
+| FR85 | Une relance automatique est envoyée aux participants inactifs depuis plusieurs jours. | S |
+| FR86 | Les notifications peuvent être programmées à l'avance. | S |
 
 ### 3.9 Fil d'actualité
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR78 | Un fil d'actualité affiche les publications de l'organisation et les faits marquants du jeu. | M |
-| FR79 | L'administrateur peut publier un message avec texte et image depuis le back-office. | M |
-| FR80 | Le fil peut afficher automatiquement des faits marquants (défi collectif atteint, palier de collecte, carte rare obtenue). | S |
-| FR81 | Les participants peuvent réagir ou commenter les publications. | C |
+| FR87 | Un fil d'actualité affiche les publications de l'organisation et les faits marquants du jeu. | M |
+| FR88 | L'administrateur peut publier un message avec texte et image depuis le back-office. | M |
+| FR89 | Le fil peut afficher automatiquement des faits marquants (défi collectif atteint, palier de collecte, carte rare obtenue). | S |
+| FR90 | Les participants peuvent réagir ou commenter les publications. | C |
 
 ### 3.10 Back-office administrateur
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR82 | L'accès au back-office est restreint aux comptes administrateurs. | M |
-| FR83 | L'administrateur crée, modifie, programme et publie les défis du mois. | M |
-| FR84 | L'administrateur crée et publie de nouvelles cartes (visuel, nom, rareté). | M |
-| FR85 | L'administrateur publie des messages dans le fil d'actualité. | M |
-| FR86 | L'administrateur envoie des notifications ciblées. | M |
-| FR87 | L'administrateur consulte et recherche la liste des participants avec leur niveau, leur statut Strava et leur activité. | M |
-| FR88 | L'administrateur consulte le tableau de bord de la collecte : encaissements, remboursements, frais, montant net reversable, ventilation par niveau. | M |
-| FR89 | L'administrateur exporte les données comptables dans un format tabulaire exploitable. | M |
-| FR90 | L'administrateur exporte la liste des adresses de livraison des médailles par niveau. | M |
-| FR91 | L'administrateur consulte les activités signalées comme aberrantes et arbitre chaque cas. | M |
-| FR92 | L'administrateur peut suspendre ou exclure un participant, avec motif tracé. | S |
-| FR93 | Le back-office est utilisable depuis un téléphone. | M |
-| FR94 | Les actions administratives sensibles sont journalisées. | S |
-| FR95 | L'administrateur peut prévisualiser un défi ou une carte avant publication. | S |
+| FR91 | L'accès au back-office est restreint aux comptes administrateurs. | M |
+| FR92 | L'administrateur crée et modifie les défis du **catalogue** (type, sport, difficulté, durée, points, récompense). | M |
+| FR93 | L'administrateur visualise l'état du catalogue : défis disponibles, taux d'utilisation, alerte de rupture. | M |
+| FR94 | L'administrateur peut imposer un défi commun à tous pour une journée donnée. | M |
+| FR95 | L'administrateur crée et publie de nouvelles cartes (visuel, nom, rareté, série). | M |
+| FR96 | L'administrateur publie des messages dans le fil d'actualité. | M |
+| FR97 | L'administrateur envoie des notifications ciblées. | M |
+| FR98 | L'administrateur consulte et recherche la liste des participants avec leur niveau, leur statut Strava et leur activité. | M |
+| FR99 | L'administrateur consulte le tableau de bord de la collecte : encaissements, remboursements, frais, montant net reversable, ventilation par niveau. | M |
+| FR100 | L'administrateur exporte les données comptables dans un format tabulaire exploitable. | M |
+| FR101 | L'administrateur exporte la liste des adresses de livraison des médailles par niveau. | M |
+| FR102 | L'administrateur consulte les activités signalées comme aberrantes et arbitre chaque cas. | M |
+| FR103 | L'administrateur peut suspendre ou exclure un participant, avec motif tracé. | S |
+| FR104 | Le back-office est utilisable depuis un téléphone. | M |
+| FR105 | Les actions administratives sensibles sont journalisées. | S |
+| FR106 | L'administrateur peut prévisualiser un défi ou une carte avant publication. | S |
 
 ### 3.11 Intégrité du jeu (anti-triche)
 
 | # | Exigence | Prio |
 | --- | --- | --- |
-| FR96 | Le système contrôle la cohérence des activités (vitesse, allure, durée, type déclaré) et signale les valeurs aberrantes. | M |
-| FR97 | Une activité signalée n'est pas automatiquement rejetée : elle est mise en attente d'arbitrage administrateur. | M |
-| FR98 | Les activités marquées comme manuelles ou importées sur Strava sont identifiées et traitées selon une règle explicite. | M |
-| FR99 | Un participant peut signaler un comportement suspect. | C |
-| FR100 | Les seuils de détection sont paramétrables sans redéploiement. | S |
+| FR107 | Le système contrôle la cohérence des activités (vitesse, allure, durée, type déclaré) et signale les valeurs aberrantes. | M |
+| FR108 | Une activité signalée n'est pas automatiquement rejetée : elle est mise en attente d'arbitrage administrateur. | M |
+| FR109 | Les activités marquées comme manuelles ou importées sur Strava sont identifiées et traitées selon une règle explicite. | M |
+| FR110 | Un même compte Strava ne peut être lié qu'à un seul compte de jeu. | M |
+| FR111 | Un participant peut signaler un comportement suspect. | C |
+| FR112 | Les seuils de détection sont paramétrables sans redéploiement. | S |
 
 ---
 
@@ -286,7 +363,7 @@ cette édition.
 | NFR3 | Toute l'interface utilisateur est en français. | M |
 | NFR4 | Les pages principales s'ouvrent en moins de 3 secondes sur une connexion mobile 4G. | M |
 | NFR5 | Le système supporte 800 participants actifs, avec un pic de charge à la publication du défi quotidien. | M |
-| NFR6 | Le coût d'infrastructure récurrent reste inférieur à 30 € par mois hors commissions de paiement. | M |
+| NFR6 | Le coût d'infrastructure récurrent reste inférieur à 30 € par mois hors commissions de paiement. *Tenu : ~25 €/mois sur les trois mois de l'édition, le VPS étant déjà payé.* | M |
 | NFR7 | Une indisponibilité de Strava ne provoque aucune perte de données : les activités sont rattrapées au rétablissement. | M |
 | NFR8 | Aucun secret n'est présent dans le dépôt ; toutes les clés passent par des variables d'environnement. | M |
 | NFR9 | Les données utilisateur sont protégées par des règles d'accès au niveau de la base de données. | M |
@@ -304,7 +381,9 @@ cette édition.
 | NFR21 | L'interface respecte la charte bleu / orange et n'utilise aucun élément d'identité de la fondation Movember. | M |
 | NFR22 | L'application reste consultable en lecture si la synchronisation des activités est temporairement indisponible. | S |
 | NFR23 | Accessibilité visée : WCAG 2.1 niveau AA sur les parcours publics et le parcours participant. | S |
-| NFR24 | Le déploiement est automatisé depuis GitHub, avec un environnement de préproduction. | M |
+| NFR24 | Le déploiement est automatisé depuis GitHub vers le VPS, avec un environnement de préproduction accessible au PO et un retour arrière possible en moins d'une minute. | M |
+| NFR27 | Le serveur est supervisé en continu pendant l'édition, avec alerte en cas d'indisponibilité et redémarrage automatique des services. | M |
+| NFR28 | Une procédure d'exploitation écrite (`docs/runbook.md`) permet au PO seul de redémarrer l'application, restaurer une sauvegarde ou revenir à la version précédente. | M |
 | NFR25 | Les parcours critiques (paiement, connexion Strava, évaluation d'un défi) sont couverts par des tests automatisés. | M |
 | NFR26 | Une page de statut interne permet de vérifier l'état des intégrations (Strava, Stripe, notifications). | S |
 
@@ -399,8 +478,9 @@ délai imparti.
 
 ### 6.4 Autres hypothèses transmises à l'Architecte
 
-- Stack par défaut : Next.js + TypeScript, Tailwind, Supabase, Stripe, hébergement
-  Vercel — à confirmer ou écarter avec justification.
+- Stack : Next.js + TypeScript, Tailwind, Supabase, Stripe. **Hébergement sur le VPS
+  Hostinger du PO** (décision prise en Phase 3), avec conteneurisation Docker et
+  déploiement automatisé depuis GitHub.
 - Le contenu du jeu doit être piloté par les données. C'est la contrainte d'architecture
   la plus structurante du projet : elle conditionne la promesse du back-office.
 - Une couche d'abstraction « source d'activité » doit isoler Strava dès le départ.
@@ -424,13 +504,13 @@ incrément déployable et vérifiable.
 
 | # | Epic | Objectif | Prio |
 | --- | --- | --- | --- |
-| **1** | **Fondations et squelette déployable** | Mettre en place le projet, le déploiement automatisé, la PWA installable, l'authentification et la page d'accueil publique aux couleurs du jeu. | M |
+| **1** | **Fondations et squelette déployable** | Mettre en place le projet, la conteneurisation, la chaîne de déploiement vers le VPS avec préproduction, la PWA installable, l'authentification et la page d'accueil publique aux couleurs du jeu. | M |
 | **2** | **Inscription payante** | Permettre à un visiteur de choisir un niveau, de payer via Stripe et d'obtenir un compte participant actif, avec la traçabilité comptable associée. | M |
 | **3** | **Connexion Strava et synchronisation** | Lier le compte Strava du participant et récupérer ses activités automatiquement et durablement, dans le respect du RGPD. | M |
-| **4** | **Moteur de défis** | Publier un défi par jour, l'évaluer automatiquement à partir des activités, et restituer sa progression au participant. | M |
-| **5** | **Cartes et collection** | Attribuer des cartes à la réussite des défis et offrir un album consultable, avec mise en scène de l'obtention. | M |
+| **4** | **Moteur de défis** | Constituer le catalogue, attribuer chaque jour un défi individuel à chaque participant, l'évaluer automatiquement, et gérer les défis cumulables et non bloquants. | M |
+| **5** | **Cartes et collection** | Attribuer une carte tirée au sort à chaque défi réussi et offrir un album consultable, avec mise en scène de l'obtention. | M |
 | **6** | **Notifications et installation PWA** | Garantir que chaque participant est prévenu chaque jour, par push ou par e-mail, avec un onboarding d'installation guidé. | M |
-| **7** | **Équipes, classements et fil d'actualité** | Créer la dimension collective et compétitive du jeu et donner à l'organisation un canal de publication. | M |
+| **7** | **Équipes et classements** | Créer la dimension collective et les sept classements, et donner à l'organisation un canal de publication. | M |
 | **8** | **Back-office d'animation** | Donner à l'équipe organisatrice l'autonomie complète sur les défis, les cartes, les notifications et les participants, sans développement. | M |
 | **9** | **Collecte, comptabilité et intégrité du jeu** | Fournir le tableau de bord de collecte, les exports comptables et de livraison, et les outils d'arbitrage anti-triche. | M |
 | **10** | **Packs achetables et bonus** | Permettre l'achat de packs de cartes en cours de jeu, sans aucun impact sur le classement. | S |
@@ -509,14 +589,17 @@ Phase 4 ou en cours de développement.
 | --- | --- | --- |
 | P1 | **Prix ferme de la médaille**, qui conditionne la répartition définitive du don par niveau (décision D1). | Avant l'ouverture des inscriptions |
 | P2 | Annonce du « 100 % reversé » au niveau 1 : reformuler, ou faire combler les frais Stripe par l'association (~260 € pour 600 participants). | Avant l'ouverture des inscriptions |
-| P3 | Composition et prix des packs achetables, et rythme d'obtention des cartes par les défis. | Phase 4 |
-| P4 | Règle de classement par équipe : total ou moyenne par membre — un total favorise mécaniquement les grosses équipes. | Phase 4 |
+| ~~P12~~ | ~~Contradiction sur la « carte légendaire garantie »~~ ✅ **Tranché** : les raretés sont commune, rare, épique, légendaire — « très rare » supprimée, « légendaire » ajoutée au sommet. La promesse du niveau 3 est désormais exacte. | — |
+| P3 | **Prix** des packs achetables, et **probabilités de tirage par rareté**. *(Composition tranchée : 5 cartes. Rythme tranché : 1 carte par défi réussi.)* | Phase 4 |
+| P13 | Barème de points par difficulté de défi — rapport proposé de 1 à 3 entre facile et difficile. | Phase 4 |
+| P14 | Volume cible du catalogue de défis : au moins 60 à 80 défis répartis par sport et par difficulté. **Travail de contenu à mener en septembre.** | Septembre |
+| ~~P4~~ | ~~Classement par équipe : total ou moyenne~~ ✅ **Tranché** : normalisé par le nombre de membres, pour ne pas désavantager les petites équipes. | — |
 | P5 | Taille minimale et maximale d'une équipe ; qui peut en créer une. | Phase 4 |
-| P6 | Politique de remboursement (blessure, abandon, erreur de niveau) — conditionne les CGV. | Avant l'ouverture des inscriptions |
+| ~~P6~~ | ~~Politique de remboursement — conditionne les CGV.~~ ✅ **Tranché le 11 août** : intégral avant le 1ᵉʳ novembre, plus rien ensuite hors empêchement médical sur justificatif, frais de paiement à la charge de l'association. Article 10 des CGV. | — |
 | P7 | Traitement d'un participant qui paye puis refuse de connecter Strava. | Avant l'ouverture des inscriptions |
 | P8 | Inscriptions encore possibles après le 1ᵉʳ novembre ? Avec quel rattrapage sur les défis passés ? | Phase 4 |
 | P9 | Modalités de la formule entreprise (facturation groupée ou inscriptions individuelles). | V2 |
-| P10 | Durée de conservation des données d'activité après la fin de l'édition. | Phase 3 |
+| ~~P10~~ | ~~Durée de conservation des données d'activité après la fin de l'édition.~~ ✅ **Tranché — 12 mois.** | — |
 | P11 | Traitement des activités marquées comme manuelles ou importées sur Strava : exclues, ou acceptées sous contrôle ? | Phase 3 |
 
 ---

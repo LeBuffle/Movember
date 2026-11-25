@@ -10,6 +10,13 @@ out/
 build/
 dist/
 
+# Service worker compilé au build par Serwist (story 1.8).
+# Généré à partir de src/app/sw.ts — c'est la source qui est versionnée.
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/swe-worker-*.js.map
+
 # Tests / couverture
 coverage/
 *.lcov

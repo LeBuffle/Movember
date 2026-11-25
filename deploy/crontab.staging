@@ -1,0 +1,82 @@
+# DEFI Movember — tâches planifiées de la PRÉPRODUCTION
+#
+# INSTALLÉ PAR `deploy/scripts/deploy.sh`, à chaque déploiement, en même temps
+# que `deploy/crontab`. Les deux fichiers sont concaténés et posés d'un seul
+# geste.
+#
+# **C'est le point délicat de ce fichier.** `crontab <fichier>` remplace le
+# crontab de l'utilisateur en entier. Installer la production d'un côté et la
+# préproduction de l'autre ferait que chaque déploiement efface les tâches de
+# l'autre environnement — et le premier à en souffrir serait la production, un
+# matin de novembre, sans que rien ne le signale. Les deux fichiers partent
+# donc toujours ensemble.
+#
+# Pas d'en-tête `SHELL=` ni `PATH=` ici : celui de `deploy/crontab` s'applique
+# aux deux, puisqu'ils n'en font plus qu'un.
+#
+# ---------------------------------------------------------------------------
+#
+# **Pourquoi la préproduction a ses propres tâches** (décision PO du 14 août).
+#
+# Elle a son propre projet Supabase : rien de ce qui tourne ici ne touche aux
+# données de production. Sans ces lignes, la préproduction ne distribue aucun
+# défi, ne renouvelle aucun jeton et ne recalcule aucun classement — tout n'y
+# arrive que si quelqu'un appuie sur un bouton.
+#
+# Ce qui rendait la **répétition générale sans valeur** : elle est censée
+# prouver que le mois se déroule tout seul, et elle ne pouvait prouver que le
+# contraire. Le badge « Interrompue » de l'écran d'état, rouge en permanence
+# faute de tâche, était le symptôme de ce trou.
+#
+# ⚠️ **Deux tâches ne sont volontairement PAS reprises ici** :
+#
+#   - `check-resources.sh` — elle surveille la machine, pas un environnement.
+#     La lancer deux fois enverrait deux alertes pour un seul disque plein.
+#   - `backup-database.sh` — elle sauvegarde la base nommée dans `deploy/.env`,
+#     c'est-à-dire la production. Une seconde exécution écrirait le même
+#     fichier deux fois par nuit sans rien sauvegarder de plus.
+#
+# Les minutes sont décalées de celles de la production : deux tâches lourdes
+# lancées à la même seconde sur un petit VPS se gênent, et des journaux
+# entrelacés se lisent mal un dimanche soir.
+# ---------------------------------------------------------------------------
+
+# Preuve que le mécanisme fonctionne, côté préproduction (story 1.4).
+17 5 * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 30 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/ping >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Rapprochement des frais Stripe (story 2.6). Clés de test.
+53 * * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/rapprochement >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# La photographie des classements (story 13.1), avant les défis du jour.
+12 5 * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 60 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/photographie >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Les défis du jour (story 4.4). **La tâche que la répétition doit prouver.**
+14 5 * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/defis-du-jour >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Renouvellement des jetons Strava (story 3.7).
+#
+# **Celle-ci compte double en préproduction.** Un jeton Strava vit quelques
+# heures ; sans cette ligne, le compte relié pour la recette meurt dans la
+# nuit et chaque essai du lendemain repart d'une liaison morte — ce qui se
+# lit comme « Strava est cassé » alors que rien ne l'est.
+11 * * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/jetons >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Rattrapage Strava (story 3.6).
+#
+# ⚠️ **Ici, ce n'est pas un filet de sécurité : c'est le seul chemin.** Strava
+# n'autorise qu'un abonnement webhook par application, et il appartient à la
+# production. En préproduction, aucune sortie n'arrive autrement que par cette
+# ligne.
+47 * * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/rattrapage >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Classements (story 7.3), au quart d'heure, décalés de la production.
+8,23,38,53 * * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/classements >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Défis entre joueurs (stories 12.5, 12.7), heures d'éveil uniquement.
+49 8-22 * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 120 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/defis-joueurs >> /var/log/defi-movember-cron-staging.log 2>&1
+
+# Politique de conservation (story 11.4).
+#
+# Sans risque ici — sa base est distincte — et c'est le seul endroit où on
+# peut la regarder tourner sans attendre décembre.
+44 4 * * * source /opt/defi-movember/deploy/.env.staging && curl --fail --silent --show-error --max-time 300 -H "x-cron-secret: $CRON_SECRET" https://staging.defi-movember.fr/api/cron/purge >> /var/log/defi-movember-cron-staging.log 2>&1
